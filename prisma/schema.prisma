@@ -1,0 +1,1160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Incasso {
+  id             String           @id @default(cuid())
+  data           DateTime         @unique
+  createdAt      DateTime         @default(now())
+  contanti       Decimal          @db.Decimal(10, 2)
+  extra          Decimal          @db.Decimal(10, 2)
+  pos            Decimal          @db.Decimal(10, 2)
+  updatedAt      DateTime         @default(now()) @updatedAt
+  createdBy      String?
+  createdByUser  User?            @relation("IncassoCreatedBy", fields: [createdBy], references: [id])
+  movimentiConto MovimentoConto[]
+
+  @@index([data], map: "incasso_data_asc_idx")
+  @@index([data(sort: Desc)], map: "incasso_data_desc_idx")
+  @@index([data, createdBy])
+}
+
+model TotaliMensili {
+  id           String   @id @default(cuid())
+  anno         Int
+  mese         Int
+  contanti     Decimal  @db.Decimal(10, 2)
+  pos          Decimal  @db.Decimal(10, 2)
+  extra        Decimal  @db.Decimal(10, 2)
+  totale       Decimal  @db.Decimal(10, 2)
+  totaleExtra  Decimal  @db.Decimal(10, 2)
+  giorniLavoro Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  disavanzo    Decimal? @db.Decimal(10, 2)
+
+  @@unique([anno, mese])
+  @@map("TotaliMensili")
+}
+
+model Cliente {
+  id                    String               @id @default(cuid())
+  nome                  String
+  telefono              String?
+  email                 String?
+  note                  String?
+  attivo                Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  movimenti             MovimentoCliente[]
+  ordinazioni           Ordinazione[]
+  contributiEffettuati  ContributoCliente[]  @relation("ContributiEffettuati")
+  contributiRicevuti    ContributoCliente[]  @relation("ContributiRicevuti")
+  righeOrdinate         RigaOrdinazione[]    @relation("RigheOrdinante")
+  righeBeneficiario     RigaOrdinazione[]    @relation("RigheBeneficiario")
+  pagamentiEffettuati   Pagamento[]          @relation("PagamentiCliente")
+  contiScalari          ContoScalare[]       // Conti intestati al cliente
+  movimentiPagatore     MovimentoContoScalare[]     @relation("MovimentiPagatore")
+
+  @@map("Cliente")
+}
+
+model MovimentoCliente {
+  id          String             @id @default(cuid())
+  clienteId   String
+  data        DateTime
+  tipo        TipoMovimento
+  importo     Decimal            @db.Decimal(10, 2)
+  descrizione String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  categoria   CategoriaProdotto?
+  cliente     Cliente            @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([clienteId])
+  @@index([data])
+  @@index([tipo])
+  @@map("MovimentoCliente")
+}
+
+model CategoriaMenu {
+  id              Int               @id @default(autoincrement())
+  nome            String            @unique
+  nomeDisplay     String
+  emoji           String?
+  descrizione     String?
+  ordinamento     Int               @default(0)
+  attiva          Boolean           @default(true)
+  coloreHex       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  pagineCategorie PaginaCategoria[]
+  prodotti        Prodotto[]
+  separatori      SeparatoreMenu[]
+
+  @@index([ordinamento])
+  @@index([attiva])
+  @@map("CategoriaMenu")
+}
+
+model Prodotto {
+  id                 Int                       @id @default(autoincrement())
+  nome               String
+  descrizione        String?
+  prezzo             Decimal                   @db.Decimal(10, 2)
+  categoria          String
+  categoriaMenuId    Int?
+  disponibile        Boolean                   @default(true)
+  tempoPreparazione  Int?
+  ordineProdotto     Int?
+  immagine           String?
+  barcode            String?
+  unitaMisura        String?                   @default("pz")
+  allergeni          String?
+  ingredienti        String?
+  calorie            Int?
+  glutenFree         Boolean                   @default(false)
+  vegano             Boolean                   @default(false)
+  vegetariano        Boolean                   @default(false)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  destinazione       DestinazioneRiga?         @default(CUCINA)
+  terminato          Boolean                   @default(false)
+  codice             Int?                      @unique
+  isDeleted          Boolean                   @default(false)
+  categoryId         Int?
+  subcategoryId      Int?
+  inventario         Inventario?
+  categoriaMenu      CategoriaMenu?            @relation(fields: [categoriaMenuId], references: [id])
+  category           Category?                 @relation(fields: [categoryId], references: [id])
+  subcategory        Subcategory?              @relation(fields: [subcategoryId], references: [id])
+  categorieUnificate ProdottoCategoria[]
+  fornitori          ProdottoFornitore[]
+  pagineCategorie    ProdottoPaginaCategoria[]
+  righeOrdine        RigaOrdinazione[]
+  ordini             RigaOrdineFornitore[]
+
+  @@index([codice])
+  @@index([prezzo])
+  @@index([disponibile])
+  @@index([categoriaMenuId])
+  @@index([categoria])
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([ordineProdotto])
+  @@index([isDeleted])
+  @@index([isDeleted, disponibile])
+  @@map("Prodotto")
+}
+
+model Tavolo {
+  id               Int                @id @default(autoincrement())
+  numero           String             @unique
+  zona             String?
+  posti            Int                @default(4)
+  stato            StatoTavolo        @default(LIBERO)
+  note             String?
+  attivo           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  ordinazioni      Ordinazione[]
+  unioni           TavoloUnione[]     @relation("TavoliInUnione")
+  unioniCapogruppo UnioneTavoli[]     @relation("TavoloCapogruppo")
+  contributi       ContributoCliente[]
+  contiScalari     ContoScalare[]     // Conti associati al tavolo
+
+  @@index([stato])
+  @@index([zona])
+  @@map("Tavolo")
+}
+
+model UnioneTavoli {
+  id                 String         @id @default(cuid())
+  tavoloCapogruppoId Int
+  descrizione        String?
+  attiva             Boolean        @default(true)
+  dataCreazione      DateTime       @default(now())
+  dataScoglimento    DateTime?
+  motivoScoglimento  String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  tavoli             TavoloUnione[]
+  tavoloCapogruppo   Tavolo         @relation("TavoloCapogruppo", fields: [tavoloCapogruppoId], references: [id])
+
+  @@index([tavoloCapogruppoId])
+  @@index([attiva])
+  @@map("UnioneTavoli")
+}
+
+model TavoloUnione {
+  id        String       @id @default(cuid())
+  tavoloId  Int
+  unioneId  String
+  createdAt DateTime     @default(now())
+  tavolo    Tavolo       @relation("TavoliInUnione", fields: [tavoloId], references: [id], onDelete: Cascade)
+  unione    UnioneTavoli @relation(fields: [unioneId], references: [id], onDelete: Cascade)
+
+  @@unique([tavoloId, unioneId])
+  @@index([tavoloId])
+  @@index([unioneId])
+  @@map("TavoloUnione")
+}
+
+model Ordinazione {
+  id             String            @id @default(cuid())
+  numero         Int               @unique @default(autoincrement())
+  tavoloId       Int?
+  clienteId      String?
+  cameriereId    String
+  stato          StatoOrdinazione  @default(APERTA)
+  tipo           TipoOrdinazione   @default(TAVOLO)
+  dataApertura   DateTime          @default(now())
+  dataChiusura   DateTime?
+  totale         Decimal           @default(0) @db.Decimal(10, 2)
+  note           String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  nomeCliente    String?
+  statoPagamento StatoPagamento    @default(NON_PAGATO)
+  cameriere      User              @relation("OrdinazioneCameriere", fields: [cameriereId], references: [id])
+  cliente        Cliente?          @relation(fields: [clienteId], references: [id])
+  tavolo         Tavolo?           @relation(fields: [tavoloId], references: [id])
+  pagamenti      Pagamento[]
+  righe          RigaOrdinazione[]
+  movimentiConto MovimentoConto[]  // Movimenti associati a questa ordinazione
+  movimentiContoScalare MovimentoContoScalare[] @relation("MovimentiContoScalare") // Movimenti conto scalare
+
+  @@index([stato])
+  @@index([statoPagamento])
+  @@index([dataApertura])
+  @@index([cameriereId])
+  @@index([tavoloId])
+  @@index([clienteId])
+  @@index([stato, dataApertura])
+  @@index([cameriereId, stato])
+  @@index([stato, tavoloId])
+  @@index([stato, statoPagamento])
+  @@map("Ordinazione")
+}
+
+model Pagamento {
+  id                String            @id @default(cuid())
+  ordinazioneId     String
+  importo           Decimal           @db.Decimal(10, 2)
+  modalita          ModalitaPagamento
+  clienteNome       String?
+  clientePagatoreId String?
+  contributoId      String?
+  righeIds          Json
+  operatoreId       String
+  timestamp         DateTime          @default(now())
+  note              String?
+  clientePagatore   Cliente?          @relation("PagamentiCliente", fields: [clientePagatoreId], references: [id])
+  contributo        ContributoCliente? @relation(fields: [contributoId], references: [id])
+  operatore         User              @relation("PagamentiOperatore", fields: [operatoreId], references: [id])
+  ordinazione       Ordinazione       @relation(fields: [ordinazioneId], references: [id], onDelete: Cascade)
+  movimentiConto    MovimentoConto[]  // Movimenti associati a questo pagamento
+  movimentiContoScalare MovimentoContoScalare[] @relation("MovimentiContoScalare") // Movimenti conto scalare
+
+  @@index([ordinazioneId])
+  @@index([operatoreId])
+  @@index([clientePagatoreId])
+  @@index([timestamp])
+  @@map("Pagamento")
+}
+
+model RigaOrdinazione {
+  id                     String                @id @default(cuid())
+  ordinazioneId          String
+  prodottoId             Int
+  quantita               Int                   @default(1)
+  prezzo                 Decimal               @db.Decimal(10, 2)
+  stato                  StatoRigaOrdinazione  @default(INSERITO)
+  destinazione           DestinazioneRiga      @default(BAR)
+  timestampOrdine        DateTime              @default(now())
+  timestampInizio        DateTime?
+  timestampPronto        DateTime?
+  note                   String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  isPagato               Boolean               @default(false)
+  pagatoDa               String?
+  clienteOrdinanteId     String?
+  clienteBeneficiarioId  String?
+  timestampConsegna      DateTime?
+  newProductId           Int?
+  pagamentiInCorso       ProdottiInPagamento[]
+  clienteOrdinante       Cliente?              @relation("RigheOrdinante", fields: [clienteOrdinanteId], references: [id])
+  clienteBeneficiario    Cliente?              @relation("RigheBeneficiario", fields: [clienteBeneficiarioId], references: [id])
+  newProduct             Product?              @relation(fields: [newProductId], references: [id])
+  ordinazione            Ordinazione           @relation(fields: [ordinazioneId], references: [id], onDelete: Cascade)
+  prodotto               Prodotto              @relation(fields: [prodottoId], references: [id])
+
+  @@index([ordinazioneId])
+  @@index([stato])
+  @@index([destinazione])
+  @@index([timestampOrdine])
+  @@index([prodottoId])
+  @@index([clienteOrdinanteId])
+  @@index([clienteBeneficiarioId])
+  @@index([newProductId])
+  @@index([ordinazioneId, stato, destinazione])
+  @@index([stato, destinazione, timestampOrdine])
+  @@index([isPagato, ordinazioneId])
+  @@map("RigaOrdinazione")
+}
+
+model Notifica {
+  id            String       @id @default(cuid())
+  tipo          TipoNotifica
+  titolo        String
+  messaggio     String
+  destinazione  String
+  ordinazioneId String?
+  rigaId        String?
+  letta         Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  data          String?
+
+  @@index([destinazione])
+  @@index([letta])
+  @@index([createdAt])
+  @@index([destinazione, letta, createdAt])
+  @@map("Notifica")
+}
+
+model User {
+  id                        String                 @id @default(cuid())
+  email                     String                 @unique
+  password                  String
+  nome                      String                 @unique
+  cognome                   String
+  ruolo                     Role
+  attivo                    Boolean                @default(true)
+  bloccato                  Boolean                @default(false)
+  ultimoAccesso             DateTime?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  authorizationsSupervisore AuthorizationLog[]     @relation("SupervisoreAuth")
+  authorizationsUser        AuthorizationLog[]     @relation("AuthorizedUser")
+  dispositiviAutorizzati    DeviceWhitelist[]
+  incassiCreati             Incasso[]              @relation("IncassoCreatedBy")
+  notificheRicevute         NotificaPagamento[]    @relation("NotificaTo")
+  notificheInviate          NotificaPagamento[]    @relation("NotificaFrom")
+  ordinazioniCameriere      Ordinazione[]          @relation("OrdinazioneCameriere")
+  ordiniGestiti             OrdineFornitore[]      @relation("OrdineGestito")
+  pagamentiOperatore        Pagamento[]            @relation("PagamentiOperatore")
+  movimentiConto            MovimentoConto[]       @relation("MovimentiOperatore")
+  movimentiContoScalare     MovimentoContoScalare[] @relation("MovimentiContoScalareOperatore")
+  qrTokensCreati            QRAuthorizationToken[] @relation("QRTokenCreatedBy")
+  qrCodesGenerated          QRCodeToken[]          @relation("GeneratedQRCodes")
+  qrCodesUser               QRCodeToken[]          @relation("UserQRCodes")
+  richiestePagemento        RichiestaPagemento[]   @relation("RichiestePagementoCameriere")
+  sessioni                  Session[]
+
+  @@map("User")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+  @@index([token, expires])
+}
+
+model DeviceWhitelist {
+  id                String   @id @default(cuid())
+  userId            String
+  deviceFingerprint String   @unique
+  deviceName        String
+  deviceInfo        Json
+  isActive          Boolean  @default(true)
+  lastUsed          DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceFingerprint])
+  @@index([isActive])
+  @@map("DeviceWhitelist")
+}
+
+model QRAuthorizationToken {
+  id            String   @id @default(cuid())
+  token         String   @unique
+  expiresAt     DateTime
+  createdBy     String
+  maxUses       Int      @default(1)
+  currentUses   Int      @default(0)
+  createdAt     DateTime @default(now())
+  createdByUser User     @relation("QRTokenCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@index([createdBy])
+  @@map("QRAuthorizationToken")
+}
+
+model Fornitore {
+  id               Int                 @id @default(autoincrement())
+  nome             String
+  ragioneSociale   String?
+  partitaIva       String?             @unique
+  telefono         String?
+  email            String?
+  indirizzo        String?
+  citta            String?
+  cap              String?
+  provincia        String?
+  paese            String?             @default("Italia")
+  note             String?
+  attivo           Boolean             @default(true)
+  terminiPagamento Int?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  ordini           OrdineFornitore[]
+  prodotti         ProdottoFornitore[]
+  spese            Spesa[]
+
+  @@index([attivo])
+  @@index([nome])
+  @@map("Fornitore")
+}
+
+model ProdottoFornitore {
+  id              Int       @id @default(autoincrement())
+  prodottoId      Int
+  fornitoreId     Int
+  costoAcquisto   Decimal?  @db.Decimal(10, 2)
+  codiceFornitore String?
+  tempoConsegna   Int?
+  quantitaMinima  Int?
+  attivo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  fornitore       Fornitore @relation(fields: [fornitoreId], references: [id], onDelete: Cascade)
+  prodotto        Prodotto  @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+
+  @@unique([prodottoId, fornitoreId])
+  @@index([prodottoId])
+  @@index([fornitoreId])
+  @@map("ProdottoFornitore")
+}
+
+model OrdineFornitore {
+  id            String                @id @default(cuid())
+  numero        String                @unique
+  fornitoreId   Int
+  dataOrdine    DateTime              @default(now())
+  dataConsegna  DateTime?
+  stato         StatoOrdine           @default(BOZZA)
+  totale        Decimal?              @db.Decimal(10, 2)
+  note          String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  gestitoDa     String?
+  fornitore     Fornitore             @relation(fields: [fornitoreId], references: [id])
+  gestitoDaUser User?                 @relation("OrdineGestito", fields: [gestitoDa], references: [id])
+  righe         RigaOrdineFornitore[]
+
+  @@index([fornitoreId])
+  @@index([dataOrdine])
+  @@index([stato])
+  @@map("OrdineFornitore")
+}
+
+model RigaOrdineFornitore {
+  id             String          @id @default(cuid())
+  ordineId       String
+  prodottoId     Int
+  quantita       Decimal         @db.Decimal(10, 2)
+  prezzoUnitario Decimal         @db.Decimal(10, 2)
+  totaleRiga     Decimal         @db.Decimal(10, 2)
+  note           String?
+  createdAt      DateTime        @default(now())
+  ordine         OrdineFornitore @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+  prodotto       Prodotto        @relation(fields: [prodottoId], references: [id])
+
+  @@index([ordineId])
+  @@index([prodottoId])
+  @@map("RigaOrdineFornitore")
+}
+
+model Inventario {
+  id              Int                   @id @default(autoincrement())
+  prodottoId      Int                   @unique
+  giacenzaAttuale Decimal               @default(0) @db.Decimal(10, 2)
+  giacenzaMinima  Decimal?              @db.Decimal(10, 2)
+  ultimoCarico    DateTime?
+  ultimoScarico   DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  notificaInviata Boolean               @default(false)
+  prodotto        Prodotto              @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+  movimenti       MovimentoInventario[]
+
+  @@index([giacenzaAttuale])
+  @@index([prodottoId])
+  @@index([notificaInviata])
+  @@map("Inventario")
+}
+
+model MovimentoInventario {
+  id            String                  @id @default(cuid())
+  inventarioId  Int
+  tipo          TipoMovimentoInventario
+  quantita      Decimal                 @db.Decimal(10, 2)
+  motivazione   String?
+  riferimento   String?
+  dataMovimento DateTime                @default(now())
+  createdAt     DateTime                @default(now())
+  inventario    Inventario              @relation(fields: [inventarioId], references: [id], onDelete: Cascade)
+
+  @@index([inventarioId])
+  @@index([dataMovimento])
+  @@index([tipo])
+  @@map("MovimentoInventario")
+}
+
+model Spesa {
+  id             String         @id @default(cuid())
+  data           DateTime
+  fornitoreId    Int?
+  categoria      CategoriaSpesa
+  importo        Decimal        @db.Decimal(10, 2)
+  descrizione    String
+  numeroFattura  String?
+  iva            Decimal?       @db.Decimal(10, 2)
+  note           String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  ambito         AmbitoSpesa    @default(OPERATIVE)
+  sottocategoria String         @default("Altre")
+  fornitore      Fornitore?     @relation(fields: [fornitoreId], references: [id])
+
+  @@index([data])
+  @@index([categoria])
+  @@index([ambito])
+  @@index([sottocategoria])
+  @@index([fornitoreId])
+  @@map("Spesa")
+}
+
+model MovimentoConto {
+  id            String             @id @default(cuid())
+  data          DateTime
+  tipo          TipoMovimentoConto
+  importo       Decimal            @db.Decimal(10, 2)
+  descrizione   String
+  riferimento   String?
+  incassoId     String?
+  ordinazioneId String?
+  pagamentoId   String?
+  operatoreId   String?
+  createdAt     DateTime           @default(now())
+  
+  // Relazioni
+  incasso       Incasso?       @relation(fields: [incassoId], references: [id])
+  ordinazione   Ordinazione?   @relation(fields: [ordinazioneId], references: [id])
+  pagamento     Pagamento?     @relation(fields: [pagamentoId], references: [id])
+  operatore     User?          @relation("MovimentiOperatore", fields: [operatoreId], references: [id])
+
+  @@index([data])
+  @@index([tipo])
+  @@index([incassoId])
+  @@index([ordinazioneId])
+  @@index([pagamentoId])
+  @@index([operatoreId])
+  @@map("MovimentoConto")
+}
+
+model QRCodeToken {
+  id           Int       @id @default(autoincrement())
+  userId       String
+  token        String    @unique
+  qrCodeData   String
+  expiresAt    DateTime
+  isUsed       Boolean   @default(false)
+  usedAt       DateTime?
+  usedByDevice String?
+  generatedBy  String
+  createdAt    DateTime  @default(now())
+  generator    User      @relation("GeneratedQRCodes", fields: [generatedBy], references: [id])
+  user         User      @relation("UserQRCodes", fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isUsed])
+}
+
+model AuthorizationLog {
+  id                Int      @id @default(autoincrement())
+  userId            String
+  supervisoreId     String
+  deviceFingerprint String
+  qrToken           String
+  ipAddress         String?
+  userAgent         String?
+  timestamp         DateTime @default(now())
+  supervisore       User     @relation("SupervisoreAuth", fields: [supervisoreId], references: [id])
+  user              User     @relation("AuthorizedUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([supervisoreId])
+  @@index([timestamp])
+}
+
+model PaginaCategoria {
+  id           Int                       @id @default(autoincrement())
+  categoriaId  Int
+  timeSlot     String
+  ordinePagina Int                       @default(0)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  categoria    CategoriaMenu             @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  prodotti     ProdottoPaginaCategoria[]
+
+  @@unique([categoriaId, timeSlot])
+  @@index([timeSlot])
+  @@index([ordinePagina])
+  @@map("PaginaCategoria")
+}
+
+model ProdottoPaginaCategoria {
+  id                Int             @id @default(autoincrement())
+  prodottoId        Int
+  paginaCategoriaId Int
+  posizione         Int             @default(0)
+  createdAt         DateTime        @default(now())
+  paginaCategoria   PaginaCategoria @relation(fields: [paginaCategoriaId], references: [id], onDelete: Cascade)
+  prodotto          Prodotto        @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+
+  @@unique([prodottoId, paginaCategoriaId])
+  @@index([paginaCategoriaId])
+  @@index([posizione])
+  @@map("ProdottoPaginaCategoria")
+}
+
+model SeparatoreMenu {
+  id          Int           @id @default(autoincrement())
+  titolo      String
+  descrizione String?
+  coloreHex   String        @default("#3B82F6")
+  posizione   Int           @default(0)
+  categoriaId Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  categoria   CategoriaMenu @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@index([categoriaId])
+  @@index([posizione])
+  @@map("SeparatoreMenu")
+}
+
+model SystemState {
+  id              String   @id @default("system")
+  ordersVersion   Int      @default(0)
+  lastOrderUpdate DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model NotificaPagamento {
+  id            String                @id @default(cuid())
+  tipo          TipoNotificaPagamento
+  daUserId      String
+  aUserId       String
+  tavoloNumero  String
+  ordinazioneId String?
+  messaggio     String
+  dati          Json?
+  letta         Boolean               @default(false)
+  timestamp     DateTime              @default(now())
+  aUser         User                  @relation("NotificaTo", fields: [aUserId], references: [id], onDelete: Cascade)
+  daUser        User                  @relation("NotificaFrom", fields: [daUserId], references: [id], onDelete: Cascade)
+
+  @@index([aUserId, letta])
+  @@index([timestamp])
+  @@index([tavoloNumero])
+  @@map("NotificaPagamento")
+}
+
+model RichiestaPagemento {
+  id                     String                  @id @default(cuid())
+  tipo                   TipoRichiestaPagemento
+  tavoloNumero           String
+  ordinazioneId          String?
+  prodottiSelezionati    String?
+  totale                 Decimal                 @db.Decimal(10, 2)
+  modalitaPagamento      ModalitaPagamento
+  stato                  StatoRichiestaPagemento
+  cameriereId            String
+  clienteNome            String?
+  timestampCreazione     DateTime                @default(now())
+  timestampCompletamento DateTime?
+  cameriere              User                    @relation("RichiestePagementoCameriere", fields: [cameriereId], references: [id], onDelete: Cascade)
+
+  @@index([cameriereId])
+  @@index([stato])
+  @@index([tavoloNumero])
+  @@index([timestampCreazione])
+  @@map("RichiestaPagemento")
+}
+
+model SuperCategoria {
+  id              Int                  @id @default(autoincrement())
+  nome            String               @unique
+  descrizione     String?
+  icona           String?
+  colore          String?
+  ordinamento     Int                  @default(0)
+  attiva          Boolean              @default(true)
+  usaPerMenu      Boolean              @default(true)
+  usaPerMagazzino Boolean              @default(true)
+  usaPerVendite   Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  categorie       CategoriaUnificata[]
+
+  @@index([ordinamento])
+  @@index([attiva])
+  @@map("SuperCategoria")
+}
+
+model CategoriaUnificata {
+  id               Int                  @id @default(autoincrement())
+  nome             String
+  nomeDisplay      String
+  descrizione      String?
+  emoji            String?
+  coloreHex        String?
+  ordinamento      Int                  @default(0)
+  attiva           Boolean              @default(true)
+  superCategoriaId Int
+  parentId         Int?
+  livello          Int                  @default(1)
+  visibileMenu     Boolean              @default(true)
+  orarioInizio     String?
+  orarioFine       String?
+  giorniSettimana  String[]             @default(["1", "2", "3", "4", "5", "6", "7"])
+  gestioneScorte   Boolean              @default(false)
+  margineDefault   Decimal?             @db.Decimal(5, 2)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  parent           CategoriaUnificata?  @relation("CategoriaParent", fields: [parentId], references: [id])
+  figli            CategoriaUnificata[] @relation("CategoriaParent")
+  superCategoria   SuperCategoria       @relation(fields: [superCategoriaId], references: [id])
+  prodotti         ProdottoCategoria[]
+
+  @@unique([superCategoriaId, nome])
+  @@index([superCategoriaId])
+  @@index([parentId])
+  @@index([ordinamento])
+  @@index([attiva, visibileMenu])
+  @@map("CategoriaUnificata")
+}
+
+model ProdottoCategoria {
+  id          Int                @id @default(autoincrement())
+  prodottoId  Int
+  categoriaId Int
+  principale  Boolean            @default(false)
+  ordinamento Int                @default(0)
+  attivo      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  categoria   CategoriaUnificata @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  prodotto    Prodotto           @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+
+  @@unique([prodottoId, categoriaId])
+  @@index([categoriaId, ordinamento])
+  @@index([prodottoId, principale])
+  @@map("ProdottoCategoria")
+}
+
+model ProdottiInPagamento {
+  id                String                 @id @default(cuid())
+  rigaOrdinazioneId String
+  richiestaId       String
+  clienteNome       String?
+  importo           Decimal                @db.Decimal(10, 2)
+  modalita          ModalitaPagamento
+  timestampInizio   DateTime               @default(now())
+  timestampFine     DateTime?
+  stato             StatoPagamentoProdotto @default(IN_CORSO)
+  note              String?
+  riga              RigaOrdinazione        @relation(fields: [rigaOrdinazioneId], references: [id], onDelete: Cascade)
+
+  @@index([rigaOrdinazioneId])
+  @@index([richiestaId])
+  @@index([stato])
+  @@index([timestampInizio])
+  @@map("ProdottiInPagamento")
+}
+
+model ClientiRicorrenti {
+  id           String   @id @default(cuid())
+  nome         String   @unique
+  cognome      String?
+  telefono     String?
+  email        String?
+  note         String?
+  frequenza    Int      @default(1)
+  ultimaVisita DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  attivo       Boolean  @default(true)
+
+  @@index([nome])
+  @@index([frequenza])
+  @@index([ultimaVisita])
+  @@index([attivo])
+  @@map("ClientiRicorrenti")
+}
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String
+  order         Int           @default(0)
+  icon          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  prodotti      Prodotto[]
+  products      Product[]
+  subcategories Subcategory[]
+
+  @@index([order])
+  @@map("Category")
+}
+
+model Subcategory {
+  id         Int        @id @default(autoincrement())
+  name       String
+  order      Int        @default(0)
+  categoryId Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  prodotti   Prodotto[]
+  products   Product[]
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([order])
+  @@map("Subcategory")
+}
+
+model Product {
+  id            Int               @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Decimal?          @db.Decimal(10, 2)
+  imageUrl      String?
+  available     Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  subcategoryId Int?
+  categoryId    Int?
+  category      Category?         @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory?      @relation(fields: [subcategoryId], references: [id])
+  righeOrdine   RigaOrdinazione[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([available])
+  @@index([price])
+  @@map("Product")
+}
+
+model CategoriaGestione {
+  id                   Int                 @id @default(autoincrement())
+  nome                 String              @unique
+  nomeDisplay          String?
+  parentId             Int?
+  livello              Int                 @default(1)
+  ordinamento          Int                 @default(0)
+  emoji                String?
+  colore               String?
+  descrizione          String?
+  attiva               Boolean             @default(true)
+  prodottiCount        Int                 @default(0)
+  prodottiDirettiCount Int                 @default(0)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  parent               CategoriaGestione?  @relation("CategoriaHierarchy", fields: [parentId], references: [id])
+  children             CategoriaGestione[] @relation("CategoriaHierarchy")
+
+  @@index([parentId])
+  @@index([livello])
+  @@index([ordinamento])
+  @@index([attiva])
+}
+
+enum TipoMovimento {
+  VENDITA
+  PAGAMENTO
+  ACCONTO
+}
+
+enum CategoriaProdotto {
+  ALCOLICI
+  APERITIVI
+  BIBITE
+  BIRRE
+  CAFFETTERIA
+  COCKTAIL
+  GELATI
+  PANINI
+}
+
+enum StatoTavolo {
+  LIBERO
+  OCCUPATO
+  RISERVATO
+  IN_PULIZIA
+}
+
+enum StatoOrdinazione {
+  APERTA
+  INVIATA
+  IN_PREPARAZIONE
+  PRONTA
+  CONSEGNATA
+  PAGATA
+  ANNULLATA
+}
+
+enum TipoOrdinazione {
+  TAVOLO
+  ASPORTO
+  BANCONE
+}
+
+enum StatoRigaOrdinazione {
+  INSERITO
+  IN_LAVORAZIONE
+  PRONTO
+  CONSEGNATO
+  ANNULLATO
+}
+
+enum DestinazioneRiga {
+  BAR
+  CUCINA
+  IMMEDIATO
+  PREPARA
+}
+
+enum TipoNotifica {
+  NUOVO_ORDINE
+  ORDINE_PRONTO
+  PRODOTTO_PRONTO
+  ORDINE_MODIFICATO
+  ORDINE_ANNULLATO
+  SISTEMA
+  SUONO_CAMERIERE
+  SUONO_PREPARA
+  REFRESH
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  OPERATORE
+  CAMERIERE
+  PREPARA
+  BANCO
+  CUCINA
+  CASSA
+  SUPERVISORE
+}
+
+enum StatoOrdine {
+  BOZZA
+  INVIATO
+  CONFERMATO
+  CONSEGNATO
+  ANNULLATO
+}
+
+enum TipoMovimentoInventario {
+  CARICO
+  SCARICO
+  RETTIFICA
+  PERDITA
+}
+
+enum AmbitoSpesa {
+  ACCONTI
+  DIPENDENTI
+  OPERATIVE
+}
+
+enum CategoriaSpesa {
+  ALIMENTARI
+  BEVANDE
+  ATTREZZATURE
+  SERVIZI
+  AFFITTO
+  UTENZE
+  PERSONALE
+  MARKETING
+  AMMINISTRATIVE
+  ALTRE
+}
+
+enum TipoMovimentoConto {
+  VENDITA_POS
+  COMMISSIONE_POS
+  RICARICA_CONTO
+  PRELIEVO
+  BONIFICO_IN
+  BONIFICO_OUT
+  ALTRO
+}
+
+enum TipoNotificaPagamento {
+  RICHIESTA_PAGAMENTO
+  SCONTRINO_PRONTO
+  PAGAMENTO_COMPLETATO
+}
+
+enum TipoRichiestaPagemento {
+  TOTALE
+  ORDINAZIONE
+  PARZIALE
+}
+
+enum ModalitaPagamento {
+  POS
+  CONTANTI
+  MISTO
+}
+
+enum StatoRichiestaPagemento {
+  RICHIESTA
+  IN_CORSO
+  COMPLETATO
+  ANNULLATO
+}
+
+enum StatoPagamentoProdotto {
+  IN_CORSO
+  COMPLETATO
+  ANNULLATO
+}
+
+enum StatoPagamento {
+  NON_PAGATO
+  PARZIALMENTE_PAGATO
+  COMPLETAMENTE_PAGATO
+}
+
+model ContributoCliente {
+  id                String          @id @default(cuid())
+  clienteId         String          // Chi effettua il contributo
+  clientePagatoreId String?         // Chi riceve il beneficio (se diverso)
+  tavoloId          Int?            // Tavolo beneficiario
+  tipo              TipoContributo  // ORDINE_PROPRIO, ORDINE_ALTRUI, PAGAMENTO_ALTRUI
+  riferimentoId     String          // ID dell'ordine o pagamento
+  importo           Decimal         @db.Decimal(10, 2)
+  descrizione       String?         // "Caffè per tavolo 5", "Pagamento conto Mario"
+  timestamp         DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  cliente           Cliente         @relation("ContributiEffettuati", fields: [clienteId], references: [id])
+  clientePagatore   Cliente?        @relation("ContributiRicevuti", fields: [clientePagatoreId], references: [id])
+  tavolo            Tavolo?         @relation(fields: [tavoloId], references: [id])
+  pagamenti         Pagamento[]
+  
+  @@index([clienteId])
+  @@index([clientePagatoreId])
+  @@index([tavoloId])
+  @@index([tipo])
+  @@index([timestamp])
+  @@index([clienteId, timestamp])
+  @@map("ContributoCliente")
+}
+
+enum TipoContributo {
+  ORDINE_PROPRIO     // Cliente ordina per sé
+  ORDINE_ALTRUI      // Cliente ordina per altri
+  PAGAMENTO_ALTRUI   // Cliente paga conto di altri
+}
+
+// Modello per gestire i conti scalari dei tavoli/clienti
+model ContoScalare {
+  id                String             @id @default(cuid())
+  tavoloId          Int?               // Tavolo associato (se applicabile)
+  clienteId         String?            // Cliente associato (se conto personale)
+  nomeCliente       String?            // Nome del cliente se non registrato
+  totaleOrdinato    Decimal            @default(0) @db.Decimal(10, 2) // Totale di tutti gli ordini
+  totalePagato      Decimal            @default(0) @db.Decimal(10, 2) // Totale già pagato
+  saldoRimanente    Decimal            @default(0) @db.Decimal(10, 2) // Saldo da pagare
+  stato             StatoConto         @default(APERTO)
+  dataApertura      DateTime           @default(now())
+  dataChiusura      DateTime?
+  note              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  
+  // Relazioni
+  tavolo            Tavolo?            @relation(fields: [tavoloId], references: [id])
+  cliente           Cliente?           @relation(fields: [clienteId], references: [id])
+  movimenti         MovimentoContoScalare[]   // Storico dei movimenti
+  
+  @@index([tavoloId])
+  @@index([clienteId])
+  @@index([stato])
+  @@map("ContoScalare")
+}
+
+// Movimenti del conto scalare (ordini e pagamenti)
+model MovimentoContoScalare {
+  id                String                @id @default(cuid())
+  contoScalareId    String
+  tipo              TipoMovimentoScalare  // ORDINE, PAGAMENTO, STORNO
+  importo           Decimal               @db.Decimal(10, 2)
+  descrizione       String                // "Caffè x2, Cornetto x1" o "Pagamento contanti"
+  ordinazioneId     String?               // Riferimento all'ordine (se applicabile)
+  pagamentoId       String?               // Riferimento al pagamento (se applicabile)
+  clientePagatoreId String?               // Chi ha effettivamente pagato
+  timestamp         DateTime              @default(now())
+  operatoreId       String                // Chi ha registrato il movimento
+  note              String?
+  
+  // Relazioni
+  contoScalare      ContoScalare          @relation(fields: [contoScalareId], references: [id], onDelete: Cascade)
+  ordinazione       Ordinazione?          @relation("MovimentiContoScalare", fields: [ordinazioneId], references: [id])
+  pagamento         Pagamento?            @relation("MovimentiContoScalare", fields: [pagamentoId], references: [id])
+  clientePagatore   Cliente?              @relation("MovimentiPagatore", fields: [clientePagatoreId], references: [id])
+  operatore         User                  @relation("MovimentiContoScalareOperatore", fields: [operatoreId], references: [id])
+  
+  @@index([contoScalareId])
+  @@index([tipo])
+  @@index([timestamp])
+  @@map("MovimentoContoScalare")
+}
+
+enum StatoConto {
+  APERTO      // Conto attivo
+  CHIUSO      // Conto saldato e chiuso
+  SOSPESO     // Conto temporaneamente sospeso
+}
+
+enum TipoMovimentoScalare {
+  ORDINE      // Aggiunta di prodotti al conto
+  PAGAMENTO   // Pagamento parziale o totale
+  STORNO      // Storno di un precedente movimento
+}

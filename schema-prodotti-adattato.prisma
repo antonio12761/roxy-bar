@@ -1,0 +1,220 @@
+// Estensione dello schema Prisma esistente per supportare il sistema unificato
+// Questo schema può essere integrato con quello esistente
+
+// Aggiungere questi campi alla tabella Prodotto esistente
+model Prodotto {
+  // ... campi esistenti ...
+  
+  // Nuovi campi per gestione unificata
+  unitaServizio      String?       @default("pz")
+  fattoreConversione Decimal?      @default(1) @db.Decimal(10, 4)
+  volumeMagazzino    String?
+  volumeServizio     String?
+  quantitaConfezione Decimal?      @default(1) @db.Decimal(10, 2)
+  iva                Decimal?      @default(22) @db.Decimal(5, 2)
+  imponibile         Decimal?      @db.Decimal(10, 2)
+  
+  // Relazioni esistenti mantengono la struttura attuale
+}
+
+// Vista materializzata per magazzino (PostgreSQL)
+// Da creare con una migration SQL
+/*
+CREATE MATERIALIZED VIEW vista_prodotti_magazzino AS
+SELECT 
+    p.id,
+    p.codice,
+    p.nome,
+    p.categoria,
+    pf.fornitore_nome,
+    pf.codice_fornitore,
+    p.unita_misura,
+    p.quantita_confezione,
+    pf.costo_acquisto AS prezzo_acquisto,
+    p.iva,
+    p.imponibile,
+    p.volume_magazzino,
+    i.giacenza_attuale,
+    i.giacenza_minima,
+    COALESCE(i.giacenza_minima * 1.5, 5) AS punto_riordino,
+    (i.giacenza_attuale * pf.costo_acquisto) AS valore_giacenza,
+    CASE 
+        WHEN i.giacenza_attuale <= COALESCE(i.giacenza_minima * 1.5, 5) THEN true 
+        ELSE false 
+    END AS da_riordinare
+FROM prodotto p
+LEFT JOIN (
+    SELECT DISTINCT ON (prodotto_id) 
+        prodotto_id,
+        fornitore_id,
+        f.nome AS fornitore_nome,
+        codice_fornitore,
+        costo_acquisto
+    FROM prodotto_fornitore pf
+    JOIN fornitore f ON pf.fornitore_id = f.id
+    WHERE pf.attivo = true
+    ORDER BY prodotto_id, costo_acquisto ASC
+) pf ON p.id = pf.prodotto_id
+LEFT JOIN inventario i ON p.id = i.prodotto_id
+WHERE p.is_deleted = false AND p.attivo = true;
+*/
+
+// Vista materializzata per menu
+/*
+CREATE MATERIALIZED VIEW vista_prodotti_menu AS
+SELECT 
+    p.id,
+    p.nome,
+    p.categoria,
+    cm.nome_display AS categoria_menu,
+    COALESCE(p.descrizione, p.nome) AS descrizione,
+    p.prezzo AS prezzo_vendita,
+    p.volume_servizio,
+    p.tempo_preparazione,
+    p.ingredienti,
+    p.allergeni,
+    CASE 
+        WHEN p.fattore_conversione > 1 THEN 
+            FLOOR(COALESCE(i.giacenza_attuale, 0) * p.fattore_conversione)
+        ELSE 
+            COALESCE(i.giacenza_attuale, 0)
+    END AS disponibilita,
+    CASE 
+        WHEN p.fattore_conversione > 1 AND pf.costo_acquisto IS NOT NULL THEN 
+            p.prezzo - (pf.costo_acquisto / p.fattore_conversione)
+        WHEN pf.costo_acquisto IS NOT NULL THEN 
+            p.prezzo - pf.costo_acquisto
+        ELSE 
+            p.prezzo * 0.6
+    END AS margine_unitario,
+    CASE 
+        WHEN p.fattore_conversione > 1 AND pf.costo_acquisto IS NOT NULL THEN 
+            ((p.prezzo - (pf.costo_acquisto / p.fattore_conversione)) / p.prezzo * 100)
+        WHEN pf.costo_acquisto IS NOT NULL THEN 
+            ((p.prezzo - pf.costo_acquisto) / p.prezzo * 100)
+        ELSE 
+            60
+    END AS margine_percentuale
+FROM prodotto p
+LEFT JOIN categoria_menu cm ON p.categoria_menu_id = cm.id
+LEFT JOIN inventario i ON p.id = i.prodotto_id
+LEFT JOIN (
+    SELECT DISTINCT ON (prodotto_id) 
+        prodotto_id,
+        costo_acquisto
+    FROM prodotto_fornitore
+    WHERE attivo = true
+    ORDER BY prodotto_id, costo_acquisto ASC
+) pf ON p.id = pf.prodotto_id
+WHERE p.is_deleted = false 
+    AND p.disponibile = true 
+    AND NOT p.terminato;
+*/
+
+// Nuove funzioni helper per TypeScript
+/*
+// types/prodotto-unificato.ts
+export interface ProdottoMagazzino {
+  id: number
+  codice: string
+  nome: string
+  categoria: string
+  fornitoreNome?: string
+  codiceFornitore?: string
+  unitaMisura: string
+  quantitaConfezione: number
+  prezzoAcquisto: number
+  iva: number
+  imponibile: number
+  volumeMagazzino?: string
+  giacenzaAttuale: number
+  giacenzaMinima?: number
+  puntoRiordino: number
+  valoreGiacenza: number
+  daRiordinare: boolean
+}
+
+export interface ProdottoMenu {
+  id: number
+  nome: string
+  categoria: string
+  categoriaMenu?: string
+  descrizione: string
+  prezzoVendita: number
+  volumeServizio?: string
+  tempoPreparazione?: number
+  ingredienti?: string[]
+  allergeni?: string[]
+  disponibilita: number
+  margineUnitario: number
+  marginePercentuale: number
+}
+
+// services/prodotto-unificato.service.ts
+export class ProdottoUnificatoService {
+  constructor(private prisma: PrismaClient) {}
+  
+  async getProdottiMagazzino(): Promise<ProdottoMagazzino[]> {
+    const result = await this.prisma.$queryRaw`
+      SELECT * FROM vista_prodotti_magazzino
+      ORDER BY categoria, nome
+    `
+    return result as ProdottoMagazzino[]
+  }
+  
+  async getProdottiMenu(): Promise<ProdottoMenu[]> {
+    const result = await this.prisma.$queryRaw`
+      SELECT * FROM vista_prodotti_menu
+      WHERE disponibilita > 0
+      ORDER BY categoria_menu, nome
+    `
+    return result as ProdottoMenu[]
+  }
+  
+  async registraVendita(prodottoId: number, quantita: number): Promise<void> {
+    const prodotto = await this.prisma.prodotto.findUnique({
+      where: { id: prodottoId },
+      include: { inventario: true }
+    })
+    
+    if (!prodotto || !prodotto.inventario) {
+      throw new Error('Prodotto o inventario non trovato')
+    }
+    
+    // Calcola quantità da scalare considerando conversioni
+    const fattoreConversione = Number(prodotto.fattoreConversione || 1)
+    const quantitaMagazzino = quantita / fattoreConversione
+    
+    // Aggiorna inventario
+    await this.prisma.inventario.update({
+      where: { id: prodotto.inventario.id },
+      data: {
+        giacenzaAttuale: {
+          decrement: quantitaMagazzino
+        },
+        ultimoScarico: new Date()
+      }
+    })
+    
+    // Registra movimento
+    await this.prisma.movimentoInventario.create({
+      data: {
+        inventarioId: prodotto.inventario.id,
+        tipo: 'SCARICO',
+        quantita: quantitaMagazzino,
+        motivazione: 'Vendita',
+        riferimento: `Vendita di ${quantita} ${prodotto.unitaServizio || prodotto.unitaMisura}`
+      }
+    })
+  }
+  
+  async getProdottiDaRiordinare(): Promise<ProdottoMagazzino[]> {
+    const result = await this.prisma.$queryRaw`
+      SELECT * FROM vista_prodotti_magazzino
+      WHERE da_riordinare = true
+      ORDER BY (giacenza_attuale / NULLIF(giacenza_minima, 0)) ASC
+    `
+    return result as ProdottoMagazzino[]
+  }
+}
+*/

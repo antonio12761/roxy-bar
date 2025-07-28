@@ -1,0 +1,273 @@
+ID,Codice,Nome,Categoria,Fornitore,Prezzo Acquisto,IVA %,Prezzo Vendita,Margine %,Unità Magazzino,Fattore Conversione,Unità Servizio,Giacenza Attuale,Giacenza Minima,Punto Riordino,Disponibile Menu,Attivo
+148,PROD-148,"Tonica Schweppes 20cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+150,PROD-150,"Tonica Light Fever-Tree",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+153,PROD-153,"Succo Yoga 200ml",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+154,PROD-154,"Succo Yoga Mirtillo 200ml",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+49,122,"Khalua",Superalcolici > Liquori,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+50,123,"Limoncello",Superalcolici > Liquori,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+23,111,"Bombay Sapphire",Superalcolici > Distillati,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+31,162,"Jack Daniel's",Superalcolici > Distillati,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+30,163,"Jameson Triple Distilled",Superalcolici > Distillati,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+21,112,"Caprisius The Spirits Of Capri",Superalcolici > Distillati,,2.80,22,7.00,60.00,pz,1,pz,0,,5,SI,SI
+22,114,"Hendrick's",Superalcolici > Distillati,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+56,903,"Ciambella Semplice",Dolciumi,,0.60,22,1.50,60.00,pz,1,pz,0,,5,SI,SI
+51,912,"Muffin alla Nutella Colazione",Dolciumi,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+19,606,"Muffin alla Nutella",Dolciumi,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+52,911,"Muffin Vari Gusti",Dolciumi,,0.92,22,2.30,60.00,pz,1,pz,0,,5,SI,SI
+28,704,"Caipirinha",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+33,102,"Irish Coffee",Cocktail & Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+26,713,"Whisky Sour",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+25,712,"Strawberry Daiquiri",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+68,707,"Midori Sour",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+53,908,"Ginseng Tazza Grande",Caffetteria,,0.80,10,2.00,60.00,pz,1,pz,0,,5,SI,SI
+54,914,"Orzo Tazza Grande",Caffetteria,,0.80,10,2.00,60.00,pz,1,pz,0,,5,SI,SI
+7,401,"Beck's",Birre > Bottiglia 60/66 cl,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+3,405,"Kupfer Export",Birre > Bottiglia 50 cl,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+8,403,"Heineken 00",Birre > Bottiglia 33 cl,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+6,402,"Corona",Birre > Bottiglia 33 cl,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+15,601,"Caffè Shakerato",Caffetteria,,0.80,10,2.00,60.00,pz,1,pz,0,,5,SI,SI
+17,602,"Cappuccino",Caffetteria,,0.80,10,2.00,60.00,pz,1,pz,0,,5,SI,SI
+16,603,"Cioccolato Caldo",Caffetteria,,0.80,10,2.00,60.00,pz,1,pz,0,,5,SI,SI
+18,605,"Espresso",Caffetteria,,0.60,10,1.50,60.00,pz,1,pz,0,,5,SI,SI
+46,501,"Leffe Ambree' 33cl",Birre > alla Spina,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+45,502,"Leffe Ambree' 50cl",Birre > alla Spina,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+47,503,"Lowenbrau 50cl",Birre > alla Spina,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+39,301,"Acqua Tonica",Bibite & Succhi,,0.80,22,2.00,60.00,pz,1,pz,0,,5,SI,SI
+36,131,"Gin Tonic",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+35,132,"Moscow Mule",Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+34,133,"Sex on The Beach",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+44,202,"Calice di Prosecco",APERITIVI > Classici,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+74,807,"Moscow Mule Serata",Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+88,141,"Dartmouth Pomeriggio",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+89,142,"El Diablo",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+84,143,"Japanese Iced Tea",Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+85,144,"Mojito Pomeriggio",Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+86,146,"Piña Colada Pomeriggio",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+27,708,"Negroni",APERITIVI > Cocktail,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+42,203,"Hugo",APERITIVI > Cocktail,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+43,204,"Mimosa",APERITIVI > Cocktail,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+41,201,"Spritz Aperol",APERITIVI > Cocktail,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+20,604,"Cornetto",Dolciumi,,0.60,22,1.50,60.00,pz,1,pz,0,,5,SI,SI
+60,904,"Cornetto Crema/Marmellata",Dolciumi,,0.48,22,1.20,60.00,pz,1,pz,0,,5,SI,SI
+63,906,"Cornetto Semplice",Dolciumi,,0.40,22,1.00,60.00,pz,1,pz,0,,5,SI,SI
+67,701,"Amaretto Sour",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+32,101,"B-52",Cocktail & Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+299,PROD-299,"Orzo 400gr",Caffetteria,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+161,PROD-161,"Sanbenedetto 1,5lt",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+75,801,"B-52 Serata",Cocktail & Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+81,802,"Cosmopolitan Serata",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+5,404,"Jacob",Birre > Bottiglia 50 cl,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+78,804,"Japanese Slipper",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+77,806,"Martini Cocktail",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+80,808,"Pink Lady Serata",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+82,809,"Whisky Sour Serata",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+61,901,"Caffè Espresso Colazione",Caffetteria,,0.48,10,1.20,60.00,pz,1,pz,0,,5,SI,SI
+58,902,"Cappuccino Colazione",Caffetteria,,0.56,10,1.40,60.00,pz,1,pz,0,,5,SI,SI
+48,121,"Cointreau",Superalcolici > Liquori,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+29,161,"Glenfiddich 12",Superalcolici > Distillati,,2.80,22,7.00,60.00,pz,1,pz,0,,5,SI,SI
+71,703,"Blue Lagoon Aperitivo",Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+69,706,"Mai-Tai Aperitivo",Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+166,PROD-166,"Brewdog Punk IPA 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+167,PROD-167,"Bud 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+168,PROD-168,"Castello 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+169,PROD-169,"Ceres 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+170,PROD-170,"Corona 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+171,PROD-171,"Heineken 0.0 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+172,PROD-172,"Heineken 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+173,PROD-173,"Lambrate Robb de Matt 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+174,PROD-174,"Löwenbräu 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+175,PROD-175,"Nittenauer 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+176,PROD-176,"Peroni 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+177,PROD-177,"Peroni Gluten Free 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+178,PROD-178,"Tennent's 33cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+179,PROD-179,"Mezzopasso Millican",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+180,PROD-180,"Mezzopasso Red Stone",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+181,PROD-181,"Mezzopasso Kriss Pils",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+182,PROD-182,"Mezzopasso Backup IPA",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+183,PROD-183,"Grevensteiner 50cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+165,PROD-165,"Beck's 33cl",Birre > Bottiglia 33 cl,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+2,406,"Lambrate",Birre,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+1,409,"Punk IPA",Birre,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+4,407,"Lowenbrau",Birre > Bottiglia 33 cl,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+9,408,"Peroni",Birre > Bottiglia 33 cl,,0.80,22,2.00,60.00,pz,1,pz,0,,5,SI,SI
+203,PROD-203,"Samb Hugó 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+162,PROD-162,"Sciroppo Sambuco Fabbri 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+83,145,"Moscow Mule Pomeriggio",Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+87,147,"Sex on The Beach Pomeriggio",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+90,148,"Tequila Sunrise Pomeriggio",Long Drink,,2.00,22,5.00,60.00,pz,1,pz,0,,5,SI,SI
+24,113,"Gordon's",Superalcolici > Distillati,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+14,151,"Bacardi Carta Blanca",Superalcolici > Distillati,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+40,302,"Bottiglia Acqua 50cl",Bibite & Succhi,,0.60,22,1.50,60.00,pz,1,pz,0,,5,SI,SI
+11,152,"Barcelo' Imperial",Superalcolici > Distillati,,2.80,22,7.00,60.00,pz,1,pz,0,,5,SI,SI
+37,303,"Coca Cola",Bibite & Succhi,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
+10,153,"Don Papa Baroko",Superalcolici > Distillati,,2.80,22,7.00,60.00,pz,1,pz,0,,5,SI,SI
+38,304,"Red Bull",Bibite & Succhi,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+13,154,"Havana 7",Superalcolici > Distillati,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+65,702,"Americano",APERITIVI > Cocktail,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+73,705,"Hu",APERITIVI > Cocktail,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+57,907,"Fetta Ciambellone",Dolciumi,,0.60,22,1.50,60.00,pz,1,pz,0,,5,SI,SI
+64,910,"Mini Cornetto",Dolciumi,,0.32,22,0.80,60.00,pz,1,pz,0,,5,SI,SI
+55,905,"Cornetto Farcito",Dolciumi,,0.60,22,1.50,60.00,pz,1,pz,0,,5,SI,SI
+76,803,"Irish Coffee Serata",Cocktail & Long Drink,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+70,711,"South Side",APERITIVI > Cocktail,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+72,710,"Spritz Passion",APERITIVI > Cocktail,,1.40,22,3.50,60.00,pz,1,pz,0,,5,SI,SI
+66,709,"Negroni Sbagliato",APERITIVI > Cocktail,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+79,805,"Manhattan Serata",Cocktail & Long Drink,,1.60,22,4.00,60.00,pz,1,pz,0,,5,SI,SI
+59,909,"Latte Macchiato",Caffetteria,,0.56,10,1.40,60.00,pz,1,pz,0,,5,SI,SI
+62,913,"Orzo Normale",Caffetteria,,0.48,10,1.20,60.00,pz,1,pz,0,,5,SI,SI
+184,PROD-184,"Jacob Weiss 50cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+185,PROD-185,"Löwenbräu Oktober 50cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+186,PROD-186,"Mahrs Bock 50cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+187,PROD-187,"Winkler Kupfer 50cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+188,PROD-188,"Bavaria 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+189,PROD-189,"Beck's 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+190,PROD-190,"Castello 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+191,PROD-191,"Forst 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+192,PROD-192,"Pedavena 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+193,PROD-193,"Peroni 66cl",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+194,PROD-194,"Leffe Ambrée 6 Lt",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+195,PROD-195,"Pedra Löwenbräu 6 Lt",Birre,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+199,PROD-199,"Amaro Fernet 100cl",Superalcolici > Amari,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+201,PROD-201,"Amaro Jägermeister 100cl",Superalcolici > Amari,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+202,PROD-202,"Amaro Petrus 70cl",Superalcolici > Amari,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+197,PROD-197,"Baileys 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+196,PROD-196,"Vodka Keglevich Fragola 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+237,PROD-237,"Whisky Jim Beam 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+12,155,"Matusalem 15",Superalcolici > Distillati,,2.40,22,6.00,60.00,pz,1,pz,0,,5,SI,SI
+241,PROD-241,"Whisky Jameson 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+243,PROD-243,"Whisky Jim Beam 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+248,PROD-248,"Whisky Jack Daniel's Honey 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+252,PROD-252,"Whisky Johnnie Walker Black 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+163,PROD-163,"Sciroppo Tropicale Fabbri 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+164,PROD-164,"Sciroppo Mix Violetta Fabbri 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+272,PROD-272,"Campari Soda 10cl",APERITIVI > Classici,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+146,PROD-146,"Chinotto Plose 25cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+147,PROD-147,"Lemonsoda 20cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+149,PROD-149,"Ginger Beer Kinley",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+151,PROD-151,"Sprite Lattina",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+152,PROD-152,"Bergamotto",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+155,PROD-155,"Estathé Lattina 33cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+156,PROD-156,"Estathé Brik 10cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+157,PROD-157,"Coca Cola Lattina 33cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+158,PROD-158,"Red Bull 20cl",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+266,PROD-266,"Montepulciano Frentana 75cl",Vini & Spumanti > Vini,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+264,PROD-264,"Cococciola Frentana 75cl",Vini & Spumanti > Vini,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+265,PROD-265,"Cerasuolo Frentana 75cl",Vini & Spumanti > Vini,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+262,PROD-262,"Prosecco Asolo Montelvini 75cl",Vini & Spumanti > Spumanti,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+263,PROD-263,"Spumante Promosso Montelvini 75cl",Vini,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+267,PROD-267,"Box Cococciola 5 lt",Vini,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+208,PROD-208,"Brandy Stravecchio 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+213,PROD-213,"Bénédictine 70cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+204,PROD-204,"Blue Curaçao Bols 70cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+211,PROD-211,"Cognac Courvoisier 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+209,PROD-209,"Carlos I",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+222,PROD-222,"Gin Ballor 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+220,PROD-220,"Gin Bloom 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+214,PROD-214,"Gin Bombay 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+225,PROD-225,"Gin Caprisius Dry 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+221,PROD-221,"Gin Citadelle London Dry 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+215,PROD-215,"Gin Gordon 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+226,PROD-226,"Gin Jinzu 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+224,PROD-224,"Gin N3 London 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+216,PROD-216,"Gin Tanqueray 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+219,PROD-219,"Gin Tanqueray Ten 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+223,PROD-223,"Gin Hendrick's 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+206,PROD-206,"Grand Marnier 70cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+227,PROD-227,"Grappa 903 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+205,PROD-205,"Malibu 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+228,PROD-228,"Rum Bacardi Bianco 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+207,PROD-207,"Martini Rubino",APERITIVI > Classici,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+229,PROD-229,"Rum Diplomatico Reserve 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+230,PROD-230,"Rum Don Papa Baroko 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+231,PROD-231,"Rum Havana 7 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+212,PROD-212,"Tequila Jose Cuervo 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+234,PROD-234,"Vodka Absolut 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+235,PROD-235,"Vodka Keglevich 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+236,PROD-236,"Vodka Moskovskaya 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+244,PROD-244,"Whisky Tullamore 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+245,PROD-245,"Whisky Old Virgin",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+251,PROD-251,"Whisky Wild Turkey 101 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+258,PROD-258,"Whisky Talisker 10 Y 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+260,PROD-260,"Whisky Oban 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+240,PROD-240,"Whisky Johnnie Walker Red 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+254,PROD-254,"Whisky Laphroaig 10 Y 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+256,PROD-256,"Whisky Maker's Mark Bourbon 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+261,PROD-261,"Whisky Lagavulin 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+289,PROD-289,"Pipers 40gr",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+290,PROD-290,"Gomme Brooklyn",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+291,PROD-291,"Golia Fresh",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+292,PROD-292,"Mentos Fruit",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+293,PROD-293,"Gomme Big Babol Frutta",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+294,PROD-294,"Gomme Big Babol PanFra",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+295,PROD-295,"Gomme Vigorsol Air",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+296,PROD-296,"Gomme Vivident Air",Snack,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+300,PROD-300,"Cannucce Pieg. Busta 400pz",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+301,PROD-301,"Cannucce Nere 7x21 1000pz",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+302,PROD-302,"Bicchiere Elios 166cl 100pz",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+303,PROD-303,"Zucchero Canna 400gr",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+304,PROD-304,"Edulcorante 3gr",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+305,PROD-305,"Ghiaccio",Bar,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+306,PROD-306,"Ghiaccioli",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+307,PROD-307,"Cremino",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+308,PROD-308,"Croccante",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+309,PROD-309,"Cucciolone",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+310,PROD-310,"Cornetto Amarena",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+311,PROD-311,"Cornetto Esagerato",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+312,PROD-312,"Cornetto Choc'n Ball",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+313,PROD-313,"Cornetto Classico",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+314,PROD-314,"Coppa Rica",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+315,PROD-315,"Cornetto Desire",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+316,PROD-316,"Magnum Class/Mand",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+317,PROD-317,"Magnum Euphoria",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+318,PROD-318,"Magnum Bomboniera",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+319,PROD-319,"Ringo",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+320,PROD-320,"Bikini",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+321,PROD-321,"Kimbo",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+322,PROD-322,"Calippo",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+323,PROD-323,"Coppa Tesoro",Gelati,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+324,PROD-324,"Hamburger",Food,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+325,PROD-325,"Hot Dog",Food,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+326,PROD-326,"Toast",Food,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+327,PROD-327,"Tagliere di Sfizi",Food,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+200,PROD-200,"Amaro Fernet Menta 100cl",Superalcolici > Amari,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+210,PROD-210,"Cognac Hennessy 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+218,PROD-218,"Gin Bulldog 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+217,PROD-217,"Gin Tanqueray 0 Alcol 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+269,PROD-269,"Martini Bianco 100cl",Superalcolici > Liquori,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+268,PROD-268,"Aperol 100cl",APERITIVI > Classici,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+270,PROD-270,"Martini Rosso 100cl",APERITIVI > Classici,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+271,PROD-271,"Campari Bitter 100cl",APERITIVI > Classici,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+232,PROD-232,"Rum Matusalem 15 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+233,PROD-233,"Rum Pampero 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+238,PROD-238,"Whisky J&B 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+239,PROD-239,"Whisky J&B 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+242,PROD-242,"Whisky Bushmills 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+246,PROD-246,"Whisky Jack Daniel's 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+247,PROD-247,"Whisky Jack Daniel's Apple 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+249,PROD-249,"Whisky Jack Daniel's Cannella 100cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+250,PROD-250,"Whisky Glenfiddich 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+253,PROD-253,"Whisky Glen Grant 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+255,PROD-255,"Whisky Bulleit",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+257,PROD-257,"Whisky Glenlivet 18 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+298,PROD-298,"Ginseng 500gr",Caffetteria,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+297,PROD-297,"Crema Espresso 1000gr",Caffetteria,,0.00,10,0.00,N/A,pz,1,pz,0,,5,SI,SI
+276,PROD-276,"Cocktail 25cl",APERITIVI > ANALCOLICI,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+274,PROD-274,"Sanbitter 10cl",APERITIVI > ANALCOLICI,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+277,PROD-277,"Croissant Vuoto Oversize",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+278,PROD-278,"Croissant Rodrigo Pistacchio",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+259,PROD-259,"Whisky Glenfiddich 12 Y 70cl",Superalcolici > Distillati,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+159,PROD-159,"Min Frasassi 1,5Lt",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+160,PROD-160,"Min Frasassi 0,5Lt",Bibite & Succhi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+275,PROD-275,"Crodino 10cl",APERITIVI > ANALCOLICI,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+279,PROD-279,"Croissant Albic Oversize",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+280,PROD-280,"Pain au Chocolat",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+281,PROD-281,"Principini 4,5 Kg",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+282,PROD-282,"Conchiglia 90gr",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+283,PROD-283,"Cornetto Integrale Miele",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+284,PROD-284,"Sacch Cereali e Bosco",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+285,PROD-285,"Ciambella Maxi 95gr",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+286,PROD-286,"Plummy 4 Gusti",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+287,PROD-287,"Muffin Nutella 86gr",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+288,PROD-288,"Ciambellone",Dolciumi,,0.00,22,0.00,N/A,pz,1,pz,0,,5,SI,SI
+273,PROD-273,"Alpex Gin Tonic 20cl",Bibite & Succhi,,1.20,22,3.00,60.00,pz,1,pz,0,,5,SI,SI
+198,PROD-198,"Amaro Del Capo",Superalcolici > Amari,,1.00,22,2.50,60.00,pz,1,pz,0,,5,SI,SI
