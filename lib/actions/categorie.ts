@@ -179,7 +179,7 @@ export async function getProdottiByCategoria(categoria: string) {
     return prodotti.map(prodotto => ({
       ...prodotto,
       prezzo: prodotto.prezzo.toNumber(),
-      calorie: prodotto.calorie ? prodotto.calorie.toNumber() : null
+      calorie: prodotto.calorie
     }));
   } catch (error) {
     console.error("Errore recupero prodotti:", error);
@@ -217,7 +217,7 @@ export async function spostaProddottiCategoria(prodottiIds: number[], nuovaCateg
 
 export async function unisciCategorie(categoriaOrigine: string, categoriaDestinazione: string) {
   try {
-    // Sposta tutti i prodotti dalla categoria origine alla destinazione
+    // Sposta tutti i prodotti dalla categoria origine alla postazione
     const result = await prisma.prodotto.updateMany({
       where: {
         categoria: categoriaOrigine,
@@ -270,7 +270,7 @@ export async function creaCategoria(nomeCategoria: string, categoriaPadre?: stri
         disponibile: false,
         isDeleted: true, // Lo marchiamo come eliminato così non appare nei menu
         descrizione: "Placeholder per categoria vuota - non eliminare",
-        destinazione: "BAR",
+        postazione: "PREPARA",
         terminato: false,
         glutenFree: false,
         vegano: false,

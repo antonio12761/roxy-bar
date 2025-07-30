@@ -3,13 +3,13 @@
 import { Bell, Coffee, Wifi, WifiOff } from "lucide-react";
 import UserDisplay from "@/components/UserDisplay";
 import { CameriereProvider, useCameriere } from "@/contexts/cameriere-context";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { markAllNotificationsAsRead } from "@/lib/utils/notification-sync";
-import Link from "next/link";
 
 function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
   const { isConnected, notificationCount, resetNotificationCount } = useCameriere();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleNotificationClick = () => {
     // Mark all notifications as read and sync across components
@@ -30,12 +30,31 @@ function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Roxy Bar Logo & Brand */}
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <button 
+              onClick={() => {
+                console.log('[Layout] Navigating to /cameriere from:', pathname);
+                
+                // For ordini-in-corso page, use window.location to avoid conflicts
+                if (pathname === '/cameriere/ordini-in-corso') {
+                  console.log('[Layout] Using window.location for ordini-in-corso');
+                  window.location.href = '/cameriere';
+                } else {
+                  // For other pages, try router first
+                  try {
+                    router.push('/cameriere');
+                  } catch (error) {
+                    console.error('[Layout] Router error:', error);
+                    window.location.href = '/cameriere';
+                  }
+                }
+              }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+            >
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-white/10 to-white/20 rounded-lg shadow-lg">
                 <Coffee className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-xl font-bold text-white/70">ROXY BAR</h1>
-            </Link>
+            </button>
 
             <div className="flex items-center gap-4">
               {/* Connection Status */}

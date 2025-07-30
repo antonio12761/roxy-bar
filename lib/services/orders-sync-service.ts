@@ -129,10 +129,11 @@ class OrdersSyncService {
       ordersCache.set(orderId, serializedOrder);
 
       // Emetti evento per questo ordine specifico
-      sseService.emit('order:sync:single', {
-        orderId: orderId,
-        order: serializedOrder,
-        timestamp: new Date().toISOString()
+      sseService.emit('data:update', {
+        entity: 'order',
+        id: orderId,
+        action: 'update',
+        data: serializedOrder
       });
 
       return true;
@@ -151,10 +152,10 @@ class OrdersSyncService {
     
     if (updated) {
       // Emetti evento immediato per UI
-      sseService.emit('order:item:status-updated', {
+      sseService.emit('order:item:update', {
         orderId,
         itemId,
-        status: newStatus,
+        status: newStatus as 'INSERITO' | 'IN_LAVORAZIONE' | 'PRONTO' | 'CONSEGNATO',
         timestamp: new Date().toISOString()
       });
 
@@ -214,7 +215,7 @@ class OrdersSyncService {
     const orders = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         }
       },
       include: {
@@ -224,7 +225,7 @@ class OrdersSyncService {
           include: { prodotto: true }
         }
       },
-      orderBy: { dataApertura: 'desc' }
+      orderBy: { dataApertura: 'asc' }
     });
 
     // Invalida cache e ricarica
@@ -271,7 +272,7 @@ class OrdersSyncService {
     const newOrdersFromDb = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         },
         createdAt: {
           gt: this.lastSyncTimestamp
@@ -308,21 +309,18 @@ class OrdersSyncService {
   }
 
   private emitSyncEvents(result: Omit<SyncResult, 'fromCache' | 'executionTime'>, targetRoles?: string[]): void {
-    if (result.newOrders > 0) {
-      sseService.emit('orders:sync:new', {
-        count: result.newOrders,
-        timestamp: new Date().toISOString()
-      }, {
-        channels: targetRoles ? targetRoles.map(role => `role:${role}` as any) : undefined
-      });
-    }
-
-    if (result.updatedOrders > 0) {
-      sseService.emit('orders:sync:updated', {
-        count: result.updatedOrders,
-        timestamp: new Date().toISOString()
-      }, {
-        channels: targetRoles ? targetRoles.map(role => `role:${role}` as any) : undefined
+    // Usa data:update per notificare sincronizzazioni
+    if (result.newOrders > 0 || result.updatedOrders > 0) {
+      sseService.emit('data:update', {
+        entity: 'order',
+        action: 'update',
+        id: 'sync-batch',
+        data: {
+          newOrders: result.newOrders,
+          updatedOrders: result.updatedOrders,
+          deletedOrders: result.deletedOrders,
+          timestamp: new Date().toISOString()
+        }
       });
     }
   }

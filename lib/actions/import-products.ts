@@ -99,7 +99,7 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
           continue; // Salta righe vuote
         }
 
-        const productData: ImportProduct = {};
+        const productData: ImportProduct = { name: '' };
         
         if (hasHeader) {
           // Mappa i valori secondo l'header

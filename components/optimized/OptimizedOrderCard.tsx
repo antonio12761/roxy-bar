@@ -33,8 +33,8 @@ interface OrderData {
       categoria?: string;
     };
     quantita: number;
-    stato: string;
-    destinazione: string;
+    stato: 'INSERITO' | 'IN_LAVORAZIONE' | 'PRONTO' | 'CONSEGNATO' | 'ANNULLATO';
+    postazione: 'BAR' | 'CUCINA' | 'PREPARA';
     timestampOrdine: string;
     timestampInizio?: string | null;
     timestampPronto?: string | null;
@@ -159,10 +159,10 @@ const OptimizedOrderCard = memo<OptimizedOrderCardProps>(({
     return configs[order.stato] || configs['APERTA'];
   }, [order.stato]);
 
-  // Filtra items per destinazione se specificato
+  // Filtra items per postazione se specificato
   const filteredItems = useMemo(() => {
     if (!filterDestination) return order.righe;
-    return order.righe.filter(item => item.destinazione === filterDestination);
+    return order.righe.filter(item => item.postazione === filterDestination);
   }, [order.righe, filterDestination]);
 
   // Callbacks memoizzati

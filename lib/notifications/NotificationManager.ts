@@ -27,7 +27,7 @@ export interface OrderNotificationData {
   items?: Array<{
     nome: string;
     quantita: number;
-    destinazione: string;
+    postazione: string;
   }>;
   status?: string;
   amount?: number;
@@ -219,7 +219,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `order-created-${data.orderId}-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -243,7 +243,7 @@ export class NotificationManager {
       });
     }
 
-    return eventId;
+    return eventId || `order-created-${data.orderId}-${Date.now()}`;
   }
 
   /**
@@ -289,7 +289,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -299,7 +299,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -334,7 +334,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -344,7 +344,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -379,7 +379,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -389,7 +389,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -425,7 +425,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -435,7 +435,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -471,7 +471,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -481,7 +481,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -519,7 +519,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -529,7 +529,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -571,7 +571,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -581,7 +581,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -621,7 +621,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -631,13 +631,14 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
    * Send a notification for payment requests
+   * REMOVED - DUPLICATE FUNCTION
    */
-  public notifyPaymentRequested(data: OrderNotificationData): string {
+  private notifyPaymentRequested_DUPLICATE(data: OrderNotificationData): string {
     const config = this.notificationConfigs.get("payment_requested")!;
     
     const message = data.tableNumber 
@@ -673,7 +674,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -683,7 +684,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**
@@ -718,7 +719,7 @@ export class NotificationManager {
     );
 
     this.addToHistory({
-      id: eventId,
+      id: eventId || `notification-${Date.now()}`,
       type: config.type,
       message,
       timestamp: new Date().toISOString(),
@@ -728,7 +729,7 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
-    return eventId;
+    return eventId || `notification-${Date.now()}`;
   }
 
   /**

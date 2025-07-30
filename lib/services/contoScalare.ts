@@ -299,7 +299,7 @@ export class ContoScalareService {
           orderBy: { timestamp: 'desc' }
         }
       },
-      orderBy: { dataApertura: 'desc' }
+      orderBy: { dataApertura: 'asc' }
     });
 
     return conti.map(this.mapContoToData);
@@ -323,7 +323,7 @@ export class ContoScalareService {
           orderBy: { timestamp: 'desc' }
         }
       },
-      orderBy: { dataApertura: 'desc' }
+      orderBy: { dataApertura: 'asc' }
     });
 
     return conti.map(this.mapContoToData);

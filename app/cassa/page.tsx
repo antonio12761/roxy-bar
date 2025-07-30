@@ -10,7 +10,7 @@ export default async function CassaPage() {
   const token = user ? generateToken(user.id) : null;
   
   return (
-    <SSEProvider token={token}>
+    <SSEProvider token={token || undefined}>
       <CassaPageWrapper />
     </SSEProvider>
   );

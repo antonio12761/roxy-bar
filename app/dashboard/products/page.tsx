@@ -30,7 +30,7 @@ import { AuthGuard } from "@/components/auth-guard";
 interface Category {
   id: number;
   name: string;
-  icon?: string;
+  icon?: string | null;
   order: number;
   productsCount: number;
   subcategories: Subcategory[];
@@ -41,7 +41,7 @@ interface Subcategory {
   name: string;
   order: number;
   categoryId: number;
-  productsCount: number;
+  productsCount?: number;
   category?: Category;
 }
 
@@ -56,8 +56,8 @@ interface Product {
   subcategoryId?: number;
   category?: Category;
   subcategory?: Subcategory;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export default function ProductsPage() {

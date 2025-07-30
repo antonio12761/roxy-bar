@@ -39,7 +39,7 @@ export async function GET() {
     const orphanedOrders = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         },
         cameriereId: {
           notIn: activeUserIds
@@ -88,7 +88,7 @@ export async function GET() {
           }
         },
         data: {
-          stato: "ANNULLATA",
+          stato: "ANNULLATO",
           note: "Annullato automaticamente - cameriere non più attivo"
         }
       });

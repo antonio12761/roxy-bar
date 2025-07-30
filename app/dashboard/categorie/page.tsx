@@ -56,6 +56,7 @@ interface Product {
   prezzo: number;
   categoria: string;
   codice?: number | null;
+  disponibile?: boolean;
 }
 
 export default function CategoriePage() {
@@ -741,6 +742,10 @@ export default function CategoriePage() {
       }
 
       // Create blob and download using Server Action result
+      if (!result.csvContent || !result.contentType || !result.fileName) {
+        alert('❌ Dati di export non validi');
+        return;
+      }
       const blob = new Blob([result.csvContent], { type: result.contentType });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -775,7 +780,15 @@ export default function CategoriePage() {
         throw new Error(result.error || 'Import failed');
       }
 
-      setImportResult(result);
+      if ('updated' in result && 'created' in result && 'errors' in result && 'errorDetails' in result) {
+        setImportResult({
+          success: result.success,
+          updated: result.updated as number,
+          created: result.created as number,
+          errors: result.errors as number,
+          errorDetails: result.errorDetails as string[]
+        });
+      }
       
       // Reload categories if import was successful
       if (result.success) {
@@ -818,7 +831,7 @@ export default function CategoriePage() {
       );
       
       if (result.success) {
-        alert(`✅ Aggiornati ${result.successCount} prodotti${result.errorCount > 0 ? `, ${result.errorCount} errori` : ''}`);
+        alert(`✅ Aggiornati ${result.successCount} prodotti${result.errorCount && result.errorCount > 0 ? `, ${result.errorCount} errori` : ''}`);
         
         // Reload data
         await loadCategorie();

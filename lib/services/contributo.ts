@@ -28,7 +28,7 @@ export class ContributoService {
    * Crea un nuovo contributo cliente
    */
   static async creaContributo(input: ContributoInput): Promise<ContributoCliente> {
-    return await prisma.contributoCliente.create({
+    const result = await prisma.contributoCliente.create({
       data: {
         clienteId: input.clienteId,
         clientePagatoreId: input.clientePagatoreId,
@@ -39,6 +39,14 @@ export class ContributoService {
         descrizione: input.descrizione,
       },
     });
+    
+    return {
+      ...result,
+      clientePagatoreId: result.clientePagatoreId || undefined,
+      tavoloId: result.tavoloId || undefined,
+      descrizione: result.descrizione || undefined,
+      importo: Number(result.importo)
+    };
   }
 
   /**
@@ -136,9 +144,17 @@ export class ContributoService {
     const totaleRicevuto = ricevuti.reduce((sum, c) => sum + Number(c.importo), 0);
     const saldoNetto = totaleEffettuato - totaleRicevuto;
 
+    const transformContributo = (c: any): ContributoCliente => ({
+      ...c,
+      clientePagatoreId: c.clientePagatoreId || undefined,
+      tavoloId: c.tavoloId || undefined,
+      descrizione: c.descrizione || undefined,
+      importo: Number(c.importo)
+    });
+
     return {
-      effettuati,
-      ricevuti,
+      effettuati: effettuati.map(transformContributo),
+      ricevuti: ricevuti.map(transformContributo),
       saldoNetto,
     };
   }
@@ -147,7 +163,7 @@ export class ContributoService {
    * Ottiene contributi per tavolo
    */
   static async getContributiPerTavolo(tavoloId: number): Promise<ContributoCliente[]> {
-    return await prisma.contributoCliente.findMany({
+    const result = await prisma.contributoCliente.findMany({
       where: { tavoloId },
       include: {
         cliente: true,
@@ -155,6 +171,14 @@ export class ContributoService {
       },
       orderBy: { timestamp: "desc" },
     });
+    
+    return result.map(c => ({
+      ...c,
+      clientePagatoreId: c.clientePagatoreId || undefined,
+      tavoloId: c.tavoloId || undefined,
+      descrizione: c.descrizione || undefined,
+      importo: Number(c.importo)
+    }));
   }
 
   /**

@@ -94,6 +94,11 @@ export async function getCategorieGerarchicheV2(): Promise<CategoriaGerarchicaV2
     // Costruisci struttura gerarchica
     const categorieConPath = categorieAggiornate.map(cat => ({
       ...cat,
+      nomeDisplay: cat.nomeDisplay || undefined,
+      emoji: cat.emoji || undefined,
+      colore: cat.colore || undefined,
+      descrizione: cat.descrizione || undefined,
+      parentId: cat.parentId || undefined,
       children: [],
       fullPath: buildFullPath(cat, new Map(categorieAggiornate.map(c => [c.id, c])))
     }));
@@ -224,16 +229,27 @@ export async function rinominaCategoriaV2(id: number, nuovoNome: string) {
     const nuovoPath = buildFullPath(categoriaAggiornata, categorieMapById);
 
     // Aggiorna tutti i prodotti che usano questo path
-    await prisma.prodotto.updateMany({
+    // Prima trova tutti i prodotti che devono essere aggiornati
+    const prodottiDaAggiornare = await prisma.prodotto.findMany({
       where: {
         categoria: {
           startsWith: vecchioPath
         }
       },
-      data: {
-        categoria: prisma.$queryRaw`REPLACE(categoria, ${vecchioPath}, ${nuovoPath})`
+      select: {
+        id: true,
+        categoria: true
       }
     });
+
+    // Aggiorna ogni prodotto con la nuova categoria
+    for (const prodotto of prodottiDaAggiornare) {
+      const nuovaCategoria = prodotto.categoria.replace(vecchioPath, nuovoPath);
+      await prisma.prodotto.update({
+        where: { id: prodotto.id },
+        data: { categoria: nuovaCategoria }
+      });
+    }
 
     return {
       success: true,

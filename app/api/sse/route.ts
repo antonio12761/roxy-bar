@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Subscribe to relevant channels based on user role
-      const channels = [];
+      const channels: string[] = [];
       
       // All users get notifications and system channels
       channels.push(SSEChannels.NOTIFICATIONS, SSEChannels.SYSTEM);
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
           break;
       }
       
-      sseService.subscribeToChannels(client.id, channels);
+      sseService.subscribeToChannels(client.id, channels as any);
       
       // 4. Setup heartbeat (importante!)
       const heartbeat = setInterval(() => {
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
       const cleanup = () => {
         clearInterval(heartbeat);
         sseManager.removeClient(client.id);
-        sseService.unsubscribeFromChannels(client.id, channels);
+        sseService.unsubscribeFromChannels(client.id, channels as any);
         console.log(`[SSE] Client disconnected: ${client.id}`);
       };
       

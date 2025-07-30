@@ -34,13 +34,19 @@ const CACHE_CONFIGS = {
   [StationType.PREPARA]: {
     maxSize: 50,        // Max 50 ordini attivi
     ttl: 30 * 60 * 1000, // 30 minuti
-    keys: ['orders:active:bar', 'orders:queue:bar'],
+    keys: ['orders:active:prepara', 'orders:queue:prepara'],
     autoCleanup: true
   },
   [StationType.CUCINA]: {
     maxSize: 50,
     ttl: 30 * 60 * 1000,
-    keys: ['orders:active:kitchen', 'orders:queue:kitchen'],
+    keys: ['orders:active:cucina', 'orders:queue:cucina'],
+    autoCleanup: true
+  },
+  [StationType.BANCO]: {
+    maxSize: 50,
+    ttl: 30 * 60 * 1000,
+    keys: ['orders:active:banco', 'orders:queue:banco'],
     autoCleanup: true
   },
   [StationType.CAMERIERE]: {

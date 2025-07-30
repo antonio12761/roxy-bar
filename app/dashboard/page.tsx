@@ -1,199 +1,135 @@
 "use client";
 
-import { useState } from "react";
 import { 
-  LayoutDashboard, 
   Package, 
   Users, 
   ShoppingCart, 
-  FileText,
-  Settings,
+  TrendingUp,
   Coffee,
-  Tag,
-  ChevronRight,
-  Menu,
-  Table,
-  BarChart3
+  Euro,
+  Clock,
+  AlertCircle
 } from "lucide-react";
-import Link from "next/link";
 import { AuthGuard } from "@/components/auth-guard";
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState("overview");
-
-  const menuItems = [
+  // Dati di esempio per le statistiche
+  const stats = [
     {
-      id: "overview",
-      label: "Panoramica",
-      icon: LayoutDashboard,
-      href: "/dashboard"
-    },
-    {
-      id: "products",
-      label: "Prodotti",
-      icon: Package,
-      subItems: [
-        { label: "Gestione Categorie", href: "/dashboard/categorie", icon: Tag },
-        { label: "Tutti i Prodotti", href: "/dashboard/prodotti", icon: Coffee },
-        { label: "Statistiche", href: "/dashboard/statistiche", icon: BarChart3 },
-        { label: "Menu Builder", href: "/dashboard/menu-builder", icon: Menu }
-      ]
-    },
-    {
-      id: "users",
-      label: "Utenti",
-      icon: Users,
-      href: "/dashboard/utenti"
-    },
-    {
-      id: "orders",
-      label: "Ordini",
+      title: "Ordini Oggi",
+      value: "45",
+      change: "+12%",
       icon: ShoppingCart,
-      href: "/dashboard/ordini"
+      color: "bg-blue-500"
     },
     {
-      id: "reports",
-      label: "Report",
-      icon: FileText,
-      href: "/dashboard/report"
+      title: "Incasso Giornaliero",
+      value: "€1,234",
+      change: "+8%",
+      icon: Euro,
+      color: "bg-green-500"
     },
     {
-      id: "settings",
-      label: "Impostazioni",
-      icon: Settings,
-      href: "/dashboard/impostazioni"
+      title: "Prodotti Attivi",
+      value: "128",
+      change: "+3",
+      icon: Package,
+      color: "bg-purple-500"
+    },
+    {
+      title: "Tempo Medio Servizio",
+      value: "12 min",
+      change: "-2 min",
+      icon: Clock,
+      color: "bg-orange-500"
     }
-  ];
-
-  const quickStats = [
-    { label: "Prodotti Attivi", value: "156", color: "bg-white/10" },
-    { label: "Categorie", value: "8", color: "bg-white/10" },
-    { label: "Ordini Oggi", value: "43", color: "bg-white/15" },
-    { label: "Incasso Giornaliero", value: "€1,234", color: "bg-purple-500" }
   ];
 
   return (
     <AuthGuard allowedRoles={["ADMIN", "MANAGER"]}>
-      <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-background border-r border-slate-700 p-6">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Coffee className="h-6 w-6 text-white/70" />
-            Bar Roxy Admin
-          </h1>
-        </div>
-
-        <nav className="space-y-2">
-          {menuItems.map((item) => (
-            <div key={item.id}>
-              {item.subItems ? (
-                <div>
-                  <button
-                    onClick={() => setActiveSection(activeSection === item.id ? "" : item.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    <ChevronRight className={`h-4 w-4 transition-transform ${activeSection === item.id ? "rotate-90" : ""}`} />
-                  </button>
-                  {activeSection === item.id && (
-                    <div className="ml-8 mt-2 space-y-1">
-                      {item.subItems.map((subItem) => (
-                        <Link
-                          key={subItem.href}
-                          href={subItem.href}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <subItem.icon className="h-4 w-4" />
-                          {subItem.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              )}
-            </div>
-          ))}
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Dashboard Amministratore</h2>
-          <p className="text-muted-foreground">Benvenuto nel pannello di amministrazione</p>
-        </div>
-
-        {/* Quick Stats */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
+        
+        {/* Statistiche */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {quickStats.map((stat) => (
-            <div key={stat.label} className="bg-card border border-slate-700 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">{stat.label}</span>
-                <div className={`w-2 h-2 rounded-full ${stat.color}`} />
+          {stats.map((stat, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`${stat.color} text-white p-3 rounded-lg`}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <span className={`text-sm font-medium ${
+                  stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {stat.change}
+                </span>
               </div>
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+              <h3 className="text-gray-600 text-sm font-medium">{stat.title}</h3>
+              <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-card border border-slate-700 rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Azioni Rapide</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link
-              href="/dashboard/categorie"
-              className="p-4 bg-white/20 hover:bg-white/25-700 text-white rounded-lg transition-colors flex items-center gap-3"
-            >
-              <Tag className="h-5 w-5" />
-              <div>
-                <div className="font-semibold">Gestisci Categorie</div>
-                <div className="text-sm opacity-90">Riorganizza categorie prodotti</div>
+        {/* Sezioni Rapide */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Ordini Recenti */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Ordini Recenti</h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Tavolo 5</p>
+                  <p className="text-sm text-gray-600">2 Cappuccini, 1 Cornetto</p>
+                </div>
+                <span className="text-sm font-medium text-blue-600">In corso</span>
               </div>
-            </Link>
-            <Link
-              href="/dashboard/menu-builder"
-              className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-3"
-            >
-              <Menu className="h-5 w-5" />
-              <div>
-                <div className="font-semibold">Menu Builder</div>
-                <div className="text-sm opacity-90">Crea e personalizza il menu</div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Tavolo 12</p>
+                  <p className="text-sm text-gray-600">3 Caffè, 2 Brioche</p>
+                </div>
+                <span className="text-sm font-medium text-green-600">Completato</span>
               </div>
-            </Link>
-            <Link
-              href="/dashboard/statistiche"
-              className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-3"
-            >
-              <BarChart3 className="h-5 w-5" />
-              <div>
-                <div className="font-semibold">Statistiche</div>
-                <div className="text-sm opacity-90">Analisi e report prodotti</div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Tavolo 3</p>
+                  <p className="text-sm text-gray-600">1 Spremuta, 1 Toast</p>
+                </div>
+                <span className="text-sm font-medium text-yellow-600">In preparazione</span>
               </div>
-            </Link>
-            <Link
-              href="/dashboard/utenti"
-              className="p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-3"
-            >
-              <Users className="h-5 w-5" />
-              <div>
-                <div className="font-semibold">Gestisci Utenti</div>
-                <div className="text-sm opacity-90">Operatori e permessi</div>
+            </div>
+          </div>
+
+          {/* Avvisi */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Avvisi e Notifiche</h2>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-800">Scorte in esaurimento</p>
+                  <p className="text-sm text-yellow-700">5 prodotti sotto la soglia minima</p>
+                </div>
               </div>
-            </Link>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Coffee className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-800">Manutenzione macchina caffè</p>
+                  <p className="text-sm text-blue-700">Programmata per domani alle 14:00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grafico vendite (placeholder) */}
+        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Vendite Settimanali</h2>
+          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">Grafico vendite (da implementare)</p>
           </div>
         </div>
       </div>
-    </div>
     </AuthGuard>
   );
 }

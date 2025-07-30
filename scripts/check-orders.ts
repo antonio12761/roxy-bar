@@ -20,7 +20,7 @@ async function main() {
   const ordinazioniRecenti = await prisma.ordinazione.findMany({
     take: 5,
     orderBy: {
-      dataApertura: 'desc'
+      dataApertura: 'asc'
     },
     include: {
       tavolo: true,

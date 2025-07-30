@@ -39,8 +39,10 @@ interface Statistics {
     count: number;
   }[];
   destinationStats: {
-    bar: number;
-    cucina: number;
+    bar?: number;
+    prepara?: number;
+    cucina?: number;
+    banco?: number;
   };
 }
 
@@ -254,17 +256,17 @@ export default function StatistichePage() {
                       stroke="currentColor"
                       strokeWidth="12"
                       fill="none"
-                      strokeDasharray={`${stats.totalProducts > 0 ? (stats.destinationStats.bar / stats.totalProducts) * 352 : 0} 352`}
+                      strokeDasharray={`${stats.totalProducts > 0 && stats.destinationStats.bar ? (stats.destinationStats.bar / stats.totalProducts) * 352 : 0} 352`}
                       className="text-white/70"
                     />
                   </svg>
                   <span className="absolute text-2xl font-bold text-foreground">
-                    {stats.destinationStats.bar}
+                    {stats.destinationStats.bar || 0}
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-foreground">Bar</p>
                 <p className="text-xs text-muted-foreground">
-                  {stats.totalProducts > 0 ? ((stats.destinationStats.bar / stats.totalProducts) * 100).toFixed(1) : 0}%
+                  {stats.totalProducts > 0 && stats.destinationStats.bar ? ((stats.destinationStats.bar / stats.totalProducts) * 100).toFixed(1) : 0}%
                 </p>
               </div>
               
@@ -287,17 +289,17 @@ export default function StatistichePage() {
                       stroke="currentColor"
                       strokeWidth="12"
                       fill="none"
-                      strokeDasharray={`${stats.totalProducts > 0 ? (stats.destinationStats.cucina / stats.totalProducts) * 352 : 0} 352`}
+                      strokeDasharray={`${stats.totalProducts > 0 && stats.destinationStats.cucina ? (stats.destinationStats.cucina / stats.totalProducts) * 352 : 0} 352`}
                       className="text-white/60"
                     />
                   </svg>
                   <span className="absolute text-2xl font-bold text-foreground">
-                    {stats.destinationStats.cucina}
+                    {stats.destinationStats.cucina || 0}
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-foreground">Cucina</p>
                 <p className="text-xs text-muted-foreground">
-                  {stats.totalProducts > 0 ? ((stats.destinationStats.cucina / stats.totalProducts) * 100).toFixed(1) : 0}%
+                  {stats.totalProducts > 0 && stats.destinationStats.cucina ? ((stats.destinationStats.cucina / stats.totalProducts) * 100).toFixed(1) : 0}%
                 </p>
               </div>
             </div>

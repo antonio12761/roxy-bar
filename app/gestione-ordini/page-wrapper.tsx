@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { OrderZones } from '@/components/OrderZones'
-import { useSSE } from '@/hooks/useSSE'
+import { useStationSSE } from '@/hooks/useStationSSE'
+import { StationType } from '@/lib/sse/station-filters'
 import { aggiornaStatoOrdinazione } from '@/lib/actions/ordinazioni'
 import { toast } from '@/lib/toast'
 import type { Ordinazione, RigaOrdinazione, Prodotto, Tavolo } from '@prisma/client'
@@ -22,22 +23,6 @@ export function PageWrapper({ initialOrdinazioni }: PageWrapperProps) {
   const [ordinazioni, setOrdinazioni] = useState(initialOrdinazioni)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   
-  const { connected } = useSSE({
-    onOrderUpdate: (data) => {
-      console.log('Ricevuto aggiornamento ordine:', data)
-      // Ricarica gli ordini quando ci sono aggiornamenti
-      loadOrders()
-    },
-    onOrderNew: (data) => {
-      console.log('Nuovo ordine ricevuto:', data)
-      loadOrders()
-    },
-    onOrderReady: (data) => {
-      console.log('Ordine pronto:', data)
-      loadOrders()
-    }
-  })
-
   const loadOrders = useCallback(async () => {
     try {
       const { getOrdinazioniPerStato } = await import('@/lib/actions/ordinazioni')
@@ -48,10 +33,33 @@ export function PageWrapper({ initialOrdinazioni }: PageWrapperProps) {
     }
   }, [])
 
+  // Use optimized SSE hook for supervisor
+  const { 
+    connectionHealth,
+    eventQueue,
+    clearEventQueue 
+  } = useStationSSE({
+    stationType: StationType.SUPERVISORE,
+    userId: 'supervisor', // TODO: get actual user ID
+    enableCache: true,
+    autoReconnect: true
+  })
+
+  // Process SSE events
+  useEffect(() => {
+    eventQueue.forEach(({ event, data }) => {
+      console.log(`[Supervisore] Processing event: ${event}`, data);
+      // All events should trigger reload for supervisor view
+      loadOrders();
+    });
+    
+    clearEventQueue();
+  }, [eventQueue, clearEventQueue, loadOrders]);
+
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setIsUpdating(orderId)
     try {
-      const validStatuses = ['INVIATA', 'PRONTA', 'CONSEGNATA', 'PAGATA'] as const
+      const validStatuses = ['ORDINATO', 'IN_PREPARAZIONE', 'PRONTO', 'CONSEGNATO', 'RICHIESTA_CONTO', 'PAGATO'] as const
       if (!validStatuses.includes(newStatus as any)) {
         return
       }
@@ -102,9 +110,9 @@ export function PageWrapper({ initialOrdinazioni }: PageWrapperProps) {
               Aggiorna
             </button>
             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
-              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-white/10' : 'bg-white/8'} ${connected ? 'animate-pulse' : ''}`} />
+              <div className={`w-2 h-2 rounded-full ${connectionHealth.status === 'connected' ? 'bg-green-500' : connectionHealth.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                {connected ? 'Connesso' : 'Disconnesso'}
+                {connectionHealth.status === 'connected' ? 'Connesso' : connectionHealth.status === 'connecting' ? 'Connessione...' : 'Disconnesso'}
               </span>
             </div>
           </div>

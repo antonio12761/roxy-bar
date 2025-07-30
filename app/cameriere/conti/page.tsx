@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEnhancedSSE } from "@/hooks/useEnhancedSSE";
 import { ConnectionStatusIndicator } from "@/components/ConnectionStatusIndicator";
 import { getOrdinazioniConsegnate } from "@/lib/actions/cassa";
+import { creaPagamentoRigheSpecifiche } from "@/lib/actions/pagamenti";
 import { richiediPagamento, richiediScontrino } from "@/lib/actions/pagamenti";
 import { toast } from "@/lib/toast";
 import PaymentHistory from "@/components/cassa/payment-history";
@@ -371,7 +372,7 @@ export default function ContiPage() {
       unpaidRighe.forEach(riga => {
         allUnpaidItems.push({
           orderId: order.id,
-          rigaId: riga.id,
+          rigaId: (riga as any).id || '',
           productName: riga.prodotto.nome,
           originalQuantity: riga.quantita,
           selectedQuantity: riga.quantita,

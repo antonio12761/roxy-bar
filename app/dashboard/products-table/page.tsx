@@ -33,7 +33,7 @@ import { AuthGuard } from "@/components/auth-guard";
 interface Category {
   id: number;
   name: string;
-  icon?: string;
+  icon?: string | null;
   order: number;
   productsCount: number;
   subcategories: Subcategory[];
@@ -44,7 +44,7 @@ interface Subcategory {
   name: string;
   order: number;
   categoryId: number;
-  productsCount: number;
+  productsCount?: number;
   category?: Category;
 }
 

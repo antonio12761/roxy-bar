@@ -356,7 +356,7 @@ export function emitOrderNew(orderId: string, tableNumber: number | undefined, i
       id: item.id,
       productName: item.productName || item.nome,
       quantity: item.quantity || item.quantita,
-      destination: item.destination || item.destinazione
+      destination: item.destination || item.postazione
     })),
     totalAmount,
     timestamp: new Date().toISOString()

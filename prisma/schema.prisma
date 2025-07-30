@@ -123,7 +123,7 @@ model Prodotto {
   vegetariano        Boolean                   @default(false)
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
-  destinazione       DestinazioneRiga?         @default(CUCINA)
+  postazione         DestinazioneRiga?         @default(CUCINA)
   terminato          Boolean                   @default(false)
   codice             Int?                      @unique
   isDeleted          Boolean                   @default(false)
@@ -149,6 +149,12 @@ model Prodotto {
   @@index([ordineProdotto])
   @@index([isDeleted])
   @@index([isDeleted, disponibile])
+  // Nuovi indici per query menu e performance
+  @@index([disponibile, categoriaMenuId, ordineProdotto]) // Menu ordering
+  @@index([postazione, disponibile]) // Query per stazione
+  @@index([prezzo, disponibile]) // Query pricing
+  @@index([terminato, disponibile, categoria]) // Query disponibilità
+  @@index([isDeleted, disponibile, categoriaMenuId]) // Query menu attivo
   @@map("Prodotto")
 }
 
@@ -170,6 +176,10 @@ model Tavolo {
 
   @@index([stato])
   @@index([zona])
+  // Nuovi indici per query tavoli
+  @@index([stato, zona]) // Query tavoli liberi per zona
+  @@index([numero, stato]) // Query stato specifico tavolo
+  @@index([updatedAt, stato]) // Query tavoli modificati di recente
   @@map("Tavolo")
 }
 
@@ -211,7 +221,7 @@ model Ordinazione {
   tavoloId       Int?
   clienteId      String?
   cameriereId    String
-  stato          StatoOrdinazione  @default(APERTA)
+  stato          StatoOrdinazione  @default(ORDINATO)
   tipo           TipoOrdinazione   @default(TAVOLO)
   dataApertura   DateTime          @default(now())
   dataChiusura   DateTime?
@@ -239,6 +249,12 @@ model Ordinazione {
   @@index([cameriereId, stato])
   @@index([stato, tavoloId])
   @@index([stato, statoPagamento])
+  // Nuovi indici per performance query frequenti
+  @@index([stato, statoPagamento, dataApertura])
+  @@index([cameriereId, dataApertura, stato])
+  @@index([tavoloId, stato, statoPagamento])
+  @@index([updatedAt, stato]) // Per query ordini recenti
+  @@index([dataApertura, stato, cameriereId]) // Query dashboard cameriere
   @@map("Ordinazione")
 }
 
@@ -265,6 +281,11 @@ model Pagamento {
   @@index([operatoreId])
   @@index([clientePagatoreId])
   @@index([timestamp])
+  // Nuovi indici per query pagamenti
+  @@index([timestamp, modalita]) // Query statistiche pagamenti
+  @@index([operatoreId, timestamp]) // Query pagamenti per operatore
+  @@index([ordinazioneId, timestamp]) // Query cronologia pagamenti
+  @@index([modalita, timestamp, importo]) // Query analytics modalità
   @@map("Pagamento")
 }
 
@@ -275,7 +296,7 @@ model RigaOrdinazione {
   quantita               Int                   @default(1)
   prezzo                 Decimal               @db.Decimal(10, 2)
   stato                  StatoRigaOrdinazione  @default(INSERITO)
-  destinazione           DestinazioneRiga      @default(BAR)
+  postazione             DestinazioneRiga      @default(PREPARA)
   timestampOrdine        DateTime              @default(now())
   timestampInizio        DateTime?
   timestampPronto        DateTime?
@@ -297,15 +318,21 @@ model RigaOrdinazione {
 
   @@index([ordinazioneId])
   @@index([stato])
-  @@index([destinazione])
+  @@index([postazione])
   @@index([timestampOrdine])
   @@index([prodottoId])
   @@index([clienteOrdinanteId])
   @@index([clienteBeneficiarioId])
   @@index([newProductId])
-  @@index([ordinazioneId, stato, destinazione])
-  @@index([stato, destinazione, timestampOrdine])
+  @@index([ordinazioneId, stato, postazione])
+  @@index([stato, postazione, timestampOrdine])
   @@index([isPagato, ordinazioneId])
+  // Nuovi indici per query postazioni
+  @@index([postazione, stato, timestampOrdine]) // Query priorità per stazione
+  @@index([stato, timestampOrdine, postazione]) // Query ordini vecchi
+  @@index([ordinazioneId, isPagato, postazione]) // Query pagamenti per stazione
+  @@index([timestampPronto, stato]) // Query prodotti pronti
+  @@index([timestampInizio, postazione]) // Query tempi preparazione
   @@map("RigaOrdinazione")
 }
 
@@ -356,6 +383,12 @@ model User {
   qrCodesUser               QRCodeToken[]          @relation("UserQRCodes")
   richiestePagemento        RichiestaPagemento[]   @relation("RichiestePagementoCameriere")
   sessioni                  Session[]
+  scontriniOperatore        QueueScontrino[]       @relation("ScontriniOperatore")
+  auditLogs                 AuditLog[]             @relation("AuditUser")
+  userSessions              UserSession[]          @relation("UserSessions")
+  userShifts                UserShift[]            @relation("UserShifts")
+  handoversFrom             ShiftHandover[]        @relation("HandoversFrom")
+  handoversTo               ShiftHandover[]        @relation("HandoversTo")
 
   @@map("User")
 }
@@ -549,6 +582,10 @@ model Spesa {
   @@index([ambito])
   @@index([sottocategoria])
   @@index([fornitoreId])
+  // Nuovi indici per analytics spese
+  @@index([data, categoria, importo]) // Query report spese
+  @@index([ambito, data, categoria]) // Query categorizzate per periodo
+  @@index([fornitoreId, data, importo]) // Query spese per fornitore
   @@map("Spesa")
 }
 
@@ -925,13 +962,13 @@ enum StatoTavolo {
 }
 
 enum StatoOrdinazione {
-  APERTA
-  INVIATA
+  ORDINATO
   IN_PREPARAZIONE
-  PRONTA
-  CONSEGNATA
-  PAGATA
-  ANNULLATA
+  PRONTO
+  CONSEGNATO
+  RICHIESTA_CONTO
+  PAGATO
+  ANNULLATO
 }
 
 enum TipoOrdinazione {
@@ -949,10 +986,10 @@ enum StatoRigaOrdinazione {
 }
 
 enum DestinazioneRiga {
-  BAR
-  CUCINA
-  IMMEDIATO
   PREPARA
+  CUCINA
+  BANCO
+  IMMEDIATO
 }
 
 enum TipoNotifica {
@@ -970,13 +1007,12 @@ enum TipoNotifica {
 enum Role {
   ADMIN
   MANAGER
-  OPERATORE
+  SUPERVISORE
   CAMERIERE
   PREPARA
   BANCO
   CUCINA
   CASSA
-  SUPERVISORE
 }
 
 enum StatoOrdine {
@@ -1157,4 +1193,287 @@ enum TipoMovimentoScalare {
   ORDINE      // Aggiunta di prodotti al conto
   PAGAMENTO   // Pagamento parziale o totale
   STORNO      // Storno di un precedente movimento
+}
+
+// Modello per audit trail completo
+model AuditLog {
+  id              String            @id @default(cuid())
+  entityType      EntityType        // Tipo di entità (ORDINAZIONE, PAGAMENTO, etc.)
+  entityId        String            // ID dell'entità modificata
+  action          AuditAction       // Azione eseguita
+  userId          String?           // Utente che ha eseguito l'azione
+  sessionId       String?           // ID sessione per raggruppare azioni
+  ipAddress       String?           // IP dell'utente
+  userAgent       String?           // User agent del browser
+  
+  // Dati dell'audit
+  oldValues       Json?             // Valori precedenti
+  newValues       Json?             // Nuovi valori
+  changes         Json?             // Diff specifico dei cambiamenti
+  metadata        Json?             // Metadati aggiuntivi (es. motivo, note)
+  
+  // Informazioni di contesto
+  tableName       String?           // Nome tabella database
+  fieldNames      String[]          // Campi modificati
+  
+  // Classificazione
+  severity        AuditSeverity     @default(INFO)
+  category        AuditCategory     @default(GENERAL)
+  sensitive       Boolean           @default(false) // Contiene dati sensibili
+  
+  // Validazione e integrità
+  checksum        String?           // Hash per verifica integrità
+  validated       Boolean           @default(false)
+  
+  // Temporali
+  timestamp       DateTime          @default(now())
+  retention       DateTime?         // Data di scadenza per retention policy
+  createdAt       DateTime          @default(now())
+  
+  // Performance e risultato
+  success         Boolean           @default(true)
+  errorMessage    String?
+  processingTime  Int?              // Millisecondi
+  
+  // Relazioni aggiuntive
+  relatedEntityType EntityType?     // Tipo entità correlata
+  relatedEntityId   String?         // ID entità correlata
+  
+  // Relazioni
+  user            User?             @relation("AuditUser", fields: [userId], references: [id])
+  
+  @@index([entityType, entityId])
+  @@index([userId, timestamp])
+  @@index([action, timestamp])
+  @@index([severity, timestamp])
+  @@index([category, timestamp])
+  @@index([timestamp, entityType])
+  @@index([sessionId, timestamp])
+  @@index([sensitive, retention]) // Per pulizia dati sensibili
+  @@map("AuditLog")
+}
+
+enum EntityType {
+  ORDINAZIONE
+  PAGAMENTO
+  RIGAORDINAZIONE
+  TAVOLO
+  PRODOTTO
+  USER
+  SCONTRINO
+  SISTEMA
+  SYSTEM
+}
+
+enum AuditAction {
+  CREATE          // Creazione entità
+  UPDATE          // Modifica entità
+  DELETE          // Eliminazione entità
+  LOGIN           // Login utente
+  LOGOUT          // Logout utente
+  PAYMENT_PROCESS // Elaborazione pagamento
+  PAYMENT_CANCEL  // Annullamento pagamento
+  ORDER_CLOSE     // Chiusura ordine
+  TABLE_ASSIGN    // Assegnazione tavolo
+  STATUS_CHANGE   // Cambio stato
+  BULK_UPDATE     // Aggiornamento multiplo
+  SYSTEM_ACTION   // Azione automatica sistema
+  EXPORT          // Esportazione dati
+  IMPORT          // Importazione dati
+  CONFIG_CHANGE   // Modifica configurazione
+  ACCESS          // Accesso risorsa
+  ACCESS_DENIED   // Accesso negato
+  SECURITY_VIOLATION // Violazione sicurezza
+  PROCESS         // Processo generico
+  COMPLETE        // Completamento
+  VALIDATE        // Validazione
+  SHIFT_START     // Inizio turno
+  SHIFT_END       // Fine turno
+  HANDOVER_INITIATED // Handover iniziato
+  HANDOVER_ACCEPTED // Handover accettato
+  HANDOVER_REJECTED // Handover rifiutato
+}
+
+enum AuditSeverity {
+  DEBUG           // Informazioni debug
+  INFO            // Informazioni normali
+  WARNING         // Avvisi
+  ERROR           // Errori
+  CRITICAL        // Errori critici
+  SECURITY        // Eventi di sicurezza
+  LOW             // Bassa severità
+  MEDIUM          // Media severità  
+  HIGH            // Alta severità
+}
+
+enum AuditCategory {
+  GENERAL         // Generale
+  PAYMENT         // Pagamenti
+  ORDER           // Ordini
+  USER_MGMT       // Gestione utenti
+  SECURITY        // Sicurezza
+  SYSTEM          // Sistema
+  COMPLIANCE      // Conformità
+  PERFORMANCE     // Performance
+}
+
+// Modello per gestire la queue di stampa scontrini
+model QueueScontrino {
+  id              String                  @id @default(cuid())
+  tipo            TipoScontrino           // NON_FISCALE, FISCALE
+  stato           StatoScontrino          @default(IN_CODA)
+  priorita        PrioritaScontrino       @default(NORMALE)
+  
+  // Dati per raggruppamento
+  tavoloNumero    String?
+  sessionePagamento String?               // UUID per raggruppare pagamenti della stessa sessione
+  
+  // Contenuto scontrino
+  intestazione    Json?                   // Dati intestazione ristorante
+  righe           Json                    // Array di righe prodotti
+  totale          Decimal                 @db.Decimal(10, 2)
+  modalitaPagamento ModalitaPagamento?
+  clienteNome     String?
+  cameriereNome   String?
+  
+  // Riferimenti per audit
+  ordinazioneIds  String[]                // Array di IDs ordinazioni coinvolte
+  pagamentoIds    String[]                // Array di IDs pagamenti coinvolte
+  operatoreId     String?
+  
+  // Timestampe gestione
+  timestampCreazione DateTime             @default(now())
+  timestampStampa    DateTime?
+  timestampErrore    DateTime?
+  messaggioErrore    String?
+  tentativiStampa    Int                  @default(0)
+  maxTentativi       Int                  @default(3)
+  
+  // Backup digitale
+  contenutoCompleto  Json                 // Backup completo del contenuto
+  hash              String?               // Hash per verifica integrità
+  
+  // Relazioni
+  operatore         User?                 @relation("ScontriniOperatore", fields: [operatoreId], references: [id])
+  
+  @@index([stato, priorita, timestampCreazione])
+  @@index([tavoloNumero, sessionePagamento])
+  @@index([timestampCreazione])
+  @@index([operatoreId])
+  // Nuovi indici per performance queue scontrini
+  @@index([stato, timestampCreazione]) // Query scontrini in coda
+  @@index([priorita, timestampCreazione, stato]) // Query priorità
+  @@index([sessionePagamento, stato]) // Query batch session
+  @@index([operatoreId, timestampCreazione]) // Query per operatore
+  @@index([timestampStampa, stato]) // Query scontrini stampati
+  @@map("QueueScontrino")
+}
+
+enum TipoScontrino {
+  NON_FISCALE     // Scontrino dettagliato non fiscale
+  FISCALE         // Scontrino fiscale con totale
+}
+
+enum StatoScontrino {
+  IN_CODA         // In attesa di stampa
+  IN_STAMPA       // Attualmente in stampa
+  STAMPATO        // Stampato con successo
+  ERRORE          // Errore durante stampa
+  ANNULLATO       // Annullato manualmente
+}
+
+enum PrioritaScontrino {
+  BASSA           // Stampa quando possibile
+  NORMALE         // Stampa in ordine normale
+  ALTA            // Stampa prima degli altri
+  URGENTE         // Stampa immediatamente
+}
+
+// Modello per sessioni utente con timeout
+model UserSession {
+  id                String            @id @default(cuid())
+  userId            String
+  token             String            // Hash del token di sessione
+  deviceId          String            // ID univoco dispositivo
+  ipAddress         String
+  userAgent         String
+  loginMethod       String            @default("PASSWORD") // PASSWORD, PIN, BIOMETRIC
+  createdAt         DateTime          @default(now())
+  lastActivity      DateTime          @default(now())
+  expiresAt         DateTime
+  isActive          Boolean           @default(true)
+  terminatedAt      DateTime?
+  terminationReason String?           // LOGOUT, TIMEOUT, FORCE, etc.
+  metadata          Json?             // Metadati aggiuntivi
+  
+  // Relazioni
+  user              User              @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isActive])
+  @@index([expiresAt, isActive])
+  @@index([lastActivity, isActive])
+  @@index([deviceId])
+  @@index([token]) // Per ricerca veloce token
+  @@map("UserSession")
+}
+
+// Modello per gestione turni utenti
+model UserShift {
+  id              String            @id @default(cuid())
+  userId          String
+  startTime       DateTime          @default(now())
+  endTime         DateTime?
+  duration        Int?              // Durata in minuti
+  status          ShiftStatus       @default(ACTIVE)
+  breakTime       Int               @default(0) // Minuti di pausa
+  handoverNotes   String?           // Note per il cambio turno
+  performance     Json?             // Dati performance turno
+  metadata        Json?             // Metadati aggiuntivi
+  
+  // Relazioni
+  user            User              @relation("UserShifts", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, status])
+  @@index([startTime, endTime])
+  @@index([status])
+  @@map("UserShift")
+}
+
+// Modello per handover tra turni
+model ShiftHandover {
+  id              String            @id @default(cuid())
+  fromUserId      String
+  toUserId        String
+  timestamp       DateTime          @default(now())
+  status          HandoverStatus    @default(PENDING)
+  notes           String
+  pendingOrders   Json              // Array di ordini in sospeso
+  activeTables    Json              // Array di tavoli attivi
+  cashStatus      Json              // Stato cassa
+  checklist       Json              // Checklist handover
+  timeout         DateTime
+  rejectionReason String?
+  
+  // Relazioni
+  fromUser        User              @relation("HandoversFrom", fields: [fromUserId], references: [id])
+  toUser          User              @relation("HandoversTo", fields: [toUserId], references: [id])
+  
+  @@index([fromUserId, status])
+  @@index([toUserId, status])
+  @@index([status, timeout])
+  @@map("ShiftHandover")
+}
+
+enum ShiftStatus {
+  ACTIVE          // Turno attivo
+  PAUSED          // Turno in pausa
+  COMPLETED       // Turno completato
+  INTERRUPTED     // Turno interrotto
+}
+
+enum HandoverStatus {
+  PENDING         // In attesa di accettazione
+  ACCEPTED        // Accettato
+  REJECTED        // Rifiutato
+  COMPLETED       // Completato
 }

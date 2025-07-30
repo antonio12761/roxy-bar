@@ -8,22 +8,16 @@ async function seedUsers() {
   try {
     // Definisci gli utenti con password = nome
     const users = [
-      { nome: "Antonio", password: "Antonio", ruolo: "ADMIN", cognome: "Colaizzi" },
-      { nome: "Filippo", password: "Filippo", ruolo: "MANAGER", cognome: "Rossi" },
-      { nome: "Giulio", password: "Giulio", ruolo: "SUPERVISORE", cognome: "Bianchi" },
-      { nome: "Giovanni", password: "Giovanni", ruolo: "OPERATORE", cognome: "Verdi" },
-      { nome: "Giacomo", password: "Giacomo", ruolo: "OPERATORE", cognome: "Neri" },
-      { nome: "Marco", password: "Marco", ruolo: "CAMERIERE", cognome: "Ferrari" },
-      { nome: "Luca", password: "Luca", ruolo: "CAMERIERE", cognome: "Romano" },
-      { nome: "Matteo", password: "Matteo", ruolo: "CAMERIERE", cognome: "Ricci" },
-      { nome: "Andrea", password: "Andrea", ruolo: "PREPARA", cognome: "Marino" },
-      { nome: "Sara", password: "Sara", ruolo: "PREPARA", cognome: "Greco" },
-      { nome: "Elena", password: "Elena", ruolo: "BANCO", cognome: "Bruno" },
-      { nome: "Laura", password: "Laura", ruolo: "BANCO", cognome: "Gallo" },
-      { nome: "Chiara", password: "Chiara", ruolo: "CUCINA", cognome: "Conti" },
-      { nome: "Francesca", password: "Francesca", ruolo: "CUCINA", cognome: "De Luca" },
-      { nome: "Paola", password: "Paola", ruolo: "CASSA", cognome: "Mancini" },
-      { nome: "Marta", password: "Marta", ruolo: "CASSA", cognome: "Costa" },
+      { nome: "Antonio", password: "antonio", ruolo: "ADMIN", cognome: "Colaizzi" },
+      { nome: "Filippo", password: "filippo", ruolo: "MANAGER", cognome: "Rossi" },
+      { nome: "Giulio", password: "giulio", ruolo: "SUPERVISORE", cognome: "Bianchi" },
+      { nome: "Mara", password: "mara", ruolo: "CASSA", cognome: "Costa" },
+      { nome: "Linda", password: "linda", ruolo: "BANCO", cognome: "Bruno" },
+      { nome: "Maria", password: "maria", ruolo: "CUCINA", cognome: "Conti" },
+      { nome: "MarioC", password: "marioc", ruolo: "PREPARA", cognome: "Marino" },
+      { nome: "MarioM", password: "mariom", ruolo: "CAMERIERE", cognome: "Romano" },
+      { nome: "Gaia", password: "gaia", ruolo: "CAMERIERE", cognome: "Ferrari" },
+      { nome: "Anastasia", password: "anastasia", ruolo: "CAMERIERE", cognome: "Ricci" },
     ];
 
     console.log("🔐 Inizializzazione utenti Bar Roxy...\n");

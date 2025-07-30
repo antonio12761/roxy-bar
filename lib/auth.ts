@@ -16,7 +16,6 @@ export type Role =
   | "ADMIN"
   | "MANAGER"
   | "SUPERVISORE"
-  | "OPERATORE"
   | "CAMERIERE"
   | "PREPARA"
   | "BANCO"
@@ -42,6 +41,49 @@ export interface AuthResult {
 // Hash password
 export async function hashPassword(password: string): Promise<string> {
   return await hash(password, 12);
+}
+
+// Check auth for pages
+export async function checkAuth(): Promise<User | null> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(COOKIE_NAME);
+    
+    if (!token) {
+      return null;
+    }
+
+    const decoded = verify(token.value, JWT_SECRET!) as any;
+    if (!decoded?.userId) {
+      return null;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        nome: true,
+        cognome: true,
+        ruolo: true,
+        attivo: true
+      }
+    });
+
+    if (!user || !user.attivo) {
+      return null;
+    }
+
+    return user as User;
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return null;
+  }
+}
+
+// Get current user (alias for checkAuth)
+export async function getCurrentUser(): Promise<User | null> {
+  return await checkAuth();
 }
 
 // Verifica password
@@ -152,17 +194,22 @@ export async function loginUser(password: string): Promise<AuthResult> {
       },
     });
 
-    // Set cookie
+    // Set cookie with development-friendly settings
     const cookieStore = await cookies();
+    const isDev = process.env.NODE_ENV === "development";
+    
     cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax" as const,
-      maxAge: isDevelopment 
-        ? 30 * 24 * 60 * 60 
-        : parseInt(process.env.SESSION_MAX_AGE || "86400"),
+      secure: false, // Allow in development over HTTP
+      sameSite: isDev ? "lax" : "strict",
+      maxAge: isDev 
+        ? 30 * 24 * 60 * 60 // 30 days in development
+        : parseInt(process.env.SESSION_MAX_AGE || "86400"), // 1 day in production
       path: "/",
+      domain: undefined, // Let browser handle domain
     });
+    
+    console.log(`[LOGIN] Cookie set with name: ${COOKIE_NAME}, maxAge: ${isDev ? '30 days' : '1 day'}`);
 
     const { password: _, ...userWithoutPassword } = matchedUser;
     return { success: true, user: userWithoutPassword };
@@ -172,67 +219,26 @@ export async function loginUser(password: string): Promise<AuthResult> {
   }
 }
 
-// Ottieni utente corrente
-export async function getCurrentUser(): Promise<User | null> {
+
+// Server Action per logout (da usare nei componenti)
+export async function logout() {
+  "use server";
+  
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-
-    console.log(`[getCurrentUser] Token trovato: ${token ? 'SI' : 'NO'}`);
-    if (!token) {
-      return null;
+    const result = await logoutUser();
+    if (result.success) {
+      // Redirect after logout
+      const { redirect } = await import('next/navigation');
+      redirect('/login');
     }
-
-    const session = await prisma.session.findUnique({
-      where: { token },
-      select: {
-        expires: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            nome: true,
-            cognome: true,
-            ruolo: true,
-            attivo: true,
-          },
-        },
-      },
-    });
-
-    console.log(`[getCurrentUser] Sessione trovata: ${session ? 'SI' : 'NO'}`);
-    if (session && session.user) {
-      const isExpired = session.expires < new Date();
-      console.log(`[getCurrentUser] Sessione scaduta: ${isExpired ? 'SI' : 'NO'}`);
-      console.log(`[getCurrentUser] Utente: ${session.user.nome}, Ruolo: ${session.user.ruolo}`);
-      
-      if (isExpired) {
-        await prisma.session.delete({ where: { token } }).catch(() => {});
-        return null;
-      }
-      
-      if (!session.user.attivo) {
-        console.log(`[getCurrentUser] Utente non attivo`);
-        return null;
-      }
-      
-      // Aggiorna ultimo accesso
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { ultimoAccesso: new Date() }
-      }).catch(() => {}); // Ignora errori per non bloccare la richiesta
-      
-      return session.user;
-    }
-    
-    return null;
+    return result;
   } catch (error) {
-    console.error("❌ Errore getCurrentUser:", error);
-    return null;
+    console.error("Errore logout action:", error);
+    return { success: false };
   }
 }
 
-// Logout
+// Logout (funzione interna)
 export async function logoutUser(): Promise<{ success: boolean }> {
   try {
     const cookieStore = await cookies();

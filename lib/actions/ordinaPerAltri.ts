@@ -33,7 +33,7 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
       return { success: false, error: "Utente non autenticato" };
     }
 
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CAMERIERE"].includes(utente.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -51,8 +51,7 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
         clienteOrdinante = await tx.cliente.create({
           data: {
             nome: data.clienteOrdinante,
-            telefono: "", // Vuoto per ora
-            saldo: 0
+            telefono: "" // Vuoto per ora
           }
         });
       }
@@ -78,8 +77,7 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
           clienteDestinatario = await tx.cliente.create({
             data: {
               nome: data.clienteDestinatario,
-              telefono: "", 
-              saldo: 0
+              telefono: ""
             }
           });
         }
@@ -105,8 +103,12 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
       // Usa la funzione esistente per creare l'ordinazione
       const resultOrdinazione = await creaOrdinazione(ordinazioneData);
       
-      if (!resultOrdinazione.success || !resultOrdinazione.ordinazione) {
-        throw new Error("Errore nella creazione dell'ordinazione");
+      if (!resultOrdinazione.success) {
+        throw new Error(resultOrdinazione.error || "Errore nella creazione dell'ordinazione");
+      }
+      
+      if (!('ordinazione' in resultOrdinazione) || !resultOrdinazione.ordinazione) {
+        throw new Error("Errore nella creazione dell'ordinazione: ordinazione non creata");
       }
 
       const ordinazione = resultOrdinazione.ordinazione;

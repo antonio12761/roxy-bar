@@ -15,7 +15,7 @@ interface OptimizedOrderItemProps {
     };
     quantita: number;
     stato: 'INSERITO' | 'IN_LAVORAZIONE' | 'PRONTO' | 'CONSEGNATO' | 'ANNULLATO';
-    destinazione: 'BAR' | 'CUCINA' | 'PREPARA';
+    postazione: 'BAR' | 'CUCINA' | 'PREPARA';
     timestampOrdine: string;
     timestampInizio?: string | null;
     timestampPronto?: string | null;
@@ -153,7 +153,7 @@ const OptimizedOrderItem = memo<OptimizedOrderItemProps>(({
     return configs[item.stato] || configs['INSERITO'];
   }, [item.stato]);
 
-  const DestinationIcon = item.destinazione === 'CUCINA' ? ChefHat : Coffee;
+  const DestinationIcon = item.postazione === 'CUCINA' ? ChefHat : Coffee;
   const ActionIcon = statusConfig.actionIcon;
 
   return (
@@ -182,7 +182,7 @@ const OptimizedOrderItem = memo<OptimizedOrderItemProps>(({
             {!compact && (
               <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                 <DestinationIcon className="h-3 w-3" />
-                <span>{item.destinazione}</span>
+                <span>{item.postazione}</span>
                 <span>•</span>
                 <span>{elapsedTime}</span>
                 {isUrgent && (

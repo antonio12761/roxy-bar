@@ -23,7 +23,7 @@ export async function testWaiterNotification() {
       tableNumber: 99,
       orderType: "TAVOLO",
       items: [
-        { nome: "Test Item", quantita: 1, destinazione: "BAR" }
+        { nome: "Test Item", quantita: 1, postazione: "PREPARA" }
       ]
     });
 

@@ -47,6 +47,10 @@ async function resetOrders() {
     const deletedNotifichePagamento = await prisma.notificaPagamento.deleteMany({});
     console.log(`✅ Eliminate ${deletedNotifichePagamento.count} notifiche di pagamento`);
 
+    // 9. Elimina tutte le sessioni (per forzare re-login)
+    const deletedSessions = await prisma.session.deleteMany({});
+    console.log(`✅ Eliminate ${deletedSessions.count} sessioni (gli utenti dovranno rifare login)`);
+
     console.log('\n🎉 Azzeramento completato! Tutti gli ordini sono stati eliminati.');
     console.log('📋 Stato finale:');
     console.log('   - Ordinazioni: 0');
@@ -54,6 +58,7 @@ async function resetOrders() {
     console.log('   - Pagamenti: 0');
     console.log('   - Tavoli: tutti liberi');
     console.log('   - Notifiche: 0');
+    console.log('   - Sessioni: 0 (utenti dovranno rifare login)');
 
   } catch (error) {
     console.error('❌ Errore durante l\'azzeramento:', error);

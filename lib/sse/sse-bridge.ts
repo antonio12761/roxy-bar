@@ -72,9 +72,10 @@ export function broadcastEnhanced(
   }
   
   // Determine priority
-  const priority = priorityMap[
-    (options?.priority || notification.priority || 'normal').toLowerCase()
-  ] || 'normal';
+  const priorityInput = (options?.priority || notification.priority || 'normal').toLowerCase();
+  const priority = priorityInput in priorityMap 
+    ? priorityMap[priorityInput as keyof typeof priorityMap]
+    : 'normal';
   
   // Emit appropriate event based on type
   switch (eventName) {

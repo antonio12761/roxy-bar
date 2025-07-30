@@ -103,7 +103,7 @@ export function OrderZones({ ordinazioni, onStatusChange }: OrderZonesProps) {
             </div>
           </div>
           <Badge variant="outline" className="text-xs font-mono">
-            #{ord.numeroOrdine}
+            #{ord.numero}
           </Badge>
         </div>
       </CardHeader>
@@ -121,20 +121,20 @@ export function OrderZones({ ordinazioni, onStatusChange }: OrderZonesProps) {
               <Badge 
                 variant="secondary" 
                 className={`text-xs ml-2 ${
-                  riga.destinazione === 'CUCINA' 
+                  riga.postazione === 'CUCINA' 
                     ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                    : riga.destinazione === 'BAR'
+                    : riga.postazione === 'BANCO'
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
                 }`}
               >
-                {riga.destinazione}
+                {riga.postazione}
               </Badge>
             </div>
           ))}
         </div>
         <div className="flex justify-between items-center pt-3 border-t">
-          <span className="font-bold text-lg">{formatCurrency(ord.totale)}</span>
+          <span className="font-bold text-lg">{formatCurrency(Number(ord.totale))}</span>
           {onStatusChange && getNextStatus(ord.stato) && (
             <Button
               size="sm"

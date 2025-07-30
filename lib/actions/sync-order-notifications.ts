@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { sseService } from "@/lib/sse/sse-service";
 import { getCurrentUser } from "@/lib/auth";
@@ -23,7 +23,7 @@ export async function syncOrderNotifications() {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          notIn: ["PAGATA", "ANNULLATA"]
+          notIn: ["PAGATO", "ANNULLATO"]
         }
       },
       include: {
@@ -44,9 +44,9 @@ export async function syncOrderNotifications() {
     for (const ordinazione of ordinazioni) {
       // Emetti notifica basata sullo stato corrente
       switch (ordinazione.stato) {
-        case "APERTA":
+        case "ORDINATO":
           // Notifica nuovo ordine
-          notificationManager.notifyNewOrder({
+          notificationManager.notifyOrderCreated({
             orderId: ordinazione.id,
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
@@ -54,39 +54,45 @@ export async function syncOrderNotifications() {
             items: ordinazione.righe.map(r => ({
               nome: r.prodotto.nome,
               quantita: r.quantita,
-              destinazione: r.prodotto.destinazione || "BAR"
+              postazione: r.prodotto.postazione || "PREPARA"
             }))
           });
           
           sseService.emit('order:new', {
             orderId: ordinazione.id,
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
-            orderType: ordinazione.tipo,
-            waiterName: ordinazione.cameriere?.nome,
+            customerName: ordinazione.nomeCliente || undefined,
+            items: ordinazione.righe.map(r => ({
+              id: r.id,
+              productName: r.prodotto.nome,
+              quantity: r.quantita,
+              destination: r.postazione
+            })),
+            totalAmount: Number(ordinazione.totale),
             timestamp: new Date().toISOString()
           });
           
           notificheSincronizzate++;
           break;
 
-        case "INVIATA":
+        case "IN_PREPARAZIONE":
           // Notifica ordine inviato in cucina
           notificationManager.notifyOrderUpdated({
             orderId: ordinazione.id,
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
-            status: "INVIATA",
+            status: "IN_PREPARAZIONE",
             changes: [{
               field: 'stato',
-              oldValue: 'APERTA',
-              newValue: 'INVIATA'
+              oldValue: 'ORDINATO',
+              newValue: 'IN_PREPARAZIONE'
             }]
           });
           
           sseService.emit('order:status-change', {
             orderId: ordinazione.id,
-            oldStatus: 'APERTA',
-            newStatus: 'INVIATA',
+            oldStatus: 'ORDINATO',
+            newStatus: 'IN_PREPARAZIONE',
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
             timestamp: new Date().toISOString()
           });
@@ -103,14 +109,14 @@ export async function syncOrderNotifications() {
             status: "IN_PREPARAZIONE",
             changes: [{
               field: 'stato',
-              oldValue: 'INVIATA',
+              oldValue: 'IN_PREPARAZIONE',
               newValue: 'IN_PREPARAZIONE'
             }]
           });
           
           sseService.emit('order:status-change', {
             orderId: ordinazione.id,
-            oldStatus: 'INVIATA',
+            oldStatus: 'IN_PREPARAZIONE',
             newStatus: 'IN_PREPARAZIONE',
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
             timestamp: new Date().toISOString()
@@ -119,7 +125,7 @@ export async function syncOrderNotifications() {
           notificheSincronizzate++;
           break;
 
-        case "PRONTA":
+        case "PRONTO":
           // Notifica ordine pronto
           notificationManager.notifyOrderReady({
             orderId: ordinazione.id,
@@ -128,21 +134,21 @@ export async function syncOrderNotifications() {
             items: ordinazione.righe.map(r => ({
               nome: r.prodotto.nome,
               quantita: r.quantita,
-              destinazione: r.prodotto.destinazione || "BAR"
+              postazione: r.prodotto.postazione || "PREPARA"
             }))
           });
           
           sseService.emit('order:ready', {
             orderId: ordinazione.id,
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
-            orderType: ordinazione.tipo,
+            readyItems: ordinazione.righe.filter(r => r.stato === 'PRONTO').map(r => r.id),
             timestamp: new Date().toISOString()
           });
           
           notificheSincronizzate++;
           break;
 
-        case "CONSEGNATA":
+        case "CONSEGNATO":
           // Notifica ordine consegnato
           notificationManager.notifyOrderDelivered({
             orderId: ordinazione.id,
@@ -154,9 +160,28 @@ export async function syncOrderNotifications() {
           sseService.emit('order:delivered', {
             orderId: ordinazione.id,
             tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            deliveredBy: ordinazione.cameriere?.nome,
+            timestamp: new Date().toISOString()
+          });
+          
+          notificheSincronizzate++;
+          break;
+
+        case "RICHIESTA_CONTO":
+          // Notifica richiesta conto
+          notificationManager.notifyPaymentRequested({
+            orderId: ordinazione.id,
+            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
             amount: parseFloat(ordinazione.totale.toString()),
-            timestamp: new Date().toISOString()
+            customerName: ordinazione.nomeCliente || undefined
+          });
+          
+          sseService.emit('notification:reminder', {
+            orderId: ordinazione.id,
+            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            type: 'payment',
+            message: `Richiesta conto per ${ordinazione.tipo} ${ordinazione.tavolo ? `Tavolo ${ordinazione.tavolo.numero}` : ''} - €${ordinazione.totale}`
           });
           
           notificheSincronizzate++;
@@ -220,7 +245,7 @@ export async function checkOrderNotificationStatus(ordinazioneId: string) {
     // Verifica quali notifiche dovrebbero essere state inviate
     const expectedNotifications = [];
     
-    if (["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA", "CONSEGNATA", "PAGATA"].includes(ordinazione.stato)) {
+    if (["ORDINATO", "IN_PREPARAZIONE", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "PAGATO"].includes(ordinazione.stato)) {
       expectedNotifications.push({
         stato: ordinazione.stato,
         tipo: getNotificationTypeForState(ordinazione.stato),
@@ -253,12 +278,12 @@ export async function checkOrderNotificationStatus(ordinazioneId: string) {
  */
 function getNotificationTypeForState(stato: string): string {
   const stateToNotification: { [key: string]: string } = {
-    "APERTA": "order_created",
-    "INVIATA": "order_sent",
+    "ORDINATO": "order_created",
     "IN_PREPARAZIONE": "order_in_preparation",
-    "PRONTA": "order_ready",
-    "CONSEGNATA": "order_delivered",
-    "PAGATA": "order_paid"
+    "PRONTO": "order_ready",
+    "CONSEGNATO": "order_delivered",
+    "RICHIESTA_CONTO": "order_payment_requested",
+    "PAGATO": "order_paid"
   };
   return stateToNotification[stato] || "order_updated";
 }
@@ -268,12 +293,11 @@ function getNotificationTypeForState(stato: string): string {
  */
 function getTargetRolesForState(stato: string): string[] {
   const stateToRoles: { [key: string]: string[] } = {
-    "APERTA": ["PREPARA", "CUCINA", "CAMERIERE", "SUPERVISORE"],
-    "INVIATA": ["PREPARA", "CUCINA", "SUPERVISORE"],
-    "IN_PREPARAZIONE": ["CAMERIERE", "SUPERVISORE"],
-    "PRONTA": ["CAMERIERE", "SUPERVISORE"],
-    "CONSEGNATA": ["CASSA", "SUPERVISORE"],
-    "PAGATA": ["CAMERIERE", "SUPERVISORE"]
+    "ORDINATO": ["PREPARA", "CUCINA", "CAMERIERE", "SUPERVISORE"],
+    "IN_PREPARAZIONE": ["PREPARA", "CUCINA", "CAMERIERE", "SUPERVISORE"],
+    "PRONTO": ["CAMERIERE", "SUPERVISORE"],
+    "CONSEGNATO": ["CASSA", "SUPERVISORE"],
+    "PAGATO": ["CAMERIERE", "SUPERVISORE"]
   };
   return stateToRoles[stato] || ["SUPERVISORE"];
 }

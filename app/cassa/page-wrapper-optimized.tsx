@@ -23,6 +23,7 @@ import { useStationSSE } from "@/hooks/useStationSSE";
 import { StationType } from "@/lib/sse/station-filters";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import PaymentHistory from "@/components/cassa/payment-history";
+import ScontrinoQueueManager from "@/components/cassa/scontrino-queue-manager";
 
 interface OrderItem {
   id: string;
@@ -75,6 +76,7 @@ export default function CassaPageOptimized() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTableDrawer, setShowTableDrawer] = useState(false);
+  const [showScontrinoQueue, setShowScontrinoQueue] = useState(false);
   const [paymentMode, setPaymentMode] = useState<"table" | "order" | "partial">("table");
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -177,7 +179,7 @@ export default function CassaPageOptimized() {
     
     // If all orders in the selected table are paid, close the drawer
     if (selectedTable && showTableDrawer) {
-      const updatedTable = tableGroups.find(t => t.tavoloNumero === selectedTable.tavoloNumero);
+      const updatedTable = tableGroups.find((t: TableGroup) => t.tavoloNumero === selectedTable.tavoloNumero);
       if (!updatedTable || updatedTable.ordinazioni.length === 0) {
         setShowTableDrawer(false);
         setSelectedTable(null);
@@ -250,16 +252,16 @@ export default function CassaPageOptimized() {
     // Apply optimistic update to table groups
     const tableGroupsBackup = [...tableGroups];
     setTableGroups(prev => 
-      prev.map(table => {
-        if (table.ordinazioni.some(ord => ord.id === selectedOrder.id)) {
+      prev.map((table: TableGroup) => {
+        if (table.ordinazioni.some((ord: Order) => ord.id === selectedOrder.id)) {
           return {
             ...table,
-            ordinazioni: table.ordinazioni.filter(ord => ord.id !== selectedOrder.id),
+            ordinazioni: table.ordinazioni.filter((ord: Order) => ord.id !== selectedOrder.id),
             rimanenteComplessivo: table.rimanenteComplessivo - selectedOrder.rimanente
           };
         }
         return table;
-      }).filter(table => table.ordinazioni.length > 0)
+      }).filter((table: TableGroup) => table.ordinazioni.length > 0)
     );
     
     try {
@@ -272,7 +274,7 @@ export default function CassaPageOptimized() {
       
       if (!result.success) {
         // Rollback on failure
-        rollbackOptimisticUpdate(updateId);
+        if (updateId) rollbackOptimisticUpdate(updateId);
         setTableGroups(tableGroupsBackup);
         alert(`Errore: ${result.error}`);
       } else {
@@ -297,7 +299,7 @@ export default function CassaPageOptimized() {
       }
     } catch (error) {
       // Rollback on error
-      rollbackOptimisticUpdate(updateId);
+      if (updateId) rollbackOptimisticUpdate(updateId);
       setTableGroups(tableGroupsBackup);
       console.error("Errore pagamento:", error);
       alert("Errore durante il pagamento");
@@ -370,6 +372,14 @@ export default function CassaPageOptimized() {
               </button>
               
               <button
+                onClick={() => setShowScontrinoQueue(!showScontrinoQueue)}
+                className="px-4 py-2 bg-blue-100 dark:bg-blue-700 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-600 transition-colors flex items-center gap-2"
+              >
+                <Receipt className="h-4 w-4" />
+                Queue Scontrini
+              </button>
+              
+              <button
                 onClick={loadOrders}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
@@ -383,7 +393,12 @@ export default function CassaPageOptimized() {
       {/* Main Content */}
       <div className="p-4">
         {showHistory ? (
-          <PaymentHistory onClose={() => setShowHistory(false)} />
+          <PaymentHistory isOpen={showHistory} onClose={() => setShowHistory(false)} />
+        ) : showScontrinoQueue ? (
+          <ScontrinoQueueManager 
+            isOpen={showScontrinoQueue} 
+            onClose={() => setShowScontrinoQueue(false)} 
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tables List */}
@@ -396,7 +411,7 @@ export default function CassaPageOptimized() {
                   <p className="text-gray-500">Nessun tavolo da pagare</p>
                 </div>
               ) : (
-                tableGroups.map(table => (
+                tableGroups.map((table: TableGroup) => (
                   <div
                     key={table.tavoloNumero}
                     onClick={() => {
@@ -477,6 +492,12 @@ export default function CassaPageOptimized() {
         )}
       </div>
 
+      {/* Scontrino Queue Manager */}
+      <ScontrinoQueueManager 
+        isOpen={showScontrinoQueue} 
+        onClose={() => setShowScontrinoQueue(false)} 
+      />
+
       {/* Table Details Drawer */}
       {showTableDrawer && selectedTable && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -541,7 +562,7 @@ export default function CassaPageOptimized() {
                     </div>
                   </div>
                   
-                  {selectedTable.ordinazioni.map(order => (
+                  {selectedTable.ordinazioni.map((order: Order) => (
                     <div
                       key={order.id}
                       onClick={() => paymentMode === 'order' ? setSelectedOrder(order) : null}
@@ -569,7 +590,7 @@ export default function CassaPageOptimized() {
                       </div>
                       
                       <div className="space-y-1 mb-3">
-                        {order.righe.slice(0, 3).map(item => (
+                        {order.righe.slice(0, 3).map((item: OrderItem) => (
                           <div key={item.id} className="flex justify-between text-sm">
                             <span className="flex items-center gap-2">
                               {item.quantita}x {item.prodotto.nome}
@@ -661,7 +682,7 @@ export default function CassaPageOptimized() {
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Metodo di pagamento</label>
                           <div className="grid grid-cols-3 gap-2">
-                            {(['POS', 'CONTANTI', 'MISTO'] as const).map(method => (
+                            {(['POS', 'CONTANTI', 'MISTO'] as const).map((method: 'POS' | 'CONTANTI' | 'MISTO') => (
                               <button
                                 key={method}
                                 onClick={() => setPaymentMethod(method)}

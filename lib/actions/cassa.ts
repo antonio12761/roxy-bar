@@ -7,7 +7,7 @@ export async function getOrdinazioniConsegnate() {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["CONSEGNATA", "RITIRATA"]
+          in: ["CONSEGNATO", "RICHIESTA_CONTO"]
         },
         statoPagamento: {
           not: "COMPLETAMENTE_PAGATO"
@@ -47,27 +47,34 @@ export async function getOrdinazioniConsegnate() {
         }
       },
       orderBy: {
-        updatedAt: 'desc'
+        dataApertura: 'asc' // Ordine cronologico
       },
-      take: 50 // Limite per performance
+      take: 100 // Aumento limite per gestire raggruppamenti
     });
 
-    // Serializza i dati e calcola se l'ordine è pagato
-    const ordiniFormattati = ordinazioni.map(ord => {
+    // Raggruppa ordinazioni per tavolo
+    const ordiniPerTavolo = new Map();
+    
+    ordinazioni.forEach(ord => {
       const totalePagamenti = ord.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
       const totaleOrdine = ord.totale.toNumber();
       
-      return {
+      const ordineFormattato = {
         id: ord.id,
+        numero: ord.numero,
         tavolo: ord.tavolo,
         tipo: ord.tipo,
         cameriere: ord.cameriere,
         cliente: ord.cliente,
         nomeCliente: ord.nomeCliente,
         totale: totaleOrdine,
+        totalePagato: totalePagamenti,
+        rimanente: totaleOrdine - totalePagamenti,
         pagato: totalePagamenti >= totaleOrdine,
         statoPagamento: ord.statoPagamento,
+        stato: ord.stato,
         dataConsegna: ord.updatedAt,
+        dataApertura: ord.dataApertura,
         righe: ord.righe.map(riga => ({
           ...riga,
           prezzo: riga.prezzo.toNumber(),
@@ -76,9 +83,48 @@ export async function getOrdinazioniConsegnate() {
           prodotto: riga.prodotto
         }))
       };
+
+      const tavoloKey = ord.tavolo?.numero || `asporto-${ord.id}`;
+      
+      if (!ordiniPerTavolo.has(tavoloKey)) {
+        ordiniPerTavolo.set(tavoloKey, {
+          tavoloNumero: ord.tavolo?.numero || 'Asporto',
+          ordinazioni: [],
+          totaleComplessivo: 0,
+          totalePagatoComplessivo: 0,
+          rimanenteComplessivo: 0,
+          numeroClienti: new Set(),
+          primaDaApertura: ord.dataApertura
+        });
+      }
+
+      const tavoloData = ordiniPerTavolo.get(tavoloKey);
+      tavoloData.ordinazioni.push(ordineFormattato);
+      tavoloData.totaleComplessivo += totaleOrdine;
+      tavoloData.totalePagatoComplessivo += totalePagamenti;
+      tavoloData.rimanenteComplessivo += (totaleOrdine - totalePagamenti);
+      
+      // Aggiungi cliente al set per contare persone diverse
+      if (ord.nomeCliente) {
+        tavoloData.numeroClienti.add(ord.nomeCliente);
+      }
+      
+      // Mantieni la data di apertura più vecchia
+      if (ord.dataApertura < tavoloData.primaDaApertura) {
+        tavoloData.primaDaApertura = ord.dataApertura;
+      }
     });
 
-    return ordiniFormattati;
+    // Converti in array e ordina per data apertura più vecchia
+    const tavoliFormattati = Array.from(ordiniPerTavolo.values())
+      .map(tavolo => ({
+        ...tavolo,
+        numeroClienti: tavolo.numeroClienti.size,
+        clientiNomi: Array.from(tavolo.numeroClienti)
+      }))
+      .sort((a, b) => a.primaDaApertura.getTime() - b.primaDaApertura.getTime());
+
+    return tavoliFormattati;
   } catch (error) {
     console.error("Errore recupero ordinazioni consegnate:", error);
     return [];
@@ -92,7 +138,7 @@ export async function getRichiesteScontrino() {
     const ordinazioniConsegnate = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["CONSEGNATA", "RITIRATA"]
+          in: ["CONSEGNATO", "RICHIESTA_CONTO"]
         },
         // Filtra solo quelle che potrebbero aver bisogno di scontrino
         updatedAt: {

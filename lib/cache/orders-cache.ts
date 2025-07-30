@@ -159,7 +159,7 @@ class OrdersCache {
    * Recupera tutti gli ordini attivi dalla cache
    */
   getActiveOrders(): any[] {
-    const activeStates = ['APERTA', 'INVIATA', 'IN_PREPARAZIONE', 'PRONTA'];
+    const activeStates = ['ORDINATO', 'IN_PREPARAZIONE', 'PRONTO'];
     const orders: any[] = [];
 
     for (const stato of activeStates) {

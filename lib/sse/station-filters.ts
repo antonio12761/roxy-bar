@@ -9,6 +9,7 @@ export enum StationType {
   CAMERIERE = 'CAMERIERE',
   PREPARA = 'PREPARA', 
   CUCINA = 'CUCINA',
+  BANCO = 'BANCO',
   CASSA = 'CASSA',
   SUPERVISORE = 'SUPERVISORE'
 }
@@ -49,12 +50,12 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'notification:reminder' // Promemoria
     ]),
     customFilter: (eventName, data) => {
-      // Solo item destinazione BAR
+      // Solo item postazione PREPARA
       if (eventName === 'order:new' || eventName === 'order:sent') {
-        return data.items?.some((item: any) => item.destination === 'BAR');
+        return data.items?.some((item: any) => item.destination === 'PREPARA');
       }
       if (eventName === 'order:item:update') {
-        return data.destination === 'BAR';
+        return data.destination === 'PREPARA';
       }
       return true;
     }
@@ -69,12 +70,32 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'notification:reminder'
     ]),
     customFilter: (eventName, data) => {
-      // Solo item destinazione CUCINA
+      // Solo item postazione CUCINA
       if (eventName === 'order:new' || eventName === 'order:sent') {
         return data.items?.some((item: any) => item.destination === 'CUCINA');
       }
       if (eventName === 'order:item:update') {
         return data.destination === 'CUCINA';
+      }
+      return true;
+    }
+  },
+
+  [StationType.BANCO]: {
+    eventTypes: new Set([
+      'order:new',            // Nuovi ordini per il banco
+      'order:sent',           // Ordini inviati
+      'order:item:update',    // Aggiornamenti singoli item
+      'order:cancelled',      // Ordini annullati
+      'notification:reminder' // Promemoria
+    ]),
+    customFilter: (eventName, data) => {
+      // Solo item postazione BANCO
+      if (eventName === 'order:new' || eventName === 'order:sent') {
+        return data.items?.some((item: any) => item.destination === 'BANCO');
+      }
+      if (eventName === 'order:item:update') {
+        return data.destination === 'BANCO';
       }
       return true;
     }
@@ -91,7 +112,7 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
     customFilter: (eventName, data) => {
       // Solo ordini che possono essere pagati
       if (eventName === 'order:delivered' || eventName === 'order:ready') {
-        return data.status === 'CONSEGNATA' || data.status === 'PRONTA';
+        return data.status === 'CONSEGNATO' || data.status === 'PRONTO';
       }
       return true;
     }
@@ -147,7 +168,7 @@ export function getEventPriority(
   stationType: StationType,
   eventName: SSEEventName
 ): number {
-  const basePriority = {
+  const basePriorities: Partial<Record<SSEEventName, number>> = {
     'order:new': 10,
     'order:ready': 9,
     'order:delivered': 8,
@@ -157,11 +178,15 @@ export function getEventPriority(
     'system:announcement': 4,
     'user:activity': 2,
     'system:heartbeat': 1
-  }[eventName] || 3;
+  };
+  
+  const basePriority = basePriorities[eventName] || 3;
 
   // Boost priority for relevant stations
   const stationBoost = {
     [StationType.PREPARA]: eventName.includes('new') || eventName.includes('sent') ? 2 : 0,
+    [StationType.CUCINA]: eventName.includes('new') || eventName.includes('sent') ? 2 : 0,
+    [StationType.BANCO]: eventName.includes('new') || eventName.includes('sent') ? 2 : 0,
     [StationType.CAMERIERE]: eventName.includes('ready') || eventName.includes('delivered') ? 2 : 0,
     [StationType.CASSA]: eventName.includes('delivered') || eventName.includes('paid') ? 2 : 0,
     [StationType.SUPERVISORE]: 1 // Sempre priorità alta per supervisore

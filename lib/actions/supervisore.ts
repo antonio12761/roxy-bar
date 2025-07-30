@@ -29,7 +29,7 @@ export async function getSupervisoreStats() {
     const ordiniAttivi = await prisma.ordinazione.count({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         }
       }
     });
@@ -86,7 +86,7 @@ export async function getSupervisoreStats() {
           gte: oggi,
           lt: domani
         },
-        stato: "CONSEGNATA",
+        stato: "CONSEGNATO",
         dataChiusura: {
           not: null
         }
@@ -213,7 +213,7 @@ export async function getSupervisoreOrders() {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA", "CONSEGNATA", "PAGATA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "RICHIESTA_CONTO", "PAGATO"]
         }
       },
       include: {
@@ -258,7 +258,7 @@ export async function getSupervisoreOrders() {
         }
       },
       orderBy: {
-        dataApertura: 'desc'
+        dataApertura: 'asc'
       },
       take: 50 // Limita a 50 ordini più recenti
     });
@@ -287,7 +287,7 @@ export async function getSupervisoreOrders() {
           id: riga.id,
           quantita: riga.quantita,
           stato: riga.stato,
-          destinazione: riga.destinazione,
+          postazione: riga.postazione,
           prezzo: riga.prodotto.prezzo.toNumber(),
           prodotto: {
             ...riga.prodotto,
@@ -378,7 +378,7 @@ export async function syncOrphansOrders() {
     const orphanedOrders = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         },
         cameriereId: {
           notIn: activeUserIds.length > 0 ? activeUserIds : ['']
@@ -427,7 +427,7 @@ export async function syncOrphansOrders() {
           }
         },
         data: {
-          stato: "ANNULLATA",
+          stato: "ANNULLATO",
           note: "Annullato automaticamente - cameriere non più attivo"
         }
       });

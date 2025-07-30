@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verifica permessi (CASSA o superiore)
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CASSA"].includes(user.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CASSA"].includes(user.ruolo)) {
       return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
     }
 

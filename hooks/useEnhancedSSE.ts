@@ -41,7 +41,7 @@ export function useEnhancedSSE({
   reconnectDelay = 3000,
   enableEventReplay = true,
   queueOfflineEvents = true
-}: UseEnhancedSSEProps = {}) {
+}: UseEnhancedSSEProps) {
   // Connection state
   const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth>({
     status: "disconnected",
@@ -69,8 +69,8 @@ export function useEnhancedSSE({
   const latencyCheckMapRef = useRef<Map<string, number>>(new Map());
   const acknowledgmentQueueRef = useRef<Set<string>>(new Set());
   const reconnectAttemptsRef = useRef<number>(0);
-  const processNotificationRef = useRef<(notification: EnhancedSSENotification) => void>();
-  const sendAcknowledgmentRef = useRef<(eventId: string, status: "received" | "processed" | "failed", error?: string) => Promise<void>>();
+  const processNotificationRef = useRef<((notification: EnhancedSSENotification) => void) | null>(null);
+  const sendAcknowledgmentRef = useRef<((eventId: string, status: "received" | "processed" | "failed", error?: string) => Promise<void>) | null>(null);
   
   // Store props in refs to avoid stale closures
   const clientIdRef = useRef(clientId);
@@ -244,7 +244,7 @@ export function useEnhancedSSE({
   }, []);
 
   // Connect to SSE stream (using ref to avoid dependency issues)
-  const connectRef = useRef<() => void>();
+  const connectRef = useRef<(() => void) | null>(null);
   
   const connect = useCallback(() => {
     // CRITICAL: Don't connect without a token

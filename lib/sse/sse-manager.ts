@@ -231,21 +231,6 @@ class SSEManager extends EventEmitter {
   
   // New methods for station filtering support
   
-  sendToClient(clientId: string, message: any): boolean {
-    const client = this.clients.get(clientId);
-    if (!client) return false;
-    
-    try {
-      const data = this.formatSSEMessage(message);
-      client.controller.enqueue(data);
-      client.lastActivity = Date.now();
-      return true;
-    } catch (error) {
-      this.removeClient(clientId);
-      return false;
-    }
-  }
-  
   getConnectedClients(): SSEClient[] {
     return Array.from(this.clients.values());
   }

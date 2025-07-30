@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { broadcast } from "@/lib/notifications";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { sseService } from "@/lib/sse/sse-service";
+import { SSEEventMap } from "@/lib/sse/sse-events";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { ordersCache } from "@/lib/cache/orders-cache";
 import { ordersSyncService } from "@/lib/services/orders-sync-service";
@@ -27,6 +28,53 @@ interface NuovaOrdinazione {
   prodotti: ProdottoOrdine[];
 }
 
+export async function getOrdinazioniAttiveTavolo(tavoloId: number) {
+  try {
+    console.log("🔵 getOrdinazioniAttiveTavolo: Caricamento ordinazioni per tavolo", tavoloId);
+    
+    const utente = await getCurrentUser();
+    if (!utente) {
+      console.error("❌ getOrdinazioniAttiveTavolo: Utente non autenticato");
+      return { success: false, error: "Utente non autenticato" };
+    }
+
+    const ordinazioni = await prisma.ordinazione.findMany({
+      where: {
+        tavoloId: tavoloId,
+        stato: {
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO"]
+        },
+        statoPagamento: "NON_PAGATO"
+      },
+      include: {
+        righe: {
+          include: {
+            prodotto: true
+          }
+        },
+        tavolo: true
+      },
+      orderBy: {
+        dataApertura: 'desc'
+      }
+    });
+
+    const serializedOrdinazioni = serializeDecimalData(ordinazioni);
+    console.log(`✅ getOrdinazioniAttiveTavolo: Trovate ${ordinazioni.length} ordinazioni attive`);
+    
+    return { 
+      success: true, 
+      ordinazioni: serializedOrdinazioni 
+    };
+  } catch (error) {
+    console.error("❌ getOrdinazioniAttiveTavolo: Errore:", error);
+    return { 
+      success: false, 
+      error: "Errore nel caricamento delle ordinazioni" 
+    };
+  }
+}
+
 export async function creaOrdinazione(dati: NuovaOrdinazione) {
   try {
     console.log("🔵 creaOrdinazione: Inizio con dati:", dati);
@@ -39,7 +87,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
     console.log("✅ creaOrdinazione: Utente:", utente.nome, utente.ruolo);
 
     // Verifica permessi (CAMERIERE o superiore)
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CAMERIERE"].includes(utente.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -51,7 +99,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
           where: {
             tavoloId: dati.tavoloId,
             stato: {
-              in: ["APERTA", "INVIATA", "IN_PREPARAZIONE"]
+              in: ["ORDINATO", "IN_PREPARAZIONE"]
             },
             dataApertura: {
               gte: new Date(Date.now() - 5 * 60 * 1000) // Ultimi 5 minuti
@@ -65,7 +113,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
             }
           },
           orderBy: {
-            dataApertura: 'desc'
+            dataApertura: 'asc'
           }
         });
 
@@ -90,7 +138,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
           if (isProbabileDuplicato) {
             // Notifica il possibile duplicato alle stazioni
             notificationManager.notifyDuplicateOrderWarning(
-              parseInt(ultimoOrdine.tavolo?.numero || "0"),
+              parseInt(ultimoOrdine.tavoloId?.toString() || "0"),
               ultimoOrdine.id,
               dati.prodotti
             );
@@ -110,7 +158,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
         });
       }
 
-      // Recupera destinazioni prodotti dal database
+      // Recupera postazioni prodotti dal database
       const prodottiInfo = await tx.prodotto.findMany({
         where: {
           id: {
@@ -119,7 +167,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
         },
         select: {
           id: true,
-          destinazione: true
+          postazione: true
         }
       });
 
@@ -147,7 +195,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
           tipo: dati.tipo,
           note: dati.note,
           nomeCliente: nomeCliente,
-          stato: "APERTA",
+          stato: "ORDINATO",
           totale,
           righe: {
             create: dati.prodotti.map(p => {
@@ -158,7 +206,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
                 prezzo: p.prezzo,
                 note: p.note,
                 stato: "INSERITO",
-                destinazione: prodottoInfo?.destinazione || "BAR",
+                postazione: prodottoInfo?.postazione || "PREPARA",
               };
             })
           }
@@ -190,7 +238,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
         items: result.ordinazione.righe.map(r => ({
           nome: r.prodotto.nome,
           quantita: r.quantita,
-          destinazione: r.destinazione
+          postazione: r.postazione
         })),
         customerName: result.ordinazione.clienteId || undefined,
         waiterName: utente.nome
@@ -201,12 +249,12 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
       sseService.emit('order:new', {
         orderId: result.ordinazione.id,
         tableNumber: result.ordinazione.tavolo ? parseInt(result.ordinazione.tavolo.numero) : undefined,
-        customerName: result.ordinazione.nomeCliente,
+        customerName: result.ordinazione.nomeCliente || undefined,
         items: result.ordinazione.righe.map(r => ({
           id: r.id,
           productName: r.prodotto.nome,
           quantity: r.quantita,
-          destination: r.destinazione
+          destination: r.postazione
         })),
         totalAmount: result.ordinazione.totale.toNumber(),
         timestamp: new Date().toISOString()
@@ -249,7 +297,7 @@ export async function getOrdinazioniAperte() {
       const ordinazioni = await prisma.ordinazione.findMany({
         where: {
           stato: {
-            in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+            in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
           }
         },
         include: {
@@ -266,7 +314,7 @@ export async function getOrdinazioniAperte() {
           }
         },
         orderBy: {
-          dataApertura: 'desc'
+          dataApertura: 'asc'
         }
       });
 
@@ -300,7 +348,7 @@ export async function getTavoli() {
         ordinazioni: {
           where: {
             stato: {
-              in: ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"]
+              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
             }
           },
           select: {
@@ -308,7 +356,7 @@ export async function getTavoli() {
             note: true
           },
           orderBy: {
-            dataApertura: 'desc'
+            dataApertura: 'asc'
           },
           take: 1
         }
@@ -347,7 +395,9 @@ export async function getTavoli() {
     if (tavoliMapped.length > 0) {
       console.log("🔍 getTavoli: Primo tavolo:", tavoliMapped[0]);
     }
-    return tavoliMapped;
+    
+    // Serializza i dati per evitare problemi con Decimal
+    return serializeDecimalData(tavoliMapped);
   } catch (error) {
     console.error("❌ getTavoli: Errore recupero tavoli:", error);
     return [];
@@ -366,7 +416,7 @@ export async function getProdotti() {
         nome: true,
         prezzo: true,
         categoria: true,
-        destinazione: true,
+        postazione: true,
         codice: true
       },
       orderBy: {
@@ -387,7 +437,7 @@ export async function getOrdinazioniPerStato() {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ['INVIATA', 'PRONTA', 'CONSEGNATA', 'PAGATA']
+          in: ['PRONTO', 'CONSEGNATO', 'RICHIESTA_CONTO', 'PAGATO']
         }
       },
       include: {
@@ -413,7 +463,7 @@ export async function getOrdinazioniPerStato() {
 
 export async function aggiornaStatoOrdinazione(
   ordinazioneId: string,
-  nuovoStato: "APERTA" | "INVIATA" | "IN_PREPARAZIONE" | "PRONTA" | "CONSEGNATA" | "PAGATA" | "ANNULLATA"
+  nuovoStato: "ORDINATO" | "IN_PREPARAZIONE" | "PRONTO" | "CONSEGNATO" | "RICHIESTA_CONTO" | "PAGATO" | "ANNULLATO"
 ) {
   try {
     const utente = await getCurrentUser();
@@ -432,9 +482,9 @@ export async function aggiornaStatoOrdinazione(
     }
 
     // Verifica transizioni di stato valide
-    if (nuovoStato === "ANNULLATA") {
-      // ANNULLATA è permesso solo se lo stato attuale è APERTA
-      if (ordinazioneCorrente.stato !== "APERTA") {
+    if (nuovoStato === "ANNULLATO") {
+      // ANNULLATO è permesso solo se lo stato attuale è ORDINATO
+      if (ordinazioneCorrente.stato !== "ORDINATO") {
         return { 
           success: false, 
           error: "L'ordinazione può essere annullata solo se non è ancora in lavorazione" 
@@ -452,7 +502,7 @@ export async function aggiornaStatoOrdinazione(
 
     // Notifica cambio stato per tutti gli stati
     switch (nuovoStato) {
-      case "INVIATA":
+      case "ORDINATO":
         notificationManager.notifyOrderUpdated({
           orderId: ordinazione.id,
           tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
@@ -480,7 +530,7 @@ export async function aggiornaStatoOrdinazione(
         });
         break;
       
-      case "PRONTA":
+      case "PRONTO":
         notificationManager.notifyOrderReady({
           orderId: ordinazione.id,
           tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
@@ -488,7 +538,7 @@ export async function aggiornaStatoOrdinazione(
         });
         break;
       
-      case "CONSEGNATA":
+      case "CONSEGNATO":
         notificationManager.notifyOrderDelivered({
           orderId: ordinazione.id,
           tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
@@ -497,7 +547,7 @@ export async function aggiornaStatoOrdinazione(
         });
         break;
       
-      case "PAGATA":
+      case "PAGATO":
         notificationManager.notifyOrderPaid({
           orderId: ordinazione.id,
           tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
@@ -506,7 +556,7 @@ export async function aggiornaStatoOrdinazione(
         });
         break;
       
-      case "ANNULLATA":
+      case "ANNULLATO":
         notificationManager.notifyOrderCancelled({
           orderId: ordinazione.id,
           tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
@@ -517,18 +567,19 @@ export async function aggiornaStatoOrdinazione(
     }
 
     // Emetti evento SSE specifico per ogni stato
-    const sseEventMap: { [key: string]: string } = {
-      "INVIATA": "order:sent",
+    const sseEventMap: { [key: string]: keyof SSEEventMap } = {
+      "ORDINATO": "order:new",
       "IN_PREPARAZIONE": "order:in-preparation",
-      "PRONTA": "order:ready",
-      "CONSEGNATA": "order:delivered",
-      "PAGATA": "order:paid",
-      "ANNULLATA": "order:cancelled"
+      "PRONTO": "order:ready",
+      "CONSEGNATO": "order:delivered",
+      "RICHIESTA_CONTO": "order:status-change",
+      "PAGATO": "order:paid",
+      "ANNULLATO": "order:cancelled"
     };
 
     const sseEvent = sseEventMap[nuovoStato] || 'order:status-change';
     
-    sseService.emit(sseEvent, {
+    sseService.emit(sseEvent as keyof SSEEventMap, {
       orderId: ordinazione.id,
       oldStatus: ordinazioneCorrente.stato,
       newStatus: nuovoStato,
@@ -581,7 +632,7 @@ export async function aggiornaStatoRiga(
       }
 
       // Verifica transizioni di stato valide
-      const transizioniValide = {
+      const transizioniValide: Record<string, string[]> = {
         "INSERITO": ["IN_LAVORAZIONE", "ANNULLATO"],
         "IN_LAVORAZIONE": ["PRONTO", "ANNULLATO"],
         "PRONTO": ["CONSEGNATO", "ANNULLATO"],
@@ -630,7 +681,7 @@ export async function aggiornaStatoRiga(
         if (righeRimanenti === 0) {
           await tx.ordinazione.update({
             where: { id: riga.ordinazioneId },
-            data: { stato: "CONSEGNATA" }
+            data: { stato: "CONSEGNATO" }
           });
         }
       }
@@ -678,14 +729,24 @@ export async function aggiornaStatoRiga(
       );
       
       // Emetti evento SSE diretto per cambio stato item
-      sseService.emit('order:item:update', {
-        itemId: result.riga.id,
-        orderId: result.riga.ordinazione.id,
-        status: nuovoStato,
-        previousStatus: result.riga.stato,
-        tableNumber,
-        timestamp: new Date().toISOString()
-      });
+      if (nuovoStato === 'ANNULLATO') {
+        // Usa order:status-change per gli annullamenti
+        sseService.emit('order:status-change', {
+          orderId: result.riga.ordinazione.id,
+          oldStatus: result.riga.stato,
+          newStatus: nuovoStato,
+          tableNumber,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        sseService.emit('order:item:update', {
+          itemId: result.riga.id,
+          orderId: result.riga.ordinazione.id,
+          status: nuovoStato as 'INSERITO' | 'IN_LAVORAZIONE' | 'PRONTO' | 'CONSEGNATO',
+          previousStatus: result.riga.stato,
+          timestamp: new Date().toISOString()
+        });
+      }
       
       // Se l'ordine è completamente pronto o consegnato, notifica anche lo stato dell'ordine
       if (nuovoStato === "PRONTO") {
@@ -727,9 +788,8 @@ export async function aggiornaStatoRiga(
           // Emetti evento SSE
           sseService.emit('order:delivered', {
             orderId: result.riga.ordinazione.id,
-            oldStatus: result.riga.ordinazione.stato,
-            newStatus: 'CONSEGNATA',
             tableNumber,
+            deliveredBy: utente?.nome,
             timestamp: new Date().toISOString()
           });
         }
@@ -756,7 +816,7 @@ export async function sincronizzaOrdiniTraStazioni() {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          in: ["ORDINATO", "IN_LAVORAZIONE", "PRONTO"]
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
         }
       },
       include: {
@@ -773,22 +833,22 @@ export async function sincronizzaOrdiniTraStazioni() {
         }
       },
       orderBy: {
-        dataApertura: 'desc'
+        dataApertura: 'asc'
       }
     });
 
-    // Raggruppa per destinazione per notificare le stazioni appropriate
-    const ordiniPerDestinazione = {
-      BAR: [] as any[],
+    // Raggruppa per postazione per notificare le stazioni appropriate
+    const ordiniPerPostazione = {
+      PREPARA: [] as any[],
       CUCINA: [] as any[],
-      PREPARA: [] as any[]
+      BANCO: [] as any[]
     };
 
     ordinazioni.forEach(ord => {
       ord.righe.forEach(riga => {
-        const key = riga.destinazione as keyof typeof ordiniPerDestinazione;
-        if (ordiniPerDestinazione[key]) {
-          ordiniPerDestinazione[key].push({
+        const key = riga.postazione as keyof typeof ordiniPerPostazione;
+        if (ordiniPerPostazione[key]) {
+          ordiniPerPostazione[key].push({
             ordineId: ord.id,
             tavoloNumero: ord.tavolo?.numero,
             rigaId: riga.id,
@@ -802,18 +862,18 @@ export async function sincronizzaOrdiniTraStazioni() {
     });
 
     // Invia notifiche di sincronizzazione per ogni stazione
-    Object.entries(ordiniPerDestinazione).forEach(([destinazione, ordini]) => {
+    Object.entries(ordiniPerPostazione).forEach(([postazione, ordini]) => {
       if (ordini.length > 0) {
         broadcast({
           type: "station_sync",
-          message: `Sincronizzazione ordini per ${destinazione}`,
+          message: `Sincronizzazione ordini per ${postazione}`,
           data: {
-            destinazione,
+            postazione,
             ordini,
             timestamp: new Date().toISOString(),
             syncVersion: Date.now()
           },
-          targetRoles: [destinazione === "BAR" ? "PREPARA" : destinazione]
+          targetRoles: [postazione]
         });
       }
     });
@@ -866,7 +926,7 @@ export async function getCustomerNamesForTable(tavoloId: number) {
         dataApertura: true
       },
       orderBy: {
-        dataApertura: 'desc'
+        dataApertura: 'asc'
       },
       take: 10 // Ultimi 10 ordini
     });
@@ -902,5 +962,152 @@ export async function getCustomerNamesForTable(tavoloId: number) {
       error: "Errore durante il recupero dei nomi dei clienti",
       customerNames: []
     };
+  }
+}
+
+export async function sollecitaOrdinePronto(ordinazioneId: string) {
+  "use server";
+  
+  try {
+    const utente = await getCurrentUser();
+    if (!utente) {
+      return { success: false, error: "Utente non autenticato" };
+    }
+
+    // Verifica che l'ordinazione esista e sia pronta
+    const ordinazione = await prisma.ordinazione.findUnique({
+      where: { id: ordinazioneId },
+      include: {
+        tavolo: true,
+        cameriere: true
+      }
+    });
+
+    if (!ordinazione) {
+      return { success: false, error: "Ordinazione non trovata" };
+    }
+
+    if (ordinazione.stato !== 'PRONTO') {
+      return { success: false, error: "L'ordinazione non è ancora pronta" };
+    }
+
+    // Invia notifica di sollecito al cameriere e supervisore
+    broadcast({
+      type: "order_reminder",
+      message: `⏰ Sollecito ritiro ordine: ${ordinazione.tipo} ${ordinazione.tavolo ? `Tavolo ${ordinazione.tavolo.numero}` : ''} - Ordine pronto`,
+      data: {
+        orderId: ordinazione.id,
+        tableNumber: ordinazione.tavolo?.numero,
+        orderType: ordinazione.tipo
+      },
+      targetRoles: ["CAMERIERE", "SUPERVISORE"]
+    });
+
+    // Emetti evento SSE per il sollecito
+    sseService.emit('notification:reminder', {
+      orderId: ordinazione.id,
+      tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+      type: 'pickup',
+      message: `Sollecito per ordine ${ordinazione.tipo} ${ordinazione.tavolo ? `Tavolo ${ordinazione.tavolo.numero}` : ''}`
+    });
+
+    return { success: true, message: "Sollecito inviato" };
+  } catch (error) {
+    console.error("Errore invio sollecito:", error);
+    return { success: false, error: "Errore durante l'invio del sollecito" };
+  }
+}
+
+export async function segnaOrdineRitirato(ordinazioneId: string) {
+  "use server";
+  
+  try {
+    const utente = await getCurrentUser();
+    if (!utente) {
+      return { success: false, error: "Utente non autenticato" };
+    }
+
+    // Usa transazione per aggiornamento atomico
+    const result = await prisma.$transaction(async (tx) => {
+      // Verifica che l'ordinazione esista e sia pronta
+      const ordinazione = await tx.ordinazione.findUnique({
+        where: { id: ordinazioneId },
+        include: {
+          tavolo: true,
+          righe: true
+        }
+      });
+
+      if (!ordinazione) {
+        return { success: false, error: "Ordinazione non trovata" };
+      }
+
+      if (ordinazione.stato !== 'PRONTO') {
+        return { success: false, error: "L'ordinazione non è pronta per il ritiro" };
+      }
+
+      // Aggiorna lo stato dell'ordinazione a CONSEGNATA
+      const ordinazioneAggiornata = await tx.ordinazione.update({
+        where: { id: ordinazioneId },
+        data: {
+          stato: 'CONSEGNATO',
+          dataChiusura: new Date()
+        }
+      });
+
+      // Aggiorna tutte le righe a CONSEGNATO
+      await tx.rigaOrdinazione.updateMany({
+        where: { 
+          ordinazioneId: ordinazioneId,
+          stato: { not: 'CONSEGNATO' }
+        },
+        data: {
+          stato: 'CONSEGNATO',
+          timestampConsegna: new Date()
+        }
+      });
+
+      return { success: true, ordinazione: ordinazioneAggiornata };
+    });
+
+    if (!result.success) {
+      return result;
+    }
+
+    // Invia notifiche fuori dalla transazione
+    const ordinazione = await prisma.ordinazione.findUnique({
+      where: { id: ordinazioneId },
+      include: { tavolo: true }
+    });
+
+    if (ordinazione) {
+      // Notifica che l'ordine è stato consegnato
+      notificationManager.notifyOrderDelivered({
+        orderId: ordinazione.id,
+        tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+        orderType: ordinazione.tipo,
+        amount: parseFloat(ordinazione.totale.toString())
+      });
+
+      // Emetti evento SSE
+      sseService.emit('order:delivered', {
+        orderId: ordinazione.id,
+        tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Invalida cache
+    ordersCache.remove(ordinazioneId);
+    
+    revalidatePath("/prepara");
+    revalidatePath("/cameriere");
+    revalidatePath("/cassa");
+    revalidatePath("/supervisore");
+
+    return { success: true, message: "Ordine segnato come ritirato" };
+  } catch (error) {
+    console.error("Errore ritiro ordine:", error);
+    return { success: false, error: "Errore durante il ritiro dell'ordine" };
   }
 }

@@ -1,171 +1,171 @@
 id,nome,descrizione,prezzo,categoria,disponibile,terminato,destinazione,codice,glutenFree,vegano,vegetariano,isDeleted,createdAt,updatedAt
-276,Cocktail 25cl,,2.5,APERITIVI > ANALCOLICI,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:28:18.738Z
-275,Crodino 10cl,,2.5,APERITIVI > ANALCOLICI,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:39:03.825Z
-274,Sanbitter 10cl,,2.5,APERITIVI > ANALCOLICI,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:39:03.825Z
-93,_CATEGORIA_PLACEHOLDER_APERITIVI > ANALCOLICI,Placeholder per categoria vuota - non eliminare,0,APERITIVI > ANALCOLICI,false,false,BAR,,false,false,false,true,2025-07-23T15:32:55.220Z,2025-07-23T15:32:55.220Z
-337,_CATEGORIA_PLACEHOLDER_APERITIVI > ANALCOLICI,Placeholder per categoria vuota - non eliminare,0,APERITIVI > ANALCOLICI,false,false,BAR,,false,false,false,true,2025-07-25T20:28:18.008Z,2025-07-25T20:28:18.008Z
-268,Aperol 100cl,,2.5,APERITIVI > Classici,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
-44,Calice di Prosecco,Prosecco Asolo di Montelvini,3,APERITIVI > Classici,true,false,BAR,202,false,false,false,false,2025-07-22T12:23:59.536Z,2025-07-25T13:19:30.261Z
-271,Campari Bitter 100cl,,2.5,APERITIVI > Classici,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
-272,Campari Soda 10cl,,2.5,APERITIVI > Classici,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:26:13.150Z
-270,Martini Rosso 100cl,,2.5,APERITIVI > Classici,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
-207,Martini Rubino,,2.5,APERITIVI > Classici,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
-65,Americano,"Campari Bitter, Vermouth Rosso, Soda",4,APERITIVI > Cocktail,true,false,BAR,702,false,false,false,false,2025-07-22T12:24:02.367Z,2025-07-25T13:19:47.294Z
-73,Hu,"Prosecco, Sciroppo di Sambuco, Succo di Lime, Foglie di Menta",3.5,APERITIVI > Cocktail,true,false,BAR,705,false,false,false,false,2025-07-22T12:24:03.420Z,2025-07-25T13:19:47.854Z
-42,Hugo,"Prosecco, sciroppo di sambuco, succo di lime, foglie di menta",3.5,APERITIVI > Cocktail,true,false,BAR,203,false,false,false,false,2025-07-22T12:23:59.277Z,2025-07-25T13:19:35.446Z
-43,Mimosa,"Prosecco, succo d'arancia",3.5,APERITIVI > Cocktail,true,false,BAR,204,false,false,false,false,2025-07-22T12:23:59.406Z,2025-07-25T13:19:35.922Z
-27,Negroni,"Gin, Vermouth rosso, Campari bitter",4,APERITIVI > Cocktail,true,false,BAR,708,false,false,false,false,2025-07-22T12:23:57.302Z,2025-07-25T13:19:34.974Z
-66,Negroni Sbagliato,"Campari Bitter, Vermouth Rosso, Prosecco",4,APERITIVI > Cocktail,true,false,BAR,709,false,false,false,false,2025-07-22T12:24:02.499Z,2025-07-25T13:19:50.536Z
-70,South Side,"Gin, Succo di Limone, Sciroppo di zucchero, Foglie di Menta",4,APERITIVI > Cocktail,true,false,BAR,711,false,false,false,false,2025-07-22T12:24:03.024Z,2025-07-25T13:19:49.591Z
-41,Spritz Aperol,"Aperol bitter, prosecco, seltz",4,APERITIVI > Cocktail,true,false,BAR,201,false,false,false,false,2025-07-22T12:23:59.136Z,2025-07-25T13:19:36.391Z
-72,Spritz Passion,"Passoa Passion Fruit, Prosecco, Seltz",4,APERITIVI > Cocktail,true,false,BAR,710,false,false,false,false,2025-07-22T12:24:03.290Z,2025-07-25T13:19:50.065Z
-302,Bicchiere Elios 166cl 100pz,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-301,Cannucce Nere 7x21 1000pz,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-300,Cannucce Pieg. Busta 400pz,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-304,Edulcorante 3gr,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-305,Ghiaccio,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-303,Zucchero Canna 400gr,,0,Bar,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-39,Acqua Tonica,Acqua tonica,2.5,Bibite & Succhi,true,false,BAR,301,false,false,false,false,2025-07-22T12:23:58.875Z,2025-07-25T13:19:28.845Z
-273,Alpex Gin Tonic 20cl,,3,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:44:01.526Z
-152,Bergamotto,,3,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-40,Bottiglia Acqua 50cl,Acqua naturale o frizzante,1.5,Bibite & Succhi,true,false,BAR,302,false,false,false,false,2025-07-22T12:23:59.005Z,2025-07-25T13:19:44.607Z
-146,Chinotto Plose 25cl,,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-37,Coca Cola,Bibita gassata original o zero,2.5,Bibite & Succhi,true,false,BAR,303,false,false,false,false,2025-07-22T12:23:58.612Z,2025-07-25T13:19:45.396Z
-157,Coca Cola Lattina 33cl,,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-156,Estathé Brik 10cl,,1.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-155,Estathé Lattina 33cl,,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-149,Ginger Beer Kinley,,3,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-147,Lemonsoda 20cl,,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-160,"Min Frasassi 0,5Lt",,1.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-159,"Min Frasassi 1,5Lt",,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-38,Red Bull,Energy drink,3,Bibite & Succhi,true,false,BAR,304,false,false,false,false,2025-07-22T12:23:58.743Z,2025-07-25T13:19:46.188Z
-158,Red Bull 20cl,,3,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-161,"Sanbenedetto 1,5lt",,2.5,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-151,Sprite Lattina,,"2,5",Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
-153,Succo Yoga 200ml,,"2,5",Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
-154,Succo Yoga Mirtillo 200ml,,"2,5",Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
-150,Tonica Light Fever-Tree,,3,Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
-148,Tonica Schweppes 20cl,,"2,5",Bibite & Succhi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
-188,Bavaria 66cl,,3,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-189,Beck's 60cl,,3,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-166,Brewdog Punk IPA 33cl,,0,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-167,Bud 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-169,Ceres 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-170,Corona 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-191,Forst 66cl,,3.5,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-183,Grevensteiner 50cl,,4,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-171,Heineken 0.0 33cl,,2.5,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-172,Heineken 33cl,,2.5,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-184,Jacob Weiss 50cl,,4,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-194,Leffe Ambrée 6 Lt,,0,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-174,Löwenbräu 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-182,Mezzopasso Backup IPA,,6,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-181,Mezzopasso Kriss Pils,,6,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-179,Mezzopasso Millican,,6,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-180,Mezzopasso Red Stone,,6,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-175,Nittenauer 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-195,Pedra Löwenbräu 6 Lt,,2,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-176,Peroni 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-193,Peroni 66cl,,2.7,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-177,Peroni Gluten Free 33cl,,3,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-178,Tennent's 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-187,Winkler Kupfer 50cl,,4,Birre,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-165,Beck's 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T19:59:59.190Z
-6,Corona,Birra 33cl,3,Birre > Bottiglia 33 cl,true,false,BAR,402,false,false,false,false,2025-07-22T12:23:54.537Z,2025-07-25T13:19:25.811Z
-8,Heineken 00,Birra analcolica 33cl,2.5,Birre > Bottiglia 33 cl,true,false,BAR,403,false,false,false,false,2025-07-22T12:23:54.800Z,2025-07-25T13:19:25.342Z
-4,Lowenbrau,Birra 50cl,3,Birre > Bottiglia 33 cl,true,false,BAR,407,false,false,false,false,2025-07-22T12:23:54.275Z,2025-07-25T13:19:41.874Z
-9,Peroni,Birra 33cl,3,Birre > Bottiglia 33 cl,true,false,BAR,408,false,false,false,false,2025-07-22T12:23:54.930Z,2025-07-25T13:19:42.346Z
-5,Jacob,Birra non filtrata 50cl,14.,Birre > Bottiglia 50 cl,true,false,BAR,404,false,false,false,false,2025-07-22T12:23:54.405Z,2025-07-25T13:19:30.733Z
-3,Kupfer Export,Birra rossa 50cl,15.,Birre > Bottiglia 50 cl,true,false,BAR,405,false,false,false,false,2025-07-22T12:23:54.144Z,2025-07-25T13:19:24.874Z
-7,Beck's,Birra 66cl,16.,Birre > Bottiglia 60/66 cl,true,false,BAR,401,false,false,false,false,2025-07-22T12:23:54.670Z,2025-07-25T13:19:24.403Z
-46,Leffe Ambree' 33cl,Birra belga alla spina,17.,Birre > alla Spina,true,false,BAR,501,false,false,false,false,2025-07-22T12:23:59.888Z,2025-07-25T13:19:27.540Z
-45,Leffe Ambree' 50cl,Birra belga alla spina,18.,Birre > alla Spina,true,false,BAR,502,false,false,false,false,2025-07-22T12:23:59.667Z,2025-07-25T13:19:28.052Z
-47,Lowenbrau 50cl,Birra tedesca alla spina,19.,Birre > alla Spina,true,false,BAR,503,false,false,false,false,2025-07-22T12:24:00.017Z,2025-07-25T13:19:28.532Z
-61,Caffè Espresso Colazione,Caffè espresso per colazione,20.,Caffetteria,true,false,BAR,901,false,false,false,false,2025-07-22T12:24:01.848Z,2025-07-25T13:19:40.453Z
-15,Caffè Shakerato,Caffè shakerato freddo,21.,Caffetteria,true,false,BAR,601,false,false,false,false,2025-07-22T12:23:55.713Z,2025-07-25T13:19:26.125Z
-17,Cappuccino,Cappuccino classico,22.,Caffetteria,true,false,BAR,602,false,false,false,false,2025-07-22T12:23:55.975Z,2025-07-25T13:19:26.438Z
-58,Cappuccino Colazione,Cappuccino per colazione,23.,Caffetteria,true,false,BAR,902,false,false,false,false,2025-07-22T12:24:01.457Z,2025-07-25T13:19:40.768Z
-16,Cioccolato Caldo,Cioccolata calda,24.,Caffetteria,true,false,BAR,603,false,false,false,false,2025-07-22T12:23:55.845Z,2025-07-25T13:19:26.753Z
-297,Crema Espresso 1000gr,,25.,Caffetteria,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:33.817Z
-18,Espresso,Caffè espresso,26.,Caffetteria,true,false,BAR,605,false,false,false,false,2025-07-22T12:23:56.104Z,2025-07-25T13:19:27.068Z
-298,Ginseng 500gr,,27.,Caffetteria,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:07.265Z
-53,Ginseng Tazza Grande,Ginseng in tazza grande,28.,Caffetteria,true,false,BAR,908,false,false,false,false,2025-07-22T12:24:00.803Z,2025-07-25T13:19:23.617Z
-59,Latte Macchiato,Latte macchiato,29.,Caffetteria,true,false,BAR,909,false,false,false,false,2025-07-22T12:24:01.588Z,2025-07-25T13:19:51.164Z
-299,Orzo 400gr,,30.,Caffetteria,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:07.265Z
-62,Orzo Normale,Orzo normale,31.,Caffetteria,true,false,BAR,913,false,false,false,false,2025-07-22T12:24:01.978Z,2025-07-25T13:19:51.558Z
-54,Orzo Tazza Grande,Orzo in tazza grande,32.,Caffetteria,true,false,BAR,914,false,false,false,false,2025-07-22T12:24:00.934Z,2025-07-25T13:19:23.932Z
-67,Amaretto Sour,"Disaronno, Succo di Limone, Sciroppo di zucchero",33.,Cocktail & Long Drink,true,false,BAR,701,false,false,false,false,2025-07-22T12:24:02.632Z,2025-07-25T13:19:37.752Z
-32,B-52,"Kahlua, Baileys, Gran Marnier",34.,Cocktail & Long Drink,true,false,BAR,101,false,false,false,false,2025-07-22T12:23:57.959Z,2025-07-25T13:19:38.066Z
-75,B-52 Serata,"Kahlua, Baileys, Gran Marnier",35.,Cocktail & Long Drink,true,false,BAR,801,false,false,false,false,2025-07-22T12:24:03.683Z,2025-07-25T13:19:38.382Z
-28,Caipirinha,"Cachasa, lime, zucchero di canna",36.,Cocktail & Long Drink,true,false,BAR,704,false,false,false,false,2025-07-22T12:23:57.435Z,2025-07-25T13:19:22.036Z
-81,Cosmopolitan Serata,"Vodka, Cointreau, Succo di lime, Succo di mirtillo",37.,Cocktail & Long Drink,true,false,BAR,802,false,false,false,false,2025-07-22T12:24:04.536Z,2025-07-25T13:19:38.697Z
-33,Irish Coffee,"Irish whisky, crema di cacao, panna fresca, noce moscata",38.,Cocktail & Long Drink,true,false,BAR,102,false,false,false,false,2025-07-22T12:23:58.088Z,2025-07-25T13:19:22.352Z
-76,Irish Coffee Serata,"Irish Whisky, Crema di cacao, Panna fresca, Noce moscata - variante Villa's Coffee",39.,Cocktail & Long Drink,true,false,BAR,803,false,false,false,false,2025-07-22T12:24:03.885Z,2025-07-25T13:19:49.120Z
-78,Japanese Slipper,"Midori, Cointreau, Succo di Limone",40.,Cocktail & Long Drink,true,false,BAR,804,false,false,false,false,2025-07-22T12:24:04.143Z,2025-07-25T13:19:39.011Z
-79,Manhattan Serata,"Whisky, Vermouth rosso, Gocce di Angostura",41.,Cocktail & Long Drink,true,false,BAR,805,false,false,false,false,2025-07-22T12:24:04.273Z,2025-07-25T13:19:50.851Z
-77,Martini Cocktail,"Gin, Martini Dry",42.,Cocktail & Long Drink,true,false,BAR,806,false,false,false,false,2025-07-22T12:24:04.014Z,2025-07-25T13:19:39.329Z
-68,Midori Sour,"Midori, Succo di Limone, Sciroppo di zucchero",43.,Cocktail & Long Drink,true,false,BAR,707,false,false,false,false,2025-07-22T12:24:02.762Z,2025-07-25T13:19:23.301Z
-80,Pink Lady Serata,"Gin, Triple sec, Succo di Limone, Granatina",44.,Cocktail & Long Drink,true,false,BAR,808,false,false,false,false,2025-07-22T12:24:04.402Z,2025-07-25T13:19:39.716Z
-25,Strawberry Daiquiri,"Rum bianco, sciroppo di fragole, cordiale al lime",45.,Cocktail & Long Drink,true,false,BAR,712,false,false,false,false,2025-07-22T12:23:57.040Z,2025-07-25T13:19:22.986Z
-26,Whisky Sour,"Bourbon whisky, succo di limone, sciroppo di zucchero",46.,Cocktail & Long Drink,true,false,BAR,713,false,false,false,false,2025-07-22T12:23:57.171Z,2025-07-25T13:19:22.669Z
-82,Whisky Sour Serata,"Bourbon whisky, Succo di Limone, Sciroppo di zucchero",47.,Cocktail & Long Drink,true,false,BAR,809,false,false,false,false,2025-07-22T12:24:04.665Z,2025-07-25T13:19:40.090Z
-128,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink,Placeholder per categoria vuota - non eliminare,48.,Cocktail & Long Drink,false,false,BAR,,false,false,false,true,2025-07-25T10:22:27.378Z,2025-07-25T10:22:27.378Z
-143,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink > Cocktail,Placeholder per categoria vuota - non eliminare,49.,Cocktail & Long Drink > Cocktail,false,false,BAR,,false,false,false,true,2025-07-25T12:57:52.370Z,2025-07-25T12:57:52.370Z
-144,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink > Long Drrink,Placeholder per categoria vuota - non eliminare,50.,Cocktail & Long Drink > Long Drrink,false,false,BAR,,false,false,false,true,2025-07-25T12:58:11.030Z,2025-07-25T12:58:11.030Z
-335,_CATEGORIA_PLACEHOLDER_DISTILLATI > Brandy,Placeholder per categoria vuota - non eliminare,51.,DISTILLATI > Brandy,false,false,BAR,,false,false,false,true,2025-07-25T20:25:12.656Z,2025-07-25T20:25:12.656Z
-334,_CATEGORIA_PLACEHOLDER_DISTILLATI > Cognac,Placeholder per categoria vuota - non eliminare,52.,DISTILLATI > Cognac,false,false,BAR,,false,false,false,true,2025-07-25T20:25:12.091Z,2025-07-25T20:25:12.091Z
-329,_CATEGORIA_PLACEHOLDER_DISTILLATI > Gin,Placeholder per categoria vuota - non eliminare,53.,DISTILLATI > Gin,false,false,BAR,,false,false,false,true,2025-07-25T20:23:58.283Z,2025-07-25T20:23:58.283Z
-336,_CATEGORIA_PLACEHOLDER_DISTILLATI > Grappa,Placeholder per categoria vuota - non eliminare,54.,DISTILLATI > Grappa,false,false,BAR,,false,false,false,true,2025-07-25T20:25:12.975Z,2025-07-25T20:25:12.975Z
-333,_CATEGORIA_PLACEHOLDER_DISTILLATI > Rum,Placeholder per categoria vuota - non eliminare,55.,DISTILLATI > Rum,false,false,BAR,,false,false,false,true,2025-07-25T20:23:59.721Z,2025-07-25T20:23:59.721Z
-332,_CATEGORIA_PLACEHOLDER_DISTILLATI > Tequila,Placeholder per categoria vuota - non eliminare,56.,DISTILLATI > Tequila,false,false,BAR,,false,false,false,true,2025-07-25T20:23:59.403Z,2025-07-25T20:23:59.403Z
-330,_CATEGORIA_PLACEHOLDER_DISTILLATI > Vodka,Placeholder per categoria vuota - non eliminare,57.,DISTILLATI > Vodka,false,false,BAR,,false,false,false,true,2025-07-25T20:23:58.761Z,2025-07-25T20:23:58.761Z
-331,_CATEGORIA_PLACEHOLDER_DISTILLATI > Whisky,Placeholder per categoria vuota - non eliminare,58.,DISTILLATI > Whisky,false,false,BAR,,false,false,false,true,2025-07-25T20:23:59.084Z,2025-07-25T20:23:59.084Z
-285,Ciambella Maxi 95gr,,59.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+276,Cocktail 25cl,,2.5,APERITIVI > ANALCOLICI,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:28:18.738Z
+275,Crodino 10cl,,2.5,APERITIVI > ANALCOLICI,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:39:03.825Z
+274,Sanbitter 10cl,,2.5,APERITIVI > ANALCOLICI,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:39:03.825Z
+93,_CATEGORIA_PLACEHOLDER_APERITIVI > ANALCOLICI,Placeholder per categoria vuota - non eliminare,0,APERITIVI > ANALCOLICI,false,false,BANCO,,false,false,false,true,2025-07-23T15:32:55.220Z,2025-07-23T15:32:55.220Z
+337,_CATEGORIA_PLACEHOLDER_APERITIVI > ANALCOLICI,Placeholder per categoria vuota - non eliminare,0,APERITIVI > ANALCOLICI,false,false,BANCO,,false,false,false,true,2025-07-25T20:28:18.008Z,2025-07-25T20:28:18.008Z
+268,Aperol 100cl,,2.5,APERITIVI > Classici,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
+44,Calice di Prosecco,Prosecco Asolo di Montelvini,3,APERITIVI > Classici,true,false,BANCO,202,false,false,false,false,2025-07-22T12:23:59.536Z,2025-07-25T13:19:30.261Z
+271,Campari Bitter 100cl,,2.5,APERITIVI > Classici,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
+272,Campari Soda 10cl,,2.5,APERITIVI > Classici,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:26:13.150Z
+270,Martini Rosso 100cl,,2.5,APERITIVI > Classici,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
+207,Martini Rubino,,2.5,APERITIVI > Classici,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:14.507Z
+65,Americano,"Campari Bitter, Vermouth Rosso, Soda",4,APERITIVI > Cocktail,true,false,BANCO,702,false,false,false,false,2025-07-22T12:24:02.367Z,2025-07-25T13:19:47.294Z
+73,Hu,"Prosecco, Sciroppo di Sambuco, Succo di Lime, Foglie di Menta",3.5,APERITIVI > Cocktail,true,false,BANCO,705,false,false,false,false,2025-07-22T12:24:03.420Z,2025-07-25T13:19:47.854Z
+42,Hugo,"Prosecco, sciroppo di sambuco, succo di lime, foglie di menta",3.5,APERITIVI > Cocktail,true,false,BANCO,203,false,false,false,false,2025-07-22T12:23:59.277Z,2025-07-25T13:19:35.446Z
+43,Mimosa,"Prosecco, succo d'arancia",3.5,APERITIVI > Cocktail,true,false,BANCO,204,false,false,false,false,2025-07-22T12:23:59.406Z,2025-07-25T13:19:35.922Z
+27,Negroni,"Gin, Vermouth rosso, Campari bitter",4,APERITIVI > Cocktail,true,false,BANCO,708,false,false,false,false,2025-07-22T12:23:57.302Z,2025-07-25T13:19:34.974Z
+66,Negroni Sbagliato,"Campari Bitter, Vermouth Rosso, Prosecco",4,APERITIVI > Cocktail,true,false,BANCO,709,false,false,false,false,2025-07-22T12:24:02.499Z,2025-07-25T13:19:50.536Z
+70,South Side,"Gin, Succo di Limone, Sciroppo di zucchero, Foglie di Menta",4,APERITIVI > Cocktail,true,false,BANCO,711,false,false,false,false,2025-07-22T12:24:03.024Z,2025-07-25T13:19:49.591Z
+41,Spritz Aperol,"Aperol bitter, prosecco, seltz",4,APERITIVI > Cocktail,true,false,BANCO,201,false,false,false,false,2025-07-22T12:23:59.136Z,2025-07-25T13:19:36.391Z
+72,Spritz Passion,"Passoa Passion Fruit, Prosecco, Seltz",4,APERITIVI > Cocktail,true,false,BANCO,710,false,false,false,false,2025-07-22T12:24:03.290Z,2025-07-25T13:19:50.065Z
+302,Bicchiere Elios 166cl 100pz,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+301,Cannucce Nere 7x21 1000pz,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+300,Cannucce Pieg. Busta 400pz,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+304,Edulcorante 3gr,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+305,Ghiaccio,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+303,Zucchero Canna 400gr,,0,Bar,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+39,Acqua Tonica,Acqua tonica,2.5,Bibite & Succhi,true,false,BANCO,301,false,false,false,false,2025-07-22T12:23:58.875Z,2025-07-25T13:19:28.845Z
+273,Alpex Gin Tonic 20cl,,3,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:44:01.526Z
+152,Bergamotto,,3,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+40,Bottiglia Acqua 50cl,Acqua naturale o frizzante,1.5,Bibite & Succhi,true,false,BANCO,302,false,false,false,false,2025-07-22T12:23:59.005Z,2025-07-25T13:19:44.607Z
+146,Chinotto Plose 25cl,,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+37,Coca Cola,Bibita gassata original o zero,2.5,Bibite & Succhi,true,false,BANCO,303,false,false,false,false,2025-07-22T12:23:58.612Z,2025-07-25T13:19:45.396Z
+157,Coca Cola Lattina 33cl,,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+156,Estathé Brik 10cl,,1.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+155,Estathé Lattina 33cl,,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+149,Ginger Beer Kinley,,3,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+147,Lemonsoda 20cl,,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+160,"Min Frasassi 0,5Lt",,1.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+159,"Min Frasassi 1,5Lt",,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+38,Red Bull,Energy drink,3,Bibite & Succhi,true,false,BANCO,304,false,false,false,false,2025-07-22T12:23:58.743Z,2025-07-25T13:19:46.188Z
+158,Red Bull 20cl,,3,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+161,"Sanbenedetto 1,5lt",,2.5,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+151,Sprite Lattina,,"2,5",Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:25.903Z
+153,Succo Yoga 200ml,,"2,5",Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
+154,Succo Yoga Mirtillo 200ml,,"2,5",Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
+150,Tonica Light Fever-Tree,,3,Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
+148,Tonica Schweppes 20cl,,"2,5",Bibite & Succhi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:27:48.023Z
+188,Bavaria 66cl,,3,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+189,Beck's 60cl,,3,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+166,Brewdog Punk IPA 33cl,,0,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+167,Bud 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+169,Ceres 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+170,Corona 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+191,Forst 66cl,,3.5,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+183,Grevensteiner 50cl,,4,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+171,Heineken 0.0 33cl,,2.5,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+172,Heineken 33cl,,2.5,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+184,Jacob Weiss 50cl,,4,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+194,Leffe Ambrée 6 Lt,,0,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+174,Löwenbräu 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+182,Mezzopasso Backup IPA,,6,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+181,Mezzopasso Kriss Pils,,6,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+179,Mezzopasso Millican,,6,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+180,Mezzopasso Red Stone,,6,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+175,Nittenauer 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+195,Pedra Löwenbräu 6 Lt,,2,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+176,Peroni 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+193,Peroni 66cl,,2.7,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+177,Peroni Gluten Free 33cl,,3,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+178,Tennent's 33cl,,3.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+187,Winkler Kupfer 50cl,,4,Birre,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+165,Beck's 33cl,,2.5,Birre > Bottiglia 33 cl,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T19:59:59.190Z
+6,Corona,Birra 33cl,3,Birre > Bottiglia 33 cl,true,false,BANCO,402,false,false,false,false,2025-07-22T12:23:54.537Z,2025-07-25T13:19:25.811Z
+8,Heineken 00,Birra analcolica 33cl,2.5,Birre > Bottiglia 33 cl,true,false,BANCO,403,false,false,false,false,2025-07-22T12:23:54.800Z,2025-07-25T13:19:25.342Z
+4,Lowenbrau,Birra 50cl,3,Birre > Bottiglia 33 cl,true,false,BANCO,407,false,false,false,false,2025-07-22T12:23:54.275Z,2025-07-25T13:19:41.874Z
+9,Peroni,Birra 33cl,3,Birre > Bottiglia 33 cl,true,false,BANCO,408,false,false,false,false,2025-07-22T12:23:54.930Z,2025-07-25T13:19:42.346Z
+5,Jacob,Birra non filtrata 50cl,14.,Birre > Bottiglia 50 cl,true,false,BANCO,404,false,false,false,false,2025-07-22T12:23:54.405Z,2025-07-25T13:19:30.733Z
+3,Kupfer Export,Birra rossa 50cl,15.,Birre > Bottiglia 50 cl,true,false,BANCO,405,false,false,false,false,2025-07-22T12:23:54.144Z,2025-07-25T13:19:24.874Z
+7,Beck's,Birra 66cl,16.,Birre > Bottiglia 60/66 cl,true,false,BANCO,401,false,false,false,false,2025-07-22T12:23:54.670Z,2025-07-25T13:19:24.403Z
+46,Leffe Ambree' 33cl,Birra belga alla spina,17.,Birre > alla Spina,true,false,BANCO,501,false,false,false,false,2025-07-22T12:23:59.888Z,2025-07-25T13:19:27.540Z
+45,Leffe Ambree' 50cl,Birra belga alla spina,18.,Birre > alla Spina,true,false,BANCO,502,false,false,false,false,2025-07-22T12:23:59.667Z,2025-07-25T13:19:28.052Z
+47,Lowenbrau 50cl,Birra tedesca alla spina,19.,Birre > alla Spina,true,false,BANCO,503,false,false,false,false,2025-07-22T12:24:00.017Z,2025-07-25T13:19:28.532Z
+61,Caffè Espresso Colazione,Caffè espresso per colazione,20.,Caffetteria,true,false,BANCO,901,false,false,false,false,2025-07-22T12:24:01.848Z,2025-07-25T13:19:40.453Z
+15,Caffè Shakerato,Caffè shakerato freddo,21.,Caffetteria,true,false,BANCO,601,false,false,false,false,2025-07-22T12:23:55.713Z,2025-07-25T13:19:26.125Z
+17,Cappuccino,Cappuccino classico,22.,Caffetteria,true,false,BANCO,602,false,false,false,false,2025-07-22T12:23:55.975Z,2025-07-25T13:19:26.438Z
+58,Cappuccino Colazione,Cappuccino per colazione,23.,Caffetteria,true,false,BANCO,902,false,false,false,false,2025-07-22T12:24:01.457Z,2025-07-25T13:19:40.768Z
+16,Cioccolato Caldo,Cioccolata calda,24.,Caffetteria,true,false,BANCO,603,false,false,false,false,2025-07-22T12:23:55.845Z,2025-07-25T13:19:26.753Z
+297,Crema Espresso 1000gr,,25.,Caffetteria,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:33.817Z
+18,Espresso,Caffè espresso,26.,Caffetteria,true,false,BANCO,605,false,false,false,false,2025-07-22T12:23:56.104Z,2025-07-25T13:19:27.068Z
+298,Ginseng 500gr,,27.,Caffetteria,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:07.265Z
+53,Ginseng Tazza Grande,Ginseng in tazza grande,28.,Caffetteria,true,false,BANCO,908,false,false,false,false,2025-07-22T12:24:00.803Z,2025-07-25T13:19:23.617Z
+59,Latte Macchiato,Latte macchiato,29.,Caffetteria,true,false,BANCO,909,false,false,false,false,2025-07-22T12:24:01.588Z,2025-07-25T13:19:51.164Z
+299,Orzo 400gr,,30.,Caffetteria,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:20:07.265Z
+62,Orzo Normale,Orzo normale,31.,Caffetteria,true,false,BANCO,913,false,false,false,false,2025-07-22T12:24:01.978Z,2025-07-25T13:19:51.558Z
+54,Orzo Tazza Grande,Orzo in tazza grande,32.,Caffetteria,true,false,BANCO,914,false,false,false,false,2025-07-22T12:24:00.934Z,2025-07-25T13:19:23.932Z
+67,Amaretto Sour,"Disaronno, Succo di Limone, Sciroppo di zucchero",33.,Cocktail & Long Drink,true,false,BANCO,701,false,false,false,false,2025-07-22T12:24:02.632Z,2025-07-25T13:19:37.752Z
+32,B-52,"Kahlua, Baileys, Gran Marnier",34.,Cocktail & Long Drink,true,false,BANCO,101,false,false,false,false,2025-07-22T12:23:57.959Z,2025-07-25T13:19:38.066Z
+75,B-52 Serata,"Kahlua, Baileys, Gran Marnier",35.,Cocktail & Long Drink,true,false,BANCO,801,false,false,false,false,2025-07-22T12:24:03.683Z,2025-07-25T13:19:38.382Z
+28,Caipirinha,"Cachasa, lime, zucchero di canna",36.,Cocktail & Long Drink,true,false,BANCO,704,false,false,false,false,2025-07-22T12:23:57.435Z,2025-07-25T13:19:22.036Z
+81,Cosmopolitan Serata,"Vodka, Cointreau, Succo di lime, Succo di mirtillo",37.,Cocktail & Long Drink,true,false,BANCO,802,false,false,false,false,2025-07-22T12:24:04.536Z,2025-07-25T13:19:38.697Z
+33,Irish Coffee,"Irish whisky, crema di cacao, panna fresca, noce moscata",38.,Cocktail & Long Drink,true,false,BANCO,102,false,false,false,false,2025-07-22T12:23:58.088Z,2025-07-25T13:19:22.352Z
+76,Irish Coffee Serata,"Irish Whisky, Crema di cacao, Panna fresca, Noce moscata - variante Villa's Coffee",39.,Cocktail & Long Drink,true,false,BANCO,803,false,false,false,false,2025-07-22T12:24:03.885Z,2025-07-25T13:19:49.120Z
+78,Japanese Slipper,"Midori, Cointreau, Succo di Limone",40.,Cocktail & Long Drink,true,false,BANCO,804,false,false,false,false,2025-07-22T12:24:04.143Z,2025-07-25T13:19:39.011Z
+79,Manhattan Serata,"Whisky, Vermouth rosso, Gocce di Angostura",41.,Cocktail & Long Drink,true,false,BANCO,805,false,false,false,false,2025-07-22T12:24:04.273Z,2025-07-25T13:19:50.851Z
+77,Martini Cocktail,"Gin, Martini Dry",42.,Cocktail & Long Drink,true,false,BANCO,806,false,false,false,false,2025-07-22T12:24:04.014Z,2025-07-25T13:19:39.329Z
+68,Midori Sour,"Midori, Succo di Limone, Sciroppo di zucchero",43.,Cocktail & Long Drink,true,false,BANCO,707,false,false,false,false,2025-07-22T12:24:02.762Z,2025-07-25T13:19:23.301Z
+80,Pink Lady Serata,"Gin, Triple sec, Succo di Limone, Granatina",44.,Cocktail & Long Drink,true,false,BANCO,808,false,false,false,false,2025-07-22T12:24:04.402Z,2025-07-25T13:19:39.716Z
+25,Strawberry Daiquiri,"Rum bianco, sciroppo di fragole, cordiale al lime",45.,Cocktail & Long Drink,true,false,BANCO,712,false,false,false,false,2025-07-22T12:23:57.040Z,2025-07-25T13:19:22.986Z
+26,Whisky Sour,"Bourbon whisky, succo di limone, sciroppo di zucchero",46.,Cocktail & Long Drink,true,false,BANCO,713,false,false,false,false,2025-07-22T12:23:57.171Z,2025-07-25T13:19:22.669Z
+82,Whisky Sour Serata,"Bourbon whisky, Succo di Limone, Sciroppo di zucchero",47.,Cocktail & Long Drink,true,false,BANCO,809,false,false,false,false,2025-07-22T12:24:04.665Z,2025-07-25T13:19:40.090Z
+128,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink,Placeholder per categoria vuota - non eliminare,48.,Cocktail & Long Drink,false,false,BANCO,,false,false,false,true,2025-07-25T10:22:27.378Z,2025-07-25T10:22:27.378Z
+143,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink > Cocktail,Placeholder per categoria vuota - non eliminare,49.,Cocktail & Long Drink > Cocktail,false,false,BANCO,,false,false,false,true,2025-07-25T12:57:52.370Z,2025-07-25T12:57:52.370Z
+144,_CATEGORIA_PLACEHOLDER_Cocktail & Long Drink > Long Drrink,Placeholder per categoria vuota - non eliminare,50.,Cocktail & Long Drink > Long Drrink,false,false,BANCO,,false,false,false,true,2025-07-25T12:58:11.030Z,2025-07-25T12:58:11.030Z
+335,_CATEGORIA_PLACEHOLDER_DISTILLATI > Brandy,Placeholder per categoria vuota - non eliminare,51.,DISTILLATI > Brandy,false,false,BANCO,,false,false,false,true,2025-07-25T20:25:12.656Z,2025-07-25T20:25:12.656Z
+334,_CATEGORIA_PLACEHOLDER_DISTILLATI > Cognac,Placeholder per categoria vuota - non eliminare,52.,DISTILLATI > Cognac,false,false,BANCO,,false,false,false,true,2025-07-25T20:25:12.091Z,2025-07-25T20:25:12.091Z
+329,_CATEGORIA_PLACEHOLDER_DISTILLATI > Gin,Placeholder per categoria vuota - non eliminare,53.,DISTILLATI > Gin,false,false,BANCO,,false,false,false,true,2025-07-25T20:23:58.283Z,2025-07-25T20:23:58.283Z
+336,_CATEGORIA_PLACEHOLDER_DISTILLATI > Grappa,Placeholder per categoria vuota - non eliminare,54.,DISTILLATI > Grappa,false,false,BANCO,,false,false,false,true,2025-07-25T20:25:12.975Z,2025-07-25T20:25:12.975Z
+333,_CATEGORIA_PLACEHOLDER_DISTILLATI > Rum,Placeholder per categoria vuota - non eliminare,55.,DISTILLATI > Rum,false,false,BANCO,,false,false,false,true,2025-07-25T20:23:59.721Z,2025-07-25T20:23:59.721Z
+332,_CATEGORIA_PLACEHOLDER_DISTILLATI > Tequila,Placeholder per categoria vuota - non eliminare,56.,DISTILLATI > Tequila,false,false,BANCO,,false,false,false,true,2025-07-25T20:23:59.403Z,2025-07-25T20:23:59.403Z
+330,_CATEGORIA_PLACEHOLDER_DISTILLATI > Vodka,Placeholder per categoria vuota - non eliminare,57.,DISTILLATI > Vodka,false,false,BANCO,,false,false,false,true,2025-07-25T20:23:58.761Z,2025-07-25T20:23:58.761Z
+331,_CATEGORIA_PLACEHOLDER_DISTILLATI > Whisky,Placeholder per categoria vuota - non eliminare,58.,DISTILLATI > Whisky,false,false,BANCO,,false,false,false,true,2025-07-25T20:23:59.084Z,2025-07-25T20:23:59.084Z
+285,Ciambella Maxi 95gr,,59.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 56,Ciambella Semplice,Ciambella semplice,60.,Dolciumi,true,false,CUCINA,903,false,false,false,false,2025-07-22T12:24:01.194Z,2025-07-25T13:19:20.611Z
-288,Ciambellone,,61.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-282,Conchiglia 90gr,,62.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+288,Ciambellone,,61.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+282,Conchiglia 90gr,,62.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 20,Cornetto,Cornetto con vari gusti,63.,Dolciumi,true,false,CUCINA,604,false,false,false,false,2025-07-22T12:23:56.388Z,2025-07-25T13:19:36.707Z
 60,Cornetto Crema/Marmellata,"Cornetto alla marmellata, alla crema o al cioccolato",64.,Dolciumi,true,false,CUCINA,904,false,false,false,false,2025-07-22T12:24:01.718Z,2025-07-25T13:19:37.048Z
 55,Cornetto Farcito,"Cornetto con vari gusti (Nutella, Pistacchio, Lamponi, Yogurt, etc.)",65.,Dolciumi,true,false,CUCINA,905,false,false,false,false,2025-07-22T12:24:01.064Z,2025-07-25T13:19:48.801Z
-283,Cornetto Integrale Miele,,66.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+283,Cornetto Integrale Miele,,66.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 63,Cornetto Semplice,Cornetto semplice,67.,Dolciumi,true,false,CUCINA,906,false,false,false,false,2025-07-22T12:24:02.107Z,2025-07-25T13:19:37.392Z
-279,Croissant Albic Oversize,,68.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-278,Croissant Rodrigo Pistacchio,,69.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-277,Croissant Vuoto Oversize,,70.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+279,Croissant Albic Oversize,,68.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+278,Croissant Rodrigo Pistacchio,,69.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+277,Croissant Vuoto Oversize,,70.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 57,Fetta Ciambellone,"Fetta di ciambellone allo yogurt, variegato al cioccolato",71.,Dolciumi,true,false,CUCINA,907,false,false,false,false,2025-07-22T12:24:01.323Z,2025-07-25T13:19:48.168Z
 64,Mini Cornetto,"Mini cornetto marmellata, crema, cioccolato",72.,Dolciumi,true,false,CUCINA,910,false,false,false,false,2025-07-22T12:24:02.237Z,2025-07-25T13:19:48.484Z
-287,Muffin Nutella 86gr,,73.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+287,Muffin Nutella 86gr,,73.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 52,Muffin Vari Gusti,"Muffin ai frutti di bosco, al cioccolato, ripieno al cioccolato",74.,Dolciumi,true,false,CUCINA,911,false,false,false,false,2025-07-22T12:24:00.673Z,2025-07-25T13:19:21.717Z
 19,Muffin alla Nutella,Muffin dolce con Nutella,75.,Dolciumi,true,false,CUCINA,606,false,false,false,false,2025-07-22T12:23:56.233Z,2025-07-25T13:19:21.395Z
 51,Muffin alla Nutella Colazione,Muffin dolce con Nutella - Colazione al Roxy,76.,Dolciumi,true,false,CUCINA,912,false,false,false,false,2025-07-22T12:24:00.543Z,2025-07-25T13:19:21.081Z
-280,Pain au Chocolat,,77.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-286,Plummy 4 Gusti,,78.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-281,"Principini 4,5 Kg",,79.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
-284,Sacch Cereali e Bosco,,80.,Dolciumi,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+280,Pain au Chocolat,,77.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+286,Plummy 4 Gusti,,78.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+281,"Principini 4,5 Kg",,79.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
+284,Sacch Cereali e Bosco,,80.,Dolciumi,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:41:24.603Z
 324,Hamburger,,81.,Food,true,false,CUCINA,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
 325,Hot Dog,,82.,Food,true,false,CUCINA,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
 327,Tagliere di Sfizi,,83.,Food,true,false,CUCINA,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
 326,Toast,,84.,Food,true,false,CUCINA,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-136,_CATEGORIA_PLACEHOLDER_Food,Placeholder per categoria vuota - non eliminare,85.,Food,false,false,BAR,,false,false,false,true,2025-07-25T10:22:31.281Z,2025-07-25T10:22:31.281Z
-320,Bikini,,86.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-322,Calippo,,87.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-314,Coppa Rica,,88.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-323,Coppa Tesoro,,89.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-310,Cornetto Amarena,,90.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-312,Cornetto Choc'n Ball,,91.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-313,Cornetto Classico,,92.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-315,Cornetto Desire,,93.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-311,Cornetto Esagerato,,94.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-307,Cremino,,95.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-308,Croccante,,96.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-309,Cucciolone,,97.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-306,Ghiaccioli,,98.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-321,Kimbo,,99.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-318,Magnum Bomboniera,,100.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-316,Magnum Class/Mand,,101.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-317,Magnum Euphoria,,102.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-319,Ringo,,103.,Gelati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-133,_CATEGORIA_PLACEHOLDER_Gelati,Placeholder per categoria vuota - non eliminare,104.,Gelati,false,false,BAR,,false,false,false,true,2025-07-25T10:22:29.824Z,2025-07-25T10:22:29.824Z
+136,_CATEGORIA_PLACEHOLDER_Food,Placeholder per categoria vuota - non eliminare,85.,Food,false,false,BANCO,,false,false,false,true,2025-07-25T10:22:31.281Z,2025-07-25T10:22:31.281Z
+320,Bikini,,86.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+322,Calippo,,87.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+314,Coppa Rica,,88.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+323,Coppa Tesoro,,89.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+310,Cornetto Amarena,,90.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+312,Cornetto Choc'n Ball,,91.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+313,Cornetto Classico,,92.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+315,Cornetto Desire,,93.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+311,Cornetto Esagerato,,94.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+307,Cremino,,95.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+308,Croccante,,96.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+309,Cucciolone,,97.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+306,Ghiaccioli,,98.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+321,Kimbo,,99.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+318,Magnum Bomboniera,,100.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+316,Magnum Class/Mand,,101.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+317,Magnum Euphoria,,102.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+319,Ringo,,103.,Gelati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+133,_CATEGORIA_PLACEHOLDER_Gelati,Placeholder per categoria vuota - non eliminare,104.,Gelati,false,false,BANCO,,false,false,false,true,2025-07-25T10:22:29.824Z,2025-07-25T10:22:29.824Z
 71,Blue Lagoon Aperitivo,"Vodka, Blue curacao, Succo di limone, Sciroppo di zucchero",105.,Long Drink,true,false,CUCINA,703,false,false,false,false,2025-07-22T12:24:03.155Z,2025-07-25T13:19:32.164Z
 88,Dartmouth Pomeriggio,"Vodka, Midori, Succo di Lime, Tonic Water",106.,Long Drink,true,false,CUCINA,141,false,false,false,false,2025-07-22T12:24:05.443Z,2025-07-25T13:19:33.113Z
 89,El Diablo,"Tequila, Creme de Cassis, Succo di Lime, Ginger Beer",107.,Long Drink,true,false,CUCINA,142,false,false,false,false,2025-07-22T12:24:05.573Z,2025-07-25T13:19:33.429Z
@@ -180,104 +180,104 @@ id,nome,descrizione,prezzo,categoria,disponibile,terminato,destinazione,codice,g
 34,Sex on The Beach,"Vodka alla pesca, succo d'arancia, sciroppo di granatina",116.,Long Drink,true,false,CUCINA,133,false,false,false,false,2025-07-22T12:23:58.219Z,2025-07-25T13:19:29.789Z
 87,Sex on The Beach Pomeriggio,"Vodka alla Pesca, Succo d'Arancia, Sciroppo di Granatina",117.,Long Drink,true,false,CUCINA,147,false,false,false,false,2025-07-22T12:24:05.314Z,2025-07-25T13:19:43.029Z
 90,Tequila Sunrise Pomeriggio,"Tequila, Succo d'arancia, Sciroppo di granatina",118.,Long Drink,true,false,CUCINA,148,false,false,false,false,2025-07-22T12:24:05.702Z,2025-07-25T13:19:43.344Z
-291,Golia Fresh,,119.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-293,Gomme Big Babol Frutta,,120.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-294,Gomme Big Babol PanFra,,121.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-290,Gomme Brooklyn,,122.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-295,Gomme Vigorsol Air,,123.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-296,Gomme Vivident Air,,124.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-292,Mentos Fruit,,125.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-289,Pipers 40gr,,126.,Snack,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-137,_CATEGORIA_PLACEHOLDER_Snack,Placeholder per categoria vuota - non eliminare,127.,Snack,false,false,BAR,,false,false,false,true,2025-07-25T10:22:31.766Z,2025-07-25T10:22:31.766Z
-198,Amaro Del Capo,,128.,Superalcolici > Amari,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:44:43.687Z
-199,Amaro Fernet 100cl,,129.,Superalcolici > Amari,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:33.233Z
-200,Amaro Fernet Menta 100cl,,130.,Superalcolici > Amari,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:49.303Z
-201,Amaro Jägermeister 100cl,,131.,Superalcolici > Amari,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:59.318Z
-202,Amaro Petrus 70cl,,132.,Superalcolici > Amari,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:09:11.625Z
-139,_CATEGORIA_PLACEHOLDER_Superalcolici > Amari,Placeholder per categoria vuota - non eliminare,133.,Superalcolici > Amari,false,false,BAR,,false,false,false,true,2025-07-25T12:56:15.783Z,2025-07-25T12:56:15.783Z
-328,_CATEGORIA_PLACEHOLDER_Superalcolici > Amari,Placeholder per categoria vuota - non eliminare,134.,Superalcolici > Amari,false,false,BAR,,false,false,false,true,2025-07-25T20:01:43.858Z,2025-07-25T20:01:43.858Z
+291,Golia Fresh,,119.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+293,Gomme Big Babol Frutta,,120.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+294,Gomme Big Babol PanFra,,121.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+290,Gomme Brooklyn,,122.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+295,Gomme Vigorsol Air,,123.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+296,Gomme Vivident Air,,124.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+292,Mentos Fruit,,125.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+289,Pipers 40gr,,126.,Snack,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+137,_CATEGORIA_PLACEHOLDER_Snack,Placeholder per categoria vuota - non eliminare,127.,Snack,false,false,BANCO,,false,false,false,true,2025-07-25T10:22:31.766Z,2025-07-25T10:22:31.766Z
+198,Amaro Del Capo,,128.,Superalcolici > Amari,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:44:43.687Z
+199,Amaro Fernet 100cl,,129.,Superalcolici > Amari,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:33.233Z
+200,Amaro Fernet Menta 100cl,,130.,Superalcolici > Amari,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:49.303Z
+201,Amaro Jägermeister 100cl,,131.,Superalcolici > Amari,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:08:59.318Z
+202,Amaro Petrus 70cl,,132.,Superalcolici > Amari,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:09:11.625Z
+139,_CATEGORIA_PLACEHOLDER_Superalcolici > Amari,Placeholder per categoria vuota - non eliminare,133.,Superalcolici > Amari,false,false,BANCO,,false,false,false,true,2025-07-25T12:56:15.783Z,2025-07-25T12:56:15.783Z
+328,_CATEGORIA_PLACEHOLDER_Superalcolici > Amari,Placeholder per categoria vuota - non eliminare,134.,Superalcolici > Amari,false,false,BANCO,,false,false,false,true,2025-07-25T20:01:43.858Z,2025-07-25T20:01:43.858Z
 14,Bacardi Carta Blanca,Rum bianco a porzione,135.,Superalcolici > Distillati,true,false,CUCINA,151,false,false,false,false,2025-07-22T12:23:55.584Z,2025-07-25T13:19:44.292Z
 11,Barcelo' Imperial,Rum premium a porzione,136.,Superalcolici > Distillati,true,false,CUCINA,152,false,false,false,false,2025-07-22T12:23:55.191Z,2025-07-25T13:19:45.080Z
 23,Bombay Sapphire,Gin classico a porzione,137.,Superalcolici > Distillati,true,false,CUCINA,111,false,false,false,false,2025-07-22T12:23:56.778Z,2025-07-25T13:19:18.365Z
-208,Brandy Stravecchio 100cl,,138.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:09:57.722Z
+208,Brandy Stravecchio 100cl,,138.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:09:57.722Z
 21,Caprisius The Spirits Of Capri,Gin premium a porzione,139.,Superalcolici > Distillati,true,false,CUCINA,112,false,false,false,false,2025-07-22T12:23:56.519Z,2025-07-25T13:19:19.821Z
-209,Carlos I,,140.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:55.709Z
-211,Cognac Courvoisier 70cl,,141.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:44.809Z
-210,Cognac Hennessy 70cl,,142.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:06.720Z
+209,Carlos I,,140.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:55.709Z
+211,Cognac Courvoisier 70cl,,141.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:44.809Z
+210,Cognac Hennessy 70cl,,142.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:06.720Z
 10,Don Papa Baroko,Rum premium a porzione,143.,Superalcolici > Distillati,true,false,CUCINA,153,false,false,false,false,2025-07-22T12:23:55.061Z,2025-07-25T13:19:45.869Z
-222,Gin Ballor 70cl,,144.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:17.531Z
-220,Gin Bloom 70cl,,145.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:32.154Z
-214,Gin Bombay 100cl,,146.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:49.051Z
-218,Gin Bulldog 70cl,,147.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:57.259Z
-225,Gin Caprisius Dry 70cl,,148.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:04.600Z
-221,Gin Citadelle London Dry 70cl,,149.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:12.430Z
-215,Gin Gordon 100cl,,150.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:21.114Z
-223,Gin Hendrick's 70cl,,151.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:21.427Z
-226,Gin Jinzu 70cl,,152.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:30.449Z
-224,Gin N3 London 70cl,,153.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:39.845Z
-217,Gin Tanqueray 0 Alcol 70cl,,154.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:49.153Z
-216,Gin Tanqueray 100cl,,155.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:58.530Z
-219,Gin Tanqueray Ten 70cl,,156.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:08.045Z
+222,Gin Ballor 70cl,,144.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:17.531Z
+220,Gin Bloom 70cl,,145.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:32.154Z
+214,Gin Bombay 100cl,,146.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:49.051Z
+218,Gin Bulldog 70cl,,147.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:11:57.259Z
+225,Gin Caprisius Dry 70cl,,148.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:04.600Z
+221,Gin Citadelle London Dry 70cl,,149.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:12.430Z
+215,Gin Gordon 100cl,,150.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:21.114Z
+223,Gin Hendrick's 70cl,,151.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:21.427Z
+226,Gin Jinzu 70cl,,152.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:30.449Z
+224,Gin N3 London 70cl,,153.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:39.845Z
+217,Gin Tanqueray 0 Alcol 70cl,,154.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:49.153Z
+216,Gin Tanqueray 100cl,,155.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:12:58.530Z
+219,Gin Tanqueray Ten 70cl,,156.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:08.045Z
 29,Glenfiddich 12,Whisky scozzese 12 anni a porzione,157.,Superalcolici > Distillati,true,false,CUCINA,161,false,false,false,false,2025-07-22T12:23:57.565Z,2025-07-25T13:19:31.847Z
 24,Gordon's,Gin classico a porzione,158.,Superalcolici > Distillati,true,false,CUCINA,113,false,false,false,false,2025-07-22T12:23:56.908Z,2025-07-25T13:19:43.816Z
-227,Grappa 903 70cl,,159.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:15.721Z
+227,Grappa 903 70cl,,159.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:15.721Z
 13,Havana 7,Rum cubano a porzione,160.,Superalcolici > Distillati,true,false,CUCINA,154,false,false,false,false,2025-07-22T12:23:55.454Z,2025-07-25T13:19:46.824Z
 22,Hendrick's,Gin premium a porzione,161.,Superalcolici > Distillati,true,false,CUCINA,114,false,false,false,false,2025-07-22T12:23:56.648Z,2025-07-25T13:19:20.294Z
 31,Jack Daniel's,Whisky americano a porzione,162.,Superalcolici > Distillati,true,false,CUCINA,162,false,false,false,false,2025-07-22T12:23:57.827Z,2025-07-25T13:19:18.868Z
 30,Jameson Triple Distilled,Whisky irlandese a porzione,163.,Superalcolici > Distillati,true,false,CUCINA,163,false,false,false,false,2025-07-22T12:23:57.696Z,2025-07-25T13:19:19.349Z
 12,Matusalem 15,Rum invecchiato a porzione,164.,Superalcolici > Distillati,true,false,CUCINA,155,false,false,false,false,2025-07-22T12:23:55.325Z,2025-07-25T13:19:52.030Z
-228,Rum Bacardi Bianco 100cl,,165.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:15:27.240Z
-229,Rum Diplomatico Reserve 70cl,,166.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
-230,Rum Don Papa Baroko 70cl,,167.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
-231,Rum Havana 7 70cl,,168.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
-232,Rum Matusalem 15 70cl,,169.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
-233,Rum Pampero 100cl,,170.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
-212,Tequila Jose Cuervo 70cl,,171.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-234,Vodka Absolut 100cl,,172.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-235,Vodka Keglevich 100cl,,173.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-196,Vodka Keglevich Fragola 100cl,,174.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-236,Vodka Moskovskaya 100cl,,175.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-255,Whisky Bulleit,,176.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-242,Whisky Bushmills 70cl,,177.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-253,Whisky Glen Grant 70cl,,178.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-259,Whisky Glenfiddich 12 Y 70cl,,179.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-250,Whisky Glenfiddich 70cl,,180.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-257,Whisky Glenlivet 18 70cl,,181.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-238,Whisky J&B 100cl,,182.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-239,Whisky J&B 70cl,,183.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-246,Whisky Jack Daniel's 100cl,,184.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-247,Whisky Jack Daniel's Apple 100cl,,185.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-249,Whisky Jack Daniel's Cannella 100cl,,186.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
-248,Whisky Jack Daniel's Honey 100cl,,187.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
-241,Whisky Jameson 70cl,,188.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
-243,Whisky Jim Beam 100cl,,189.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
-237,Whisky Jim Beam 70cl,,190.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
-252,Whisky Johnnie Walker Black 70cl,,191.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
-240,Whisky Johnnie Walker Red 70cl,,192.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
-261,Whisky Lagavulin 70cl,,193.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
-254,Whisky Laphroaig 10 Y 70cl,,194.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
-256,Whisky Maker's Mark Bourbon 70cl,,195.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
-260,Whisky Oban 70cl,,196.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
-245,Whisky Old Virgin,,197.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
-258,Whisky Talisker 10 Y 70cl,,198.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
-244,Whisky Tullamore 70cl,,199.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
-251,Whisky Wild Turkey 101 70cl,,200.,Superalcolici > Distillati,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
-197,Baileys 100cl,,201.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:51.157Z
-204,Blue Curaçao Bols 70cl,,202.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:34.718Z
-213,Bénédictine 70cl,,203.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:17.833Z
+228,Rum Bacardi Bianco 100cl,,165.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:15:27.240Z
+229,Rum Diplomatico Reserve 70cl,,166.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
+230,Rum Don Papa Baroko 70cl,,167.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
+231,Rum Havana 7 70cl,,168.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
+232,Rum Matusalem 15 70cl,,169.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
+233,Rum Pampero 100cl,,170.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:16:36.318Z
+212,Tequila Jose Cuervo 70cl,,171.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+234,Vodka Absolut 100cl,,172.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+235,Vodka Keglevich 100cl,,173.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+196,Vodka Keglevich Fragola 100cl,,174.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+236,Vodka Moskovskaya 100cl,,175.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+255,Whisky Bulleit,,176.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+242,Whisky Bushmills 70cl,,177.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+253,Whisky Glen Grant 70cl,,178.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+259,Whisky Glenfiddich 12 Y 70cl,,179.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+250,Whisky Glenfiddich 70cl,,180.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+257,Whisky Glenlivet 18 70cl,,181.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+238,Whisky J&B 100cl,,182.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+239,Whisky J&B 70cl,,183.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+246,Whisky Jack Daniel's 100cl,,184.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+247,Whisky Jack Daniel's Apple 100cl,,185.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+249,Whisky Jack Daniel's Cannella 100cl,,186.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:20.851Z
+248,Whisky Jack Daniel's Honey 100cl,,187.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
+241,Whisky Jameson 70cl,,188.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
+243,Whisky Jim Beam 100cl,,189.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
+237,Whisky Jim Beam 70cl,,190.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
+252,Whisky Johnnie Walker Black 70cl,,191.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:21.868Z
+240,Whisky Johnnie Walker Red 70cl,,192.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
+261,Whisky Lagavulin 70cl,,193.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
+254,Whisky Laphroaig 10 Y 70cl,,194.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
+256,Whisky Maker's Mark Bourbon 70cl,,195.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:00.804Z
+260,Whisky Oban 70cl,,196.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
+245,Whisky Old Virgin,,197.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
+258,Whisky Talisker 10 Y 70cl,,198.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
+244,Whisky Tullamore 70cl,,199.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
+251,Whisky Wild Turkey 101 70cl,,200.,Superalcolici > Distillati,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:17:42.057Z
+197,Baileys 100cl,,201.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:51.157Z
+204,Blue Curaçao Bols 70cl,,202.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:34.718Z
+213,Bénédictine 70cl,,203.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:10:17.833Z
 48,Cointreau,Liquore all'arancia a porzione,204.,Superalcolici > Liquori,true,false,CUCINA,121,false,false,false,false,2025-07-22T12:24:00.150Z,2025-07-25T13:19:31.220Z
-206,Grand Marnier 70cl,,205.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:41.817Z
+206,Grand Marnier 70cl,,205.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:13:41.817Z
 49,Khalua,Liquore al caffè a porzione,206.,Superalcolici > Liquori,true,false,CUCINA,122,false,false,false,false,2025-07-22T12:24:00.281Z,2025-07-25T13:19:17.265Z
 50,Limoncello,Liquore al limone a porzione,207.,Superalcolici > Liquori,true,false,CUCINA,123,false,false,false,false,2025-07-22T12:24:00.412Z,2025-07-25T13:19:17.894Z
-205,Malibu 100cl,,208.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:40.144Z
-269,Martini Bianco 100cl,,209.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:24.382Z
-203,Samb Hugó 100cl,,210.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:38.119Z
-164,Sciroppo Mix Violetta Fabbri 100cl,,211.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
-162,Sciroppo Sambuco Fabbri 100cl,,212.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
-163,Sciroppo Tropicale Fabbri 100cl,,213.,Superalcolici > Liquori,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
-263,Spumante Promosso Montelvini 75cl,,215.,Vini & Spumanti > Spumanti,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
-262,Prosecco Asolo Montelvini 75cl,,217.,Vini & Spumanti > Spumanti,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:55.898Z
-265,Cerasuolo Frentana 75cl,,220.,Vini & Spumanti > Vini,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:40.902Z
-264,Cococciola Frentana 75cl,,221.,Vini & Spumanti > Vini,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:21.927Z
-266,Montepulciano Frentana 75cl,,222.,Vini & Spumanti > Vini,true,false,BAR,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:12.432Z
-338,_CATEGORIA_PLACEHOLDER_Vini & Spumanti > Vini,Placeholder per categoria vuota - non eliminare,223.,Vini & Spumanti > Vini,false,false,BAR,,false,false,false,true,2025-07-25T20:42:11.701Z,2025-07-25T20:42:11.701Z
+205,Malibu 100cl,,208.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:40.144Z
+269,Martini Bianco 100cl,,209.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:14:24.382Z
+203,Samb Hugó 100cl,,210.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:18:38.119Z
+164,Sciroppo Mix Violetta Fabbri 100cl,,211.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
+162,Sciroppo Sambuco Fabbri 100cl,,212.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
+163,Sciroppo Tropicale Fabbri 100cl,,213.,Superalcolici > Liquori,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:21:12.121Z
+263,Spumante Promosso Montelvini 75cl,,215.,Vini & Spumanti > Spumanti,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T13:29:55.474Z
+262,Prosecco Asolo Montelvini 75cl,,217.,Vini & Spumanti > Spumanti,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:55.898Z
+265,Cerasuolo Frentana 75cl,,220.,Vini & Spumanti > Vini,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:40.902Z
+264,Cococciola Frentana 75cl,,221.,Vini & Spumanti > Vini,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:21.927Z
+266,Montepulciano Frentana 75cl,,222.,Vini & Spumanti > Vini,true,false,BANCO,,false,false,false,false,2025-07-25T13:29:55.474Z,2025-07-25T20:42:12.432Z
+338,_CATEGORIA_PLACEHOLDER_Vini & Spumanti > Vini,Placeholder per categoria vuota - non eliminare,223.,Vini & Spumanti > Vini,false,false,BANCO,,false,false,false,true,2025-07-25T20:42:11.701Z,2025-07-25T20:42:11.701Z

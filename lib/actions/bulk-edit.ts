@@ -78,10 +78,11 @@ export async function bulkUpdateProductsWithPriceAdjustment(
 
         // Calculate new price if adjustment is provided
         if (priceAdjustment) {
+          const currentPrice = Number(product.prezzo);
           if (priceAdjustment.type === 'fixed') {
-            updateData.prezzo = Math.max(0, product.prezzo + priceAdjustment.value);
+            updateData.prezzo = Math.max(0, currentPrice + priceAdjustment.value);
           } else {
-            updateData.prezzo = Math.max(0, product.prezzo * (1 + priceAdjustment.value / 100));
+            updateData.prezzo = Math.max(0, currentPrice * (1 + priceAdjustment.value / 100));
           }
         }
 

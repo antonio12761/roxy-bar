@@ -7,7 +7,6 @@ const rolePermissions = {
   ADMIN: ['/', '/dashboard', '/cameriere', '/prepara', '/cucina', '/cassa', '/supervisore', '/banco'],
   MANAGER: ['/', '/dashboard', '/cameriere', '/prepara', '/cucina', '/cassa', '/supervisore', '/banco'],
   SUPERVISORE: ['/', '/supervisore', '/cameriere'],
-  OPERATORE: ['/', '/banco'],
   CAMERIERE: ['/', '/cameriere'],
   PREPARA: ['/', '/prepara'],
   BANCO: ['/', '/banco'],
@@ -41,6 +40,14 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get(cookieName);
   
   console.log(`[MIDDLEWARE] Session cookie trovato: ${sessionCookie ? 'SI' : 'NO'}`);
+  if (sessionCookie) {
+    console.log(`[MIDDLEWARE] Cookie value starts with: ${sessionCookie.value.substring(0, 20)}...`);
+  } else {
+    // Debug: check all cookies
+    const allCookies = request.cookies.getAll();
+    console.log(`[MIDDLEWARE] Available cookies: ${allCookies.map(c => c.name).join(', ')}`);
+    console.log(`[MIDDLEWARE] Looking for cookie: ${cookieName}`);
+  }
   
   if (!sessionCookie) {
     console.log(`[MIDDLEWARE] Redirect a login per ${path}`);

@@ -56,7 +56,7 @@ export default function NotificationCenter({
   const sse = useEnhancedSSE({
     clientId: `notification_center_${Date.now()}`,
     userRole,
-    token,
+    token: token || undefined,
     onNotification: (notification) => {
       handleNewNotification(notification);
     }
@@ -102,6 +102,25 @@ export default function NotificationCenter({
     localStorage.setItem("readNotifications", JSON.stringify(Array.from(readNotifications)));
   }, [readNotifications]);
 
+  // Play notification sound based on priority
+  const playNotificationSound = useCallback((priority: NotificationPriority) => {
+    const audio = new Audio();
+    switch (priority) {
+      case NotificationPriority.URGENT:
+        audio.src = "/sounds/urgent.mp3";
+        break;
+      case NotificationPriority.HIGH:
+        audio.src = "/sounds/high.mp3";
+        break;
+      default:
+        audio.src = "/sounds/normal.mp3";
+    }
+    audio.volume = preferences.audioVolume;
+    audio.play().catch(() => {
+      // Ignore audio play errors
+    });
+  }, [preferences.audioVolume]);
+
   // Handle new notification
   const handleNewNotification = useCallback((notification: EnhancedSSENotification) => {
     // Check if this notification type is enabled and for this role
@@ -137,25 +156,6 @@ export default function NotificationCenter({
       console.error('Error syncing notifications to localStorage:', error);
     }
   }, [notifications, readNotifications]);
-
-  // Play notification sound based on priority
-  const playNotificationSound = useCallback((priority: NotificationPriority) => {
-    const audio = new Audio();
-    switch (priority) {
-      case NotificationPriority.URGENT:
-        audio.src = "/sounds/urgent.mp3";
-        break;
-      case NotificationPriority.HIGH:
-        audio.src = "/sounds/high.mp3";
-        break;
-      default:
-        audio.src = "/sounds/normal.mp3";
-    }
-    audio.volume = preferences.audioVolume;
-    audio.play().catch(() => {
-      // Ignore audio play errors
-    });
-  }, [preferences.audioVolume]);
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId: string) => {

@@ -75,7 +75,7 @@ interface OrderData {
     quantita: number;
     prezzo: number;
     stato: string;
-    destinazione: string;
+    postazione: string;
     prodotto: {
       nome: string;
     };
@@ -137,6 +137,10 @@ export default function SupervisorePageOptimized() {
           handleOrderUpdate(data);
           break;
           
+        case 'order:ready':
+          handleOrderReady(data);
+          break;
+          
         case 'order:delivered':
         case 'order:paid':
           handleOrderCompleted(data);
@@ -169,6 +173,16 @@ export default function SupervisorePageOptimized() {
     console.log('[Supervisore] Order update:', data);
     loadOrders();
     loadStats();
+  }, []);
+
+  // Handle order ready
+  const handleOrderReady = useCallback((data: any) => {
+    console.log('[Supervisore] Order ready:', data);
+    toast.success(`Ordine pronto! ${data.tableNumber ? `Tavolo ${data.tableNumber}` : 'Asporto'}`, { 
+      duration: 5000,
+      icon: '🔔'
+    });
+    loadOrders();
   }, []);
 
   // Handle order completed
@@ -233,7 +247,12 @@ export default function SupervisorePageOptimized() {
 
       // Fetch fresh data
       const data = await getSupervisoreUsers();
-      setUsers(data);
+      // Convert Date to string for lastActivity
+      const mappedData = data.map((user: any) => ({
+        ...user,
+        lastActivity: user.lastActivity ? new Date(user.lastActivity).toISOString() : undefined
+      }));
+      setUsers(mappedData);
       
       // Update online users count
       const onlineCount = data.filter((u: any) => u.online).length;
@@ -253,8 +272,8 @@ export default function SupervisorePageOptimized() {
       const cachedOrders = getCachedData<OrderData[]>('orders:all');
       if (cachedOrders && cachedOrders.length > 0) {
         console.log('[Supervisore] Using cached orders');
-        const activeOrdersList = cachedOrders.filter(order => order.stato !== 'PAGATA');
-        const paidOrdersList = cachedOrders.filter(order => order.stato === 'PAGATA');
+        const activeOrdersList = cachedOrders.filter(order => order.stato !== 'PAGATO');
+        const paidOrdersList = cachedOrders.filter(order => order.stato === 'PAGATO');
         setActiveOrders(activeOrdersList);
         setPaidOrders(paidOrdersList);
         setIsLoadingOrders(false);
@@ -265,8 +284,8 @@ export default function SupervisorePageOptimized() {
       const serializedData = serializeDecimalData(data);
       
       // Separate active from paid orders
-      const activeOrdersList = serializedData.filter((order: any) => order.stato !== 'PAGATA');
-      const paidOrdersList = serializedData.filter((order: any) => order.stato === 'PAGATA');
+      const activeOrdersList = serializedData.filter((order: any) => order.stato !== 'PAGATO');
+      const paidOrdersList = serializedData.filter((order: any) => order.stato === 'PAGATO');
       
       setActiveOrders(activeOrdersList);
       setPaidOrders(paidOrdersList);
@@ -298,7 +317,7 @@ export default function SupervisorePageOptimized() {
       
       if (!result.success) {
         // Rollback on failure
-        rollbackOptimisticUpdate(updateId);
+        if (updateId) rollbackOptimisticUpdate(updateId);
         setUsers(prev => prev.map(u => 
           u.id === user.id ? { ...u, bloccato: user.bloccato } : u
         ));
@@ -319,7 +338,7 @@ export default function SupervisorePageOptimized() {
       }
     } catch (error) {
       // Rollback on error
-      rollbackOptimisticUpdate(updateId);
+      if (updateId) rollbackOptimisticUpdate(updateId);
       setUsers(prev => prev.map(u => 
         u.id === user.id ? { ...u, bloccato: user.bloccato } : u
       ));
@@ -361,7 +380,7 @@ export default function SupervisorePageOptimized() {
       const result = await syncOrphansOrders();
       
       if (result.success) {
-        if (result.orphanedOrders > 0) {
+        if (result.orphanedOrders && result.orphanedOrders > 0) {
           toast.warning(result.message, { duration: 5000 });
         } else {
           toast.success('Sincronizzazione completata: nessun ordine orfano trovato', {
@@ -458,8 +477,8 @@ export default function SupervisorePageOptimized() {
   const getRoleColor = (ruolo: string) => {
     switch(ruolo?.toUpperCase()) {
       case 'CAMERIERE': return 'bg-blue-600';
-      case 'PREPARA':
-      case 'BAR': return 'bg-amber-600';
+      case 'PREPARA': return 'bg-amber-600';
+      case 'BANCO': return 'bg-indigo-600';
       case 'CASSA': return 'bg-green-600';
       case 'CUCINA': return 'bg-red-600';
       default: return 'bg-purple-600';
@@ -469,8 +488,8 @@ export default function SupervisorePageOptimized() {
   const getRoleIcon = (ruolo: string) => {
     switch(ruolo?.toUpperCase()) {
       case 'CAMERIERE': return User;
-      case 'PREPARA':
-      case 'BAR': return Coffee;
+      case 'PREPARA': return Coffee;
+      case 'BANCO': return Coffee;
       case 'CASSA': return CreditCard;
       case 'CUCINA': return ChefHat;
       default: return User;
@@ -796,6 +815,30 @@ export default function SupervisorePageOptimized() {
               <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Sincronizzazione...' : 'Sincronizza'}
             </button>
+            
+            {/* Fix Destinazioni Button - Only for first-time setup */}
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const response = await fetch('/api/fix-destinations');
+                  const result = await response.json();
+                  if (result.success) {
+                    toast.success(`Fix completato! ${result.righeAggiornate} righe aggiornate.`);
+                    loadOrders(); // Ricarica gli ordini
+                  } else {
+                    toast.error('Errore durante il fix: ' + (result.error || 'Errore sconosciuto'));
+                  }
+                } catch (error) {
+                  toast.error('Errore di connessione');
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors"
+              title="Aggiorna destinazioni BAR → PREPARA (solo prima volta)"
+            >
+              <AlertCircle className="h-3 w-3" />
+              Fix Destinazioni
+            </button>
             {isCardExpanded('orders') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </button>
@@ -825,12 +868,12 @@ export default function SupervisorePageOptimized() {
                               {order.tavolo ? `Tavolo ${formatTableNumber(order)}` : formatTableNumber(order)}
                             </span>
                             <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              order.stato === "APERTA" ? "bg-yellow-100 text-yellow-800" :
-                              order.stato === "INVIATA" ? "bg-blue-100 text-blue-800" :
+                              order.stato === "ORDINATO" ? "bg-yellow-100 text-yellow-800" :
                               order.stato === "IN_PREPARAZIONE" ? "bg-orange-100 text-orange-800" :
-                              order.stato === "PRONTA" ? "bg-green-100 text-green-800" :
-                              order.stato === "CONSEGNATA" ? "bg-purple-100 text-purple-800" :
-                              order.stato === "PAGATA" ? "bg-emerald-100 text-emerald-800" :
+                              order.stato === "PRONTO" ? "bg-green-100 text-green-800" :
+                              order.stato === "CONSEGNATO" ? "bg-purple-100 text-purple-800" :
+                              order.stato === "RICHIESTA_CONTO" ? "bg-blue-100 text-blue-800" :
+                              order.stato === "PAGATO" ? "bg-emerald-100 text-emerald-800" :
                               "bg-gray-100 text-gray-800"
                             }`}>
                               {order.stato.replace("_", " ")}
@@ -875,7 +918,7 @@ export default function SupervisorePageOptimized() {
                                   riga.stato === "CONSEGNATO" ? "bg-purple-100 text-purple-700" :
                                   "bg-red-100 text-red-700"
                                 }`}>
-                                  {riga.destinazione}
+                                  {riga.postazione}
                                 </div>
                               </div>
                             ))}

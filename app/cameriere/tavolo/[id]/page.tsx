@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Coffee, Plus, Minus, ShoppingCart, Users, Clock, Wifi, WifiOff, Bell, ArrowLeft, X, Gift } from "lucide-react";
 import { useSSE } from "@/lib/hooks/useSSE";
-import { creaOrdinazione, getTavoli, getProdotti, getCustomerNamesForTable } from "@/lib/actions/ordinazioni";
+import { creaOrdinazione, getTavoli, getProdotti, getCustomerNamesForTable, getOrdinazioniAttiveTavolo } from "@/lib/actions/ordinazioni";
 import { aggiungiProdottoAltroTavolo } from "@/lib/actions/contributi";
 import { toast } from "@/lib/toast";
 import Link from "next/link";
@@ -14,7 +14,7 @@ interface Product {
   nome: string;
   prezzo: number;
   categoria: string;
-  destinazione?: string | null;
+  postazione?: string | null;
   codice?: number | null;
 }
 
@@ -33,6 +33,28 @@ interface Table {
   clienteNome?: string | null;
 }
 
+interface ActiveOrder {
+  id: string;
+  numero: number;
+  stato: "ORDINATO" | "IN_PREPARAZIONE" | "PRONTO" | "CONSEGNATO";
+  statoPagamento: "NON_PAGATO" | "PAGATO" | "PARZIALE";
+  totale: number;
+  note?: string;
+  dataApertura: string;
+  nomeCliente?: string;
+  righe: Array<{
+    id: string;
+    quantita: number;
+    prezzo: number;
+    stato: string;
+    prodotto: {
+      id: number;
+      nome: string;
+      prezzo: number;
+    };
+  }>;
+}
+
 type ModalState = "none" | "categories" | "products";
 
 export default function TavoloPage() {
@@ -48,9 +70,11 @@ export default function TavoloPage() {
   
   const [table, setTable] = useState<Table | null>(null);
   const [order, setOrder] = useState<OrderItem[]>([]);
+  const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerSeats, setCustomerSeats] = useState(2);
   const [showNameModal, setShowNameModal] = useState(true);
+  const [showActiveOrders, setShowActiveOrders] = useState(false);
   const [clienteOrdinante, setClienteOrdinante] = useState(clienteOrdinanteParam || "");
   const [productCode, setProductCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,7 +85,7 @@ export default function TavoloPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchMode, setIsSearchMode] = useState(true);
   const [lastAddedProduct, setLastAddedProduct] = useState<Product | null>(null);
-  const [drawerExpanded, setDrawerExpanded] = useState(true);
+  const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [customerNameSuggestions, setCustomerNameSuggestions] = useState<string[]>([]);
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const orderListRef = useRef<HTMLDivElement>(null);
@@ -75,6 +99,18 @@ export default function TavoloPage() {
     }
   });
 
+  const loadActiveOrders = async () => {
+    try {
+      const result = await getOrdinazioniAttiveTavolo(tavoloId);
+      if (result.success) {
+        setActiveOrders(result.ordinazioni || []);
+        setShowActiveOrders(result.ordinazioni?.length > 0);
+      }
+    } catch (error) {
+      console.error("Errore caricamento ordinazioni attive:", error);
+    }
+  };
+
   // Carica dati dal database
   useEffect(() => {
     async function loadData() {
@@ -86,6 +122,9 @@ export default function TavoloPage() {
           getCustomerNamesForTable(tavoloId)
         ]);
         
+        // Carica le ordinazioni attive separatamente
+        await loadActiveOrders();
+        
         // Se getTavoli restituisce array vuoto, probabilmente non siamo autenticati
         if (!tavoliData || tavoliData.length === 0) {
           console.error("❌ Nessun dato tavoli - probabilmente non autenticato");
@@ -94,7 +133,7 @@ export default function TavoloPage() {
           return;
         }
         
-        const currentTable = tavoliData.find(t => t.id === tavoloId);
+        const currentTable = tavoliData.find((t: Table) => t.id === tavoloId);
         if (!currentTable) {
           toast.error("Tavolo non trovato");
           router.push("/cameriere/nuova-ordinazione");
@@ -104,6 +143,7 @@ export default function TavoloPage() {
         setTable(currentTable);
         setProducts(prodottiData);
         setCustomerSeats(currentTable.posti);
+        
         
         // Set customer name suggestions from previous orders at this table
         if (previousCustomers.success && previousCustomers.customerNames.length > 0) {
@@ -124,6 +164,13 @@ export default function TavoloPage() {
     
     loadData();
   }, [tavoloId, router]);
+
+  // Quando le ordinazioni attive cambiano, aggiorna la visibilità del modal nome
+  useEffect(() => {
+    if (table && table.stato === "OCCUPATO" && activeOrders.length > 0) {
+      setShowNameModal(false);
+    }
+  }, [activeOrders, table]);
 
   // Get unique categories
   const categories = Array.from(new Set(products.map(p => p.categoria))).sort();
@@ -149,6 +196,9 @@ export default function TavoloPage() {
     
     // Track last added product
     setLastAddedProduct(product);
+    
+    // Auto-expand drawer when adding product
+    setDrawerExpanded(true);
     
     // Auto-scroll to bottom of order list
     setTimeout(() => {
@@ -253,14 +303,14 @@ export default function TavoloPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-96">
       
-      {/* Customer Name Modal */}
+      {/* Customer Name Modal - Full Height */}
       {showNameModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-6"
           onClick={() => setShowNameModal(false)}
         >
           <div 
-            className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md"
+            className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md mt-0"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold text-foreground mb-2">
@@ -294,7 +344,7 @@ export default function TavoloPage() {
                         
                         // Show suggestions
                         if (value.trim()) {
-                          const filtered = customerNameSuggestions.filter(name =>
+                          const filtered = customerNameSuggestions.filter((name: string) =>
                             name.toLowerCase().includes(value.toLowerCase())
                           );
                           setShowCustomerSuggestions(filtered.length > 0);
@@ -308,7 +358,7 @@ export default function TavoloPage() {
                           if (!customerName.trim()) {
                             setShowCustomerSuggestions(true);
                           } else {
-                            const filtered = customerNameSuggestions.filter(name =>
+                            const filtered = customerNameSuggestions.filter((name: string) =>
                               name.toLowerCase().includes(customerName.toLowerCase())
                             );
                             setShowCustomerSuggestions(filtered.length > 0);
@@ -329,11 +379,11 @@ export default function TavoloPage() {
                           Clienti precedenti tavolo {table.numero}:
                         </div>
                         {customerNameSuggestions
-                          .filter(name => 
+                          .filter((name: string) => 
                             !customerName.trim() || 
                             name.toLowerCase().includes(customerName.toLowerCase())
                           )
-                          .map((name, index) => (
+                          .map((name: string, index: number) => (
                             <button
                               key={index}
                               type="button"
@@ -402,7 +452,7 @@ export default function TavoloPage() {
       {/* Categories Modal */}
       {modalState === "categories" && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-8"
+          className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-6"
           onClick={closeModal}
         >
           <div 
@@ -423,7 +473,7 @@ export default function TavoloPage() {
             {/* Categories List - Scrollable */}
             <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
               <div className="space-y-2">
-                {categories.map((category) => (
+                {categories.map((category: string) => (
                   <button
                     key={category}
                     onClick={() => {
@@ -437,7 +487,7 @@ export default function TavoloPage() {
                       <div className="flex-1">
                         <div className="font-medium text-foreground">{category}</div>
                         <div className="text-sm text-muted-foreground">
-                          {products.filter(p => p.categoria === category).length} prodotti
+                          {products.filter((p: Product) => p.categoria === category).length} prodotti
                         </div>
                       </div>
                     </div>
@@ -452,7 +502,7 @@ export default function TavoloPage() {
       {/* Products Modal */}
       {modalState === "products" && selectedCategory && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-8"
+          className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-6"
           onClick={closeModal}
         >
           <div 
@@ -482,7 +532,7 @@ export default function TavoloPage() {
             {/* Products List */}
             <div className="flex-1 p-4 overflow-y-auto">
               <div className="space-y-2">
-                {categoryProducts.map((product) => (
+                {categoryProducts.map((product: Product) => (
                   <ProductRow
                     key={product.id}
                     product={product}
@@ -553,11 +603,88 @@ export default function TavoloPage() {
         )}
       </div>
 
+      {/* Active Orders Section */}
+      {!showNameModal && activeOrders.length > 0 && (
+        <div className="px-6 mb-6">
+          <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">Ordinazioni Attive ({activeOrders.length})</h2>
+              <button
+                onClick={() => setShowActiveOrders(!showActiveOrders)}
+                className="text-sm text-slate-400 hover:text-white"
+              >
+                {showActiveOrders ? 'Nascondi' : 'Mostra'}
+              </button>
+            </div>
+            
+            {showActiveOrders && (
+              <>
+                <div className="space-y-3">
+                  {activeOrders.map((activeOrder) => (
+                    <div key={activeOrder.id} className="bg-slate-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-white">#{activeOrder.numero}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            activeOrder.stato === 'ORDINATO' ? 'bg-blue-500 text-white' :
+                            activeOrder.stato === 'IN_PREPARAZIONE' ? 'bg-yellow-500 text-black' :
+                            activeOrder.stato === 'PRONTO' ? 'bg-green-500 text-white' :
+                            'bg-purple-500 text-white'
+                          }`}>
+                            {activeOrder.stato.replace('_', ' ')}
+                          </span>
+                          {activeOrder.nomeCliente && (
+                            <span className="text-slate-300">{activeOrder.nomeCliente}</span>
+                          )}
+                        </div>
+                        <span className="font-bold text-white">€{Number(activeOrder.totale).toFixed(2)}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-1 text-sm">
+                        {activeOrder.righe.map((riga) => (
+                          <div key={riga.id} className="flex justify-between text-slate-300">
+                            <span>{riga.quantita}x {riga.prodotto.nome}</span>
+                            <span>€{(Number(riga.prezzo) * riga.quantita).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="text-xs text-slate-400 mt-2">
+                        {new Date(activeOrder.dataApertura).toLocaleString('it-IT')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 p-3 bg-slate-900 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Totale tavolo:</span>
+                    <span className="text-xl font-bold text-white">
+                      €{activeOrders.reduce((sum, order) => sum + Number(order.totale), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Content - Quick Product Input */}
       {!showNameModal && (
         <div className="px-6">
           <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
-            <h2 className="text-lg font-bold text-foreground mb-4">Aggiungi Prodotti</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-foreground">Aggiungi Prodotti</h2>
+              {activeOrders.length > 0 && (
+                <button
+                  onClick={() => setShowNameModal(true)}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                >
+                  + Nuova Ordinazione
+                </button>
+              )}
+            </div>
             
             {/* Only show search - code functionality suspended */}
             {true ? (
@@ -572,7 +699,7 @@ export default function TavoloPage() {
                     
                     // Real-time search
                     if (query.trim()) {
-                      const results = products.filter(p => 
+                      const results = products.filter((p: Product) => 
                         p.nome.toLowerCase().includes(query.toLowerCase().trim())
                       );
                       setSearchResults(results);
@@ -588,7 +715,7 @@ export default function TavoloPage() {
                 {/* Search Results */}
                 {searchResults.length > 0 && (
                   <div className="max-h-48 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg">
-                    {searchResults.map((product) => (
+                    {searchResults.map((product: Product) => (
                       <button
                         key={product.id}
                         onClick={() => addProductFromSearch(product)}
@@ -627,32 +754,46 @@ export default function TavoloPage() {
 
       {/* Order Summary - Fixed Bottom Drawer */}
       {!showNameModal && (
-        <div className="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-40 flex flex-col max-h-96">
+        <div className={`fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-40 flex flex-col transition-all duration-300 ${
+          drawerExpanded ? 'max-h-96' : 'max-h-20'
+        }`}>
           {/* Drawer Header - Always visible */}
-          <div className="p-3 bg-slate-900">
+          <div 
+            className="p-3 bg-slate-900 cursor-pointer"
+            onClick={() => setDrawerExpanded(!drawerExpanded)}
+          >
             {/* Order info row */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="font-medium text-foreground">
-                  Ordine ({order.length} {order.length === 1 ? 'prodotto' : 'prodotti'})
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs min-w-0 flex-1">
+                <span className="font-medium text-foreground whitespace-nowrap">
+                  Ordine ({order.length})
                 </span>
-                <span className="text-foreground">
+                <span className="text-amber-400 whitespace-nowrap font-medium">
+                  T{table?.numero}
+                </span>
+                <span className="text-foreground whitespace-nowrap">
                   {customerName}
                 </span>
-                <span className="text-muted-foreground">{new Date().toLocaleTimeString()}</span>
+                {!drawerExpanded && lastAddedProduct && (
+                  <span className="text-slate-400 truncate">
+                    + {lastAddedProduct.nome}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-white/70 font-bold text-xl">€{getTotalOrder().toFixed(2)}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-white/70 font-bold text-lg">€{getTotalOrder().toFixed(2)}</span>
+                <div className={`transform transition-transform ${drawerExpanded ? 'rotate-180' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-slate-400">
+                    <path d="M4 6l4 4 4-4z"/>
+                  </svg>
+                </div>
               </div>
-            </div>
-            {/* Total row - more prominent */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-700">
-              <span className="text-lg font-semibold text-white">Totale ordine:</span>
-              <span className="text-2xl font-bold text-white/70">€{getTotalOrder().toFixed(2)}</span>
             </div>
           </div>
 
-          {/* Drawer Content */}
+          {/* Drawer Content - Only visible when expanded */}
+          {drawerExpanded && (
+            <>
               {/* Order Items */}
               <div ref={orderListRef} className="flex-1 overflow-y-auto px-4 py-2 border-t border-slate-700">
                 {order.length === 0 ? (
@@ -662,7 +803,7 @@ export default function TavoloPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {order.map((item, index) => (
+                    {order.map((item: OrderItem, index: number) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-700 rounded-lg"
@@ -730,7 +871,7 @@ export default function TavoloPage() {
                         for (const item of order) {
                           await aggiungiProdottoAltroTavolo(
                             clienteOrdinante, // Chi ordina (ID del cliente)
-                            ordinazioneResult.data.id, // ID ordinazione destinazione
+                            'ordinazione' in ordinazioneResult && ordinazioneResult.ordinazione ? ordinazioneResult.ordinazione.id : '', // ID ordinazione postazione
                             item.prodotto.id,
                             item.quantita,
                             item.prodotto.prezzo,
@@ -746,7 +887,7 @@ export default function TavoloPage() {
                       result = await creaOrdinazione({
                         tavoloId: table.id,
                         tipo: "TAVOLO",
-                        prodotti: order.map(item => ({
+                        prodotti: order.map((item: OrderItem) => ({
                           prodottoId: item.prodotto.id,
                           quantita: item.quantita,
                           prezzo: item.prodotto.prezzo
@@ -759,8 +900,8 @@ export default function TavoloPage() {
                     
                     if (result.success) {
                       // Determina le destinazioni per il messaggio
-                      const destinazioni = new Set(order.map(item => 
-                        item.prodotto.destinazione || 'BAR'
+                      const destinazioni = new Set(order.map((item: OrderItem) => 
+                        item.prodotto.postazione || 'BAR'
                       ));
                       
                       const messaggio = isOrdinaPerAltri 
@@ -769,7 +910,15 @@ export default function TavoloPage() {
                       
                       toast.success(messaggio);
                       clearOrder();
-                      router.push("/cameriere");
+                      
+                      // Ricarica le ordinazioni attive
+                      await loadActiveOrders();
+                      
+                      // Mostra la sezione ordinazioni attive
+                      setShowActiveOrders(true);
+                      
+                      // Non reindirizzare più, permetti multiple ordinazioni
+                      // router.push("/cameriere");
                     } else {
                       console.error("Errore ordine:", result.error);
                       toast.error(`Errore durante l'invio dell'ordine: ${result.error || 'Errore sconosciuto'}`);
@@ -784,6 +933,8 @@ export default function TavoloPage() {
                 Invio Ordine
               </button>
             </div>
+          )}
+            </>
           )}
         </div>
       )}
@@ -810,7 +961,7 @@ function ProductRow({ product, onAdd }: {
             </span>
           )}
           <span className="text-xs text-muted-foreground">
-            {product.destinazione || 'Bar'}
+            {product.postazione || 'Bar'}
           </span>
         </div>
       </div>

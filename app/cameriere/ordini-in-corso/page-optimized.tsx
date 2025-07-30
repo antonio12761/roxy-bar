@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Coffee, ChefHat, Users, CheckCircle, RefreshCw, Loader2, ArrowLeft, ChevronDown, ChevronUp, CreditCard } from "lucide-react";
+import { Clock, Coffee, ChefHat, Users, CheckCircle, RefreshCw, Loader2, ChevronDown, ChevronUp, CreditCard } from "lucide-react";
 import { getOrdinazioniAperte, aggiornaStatoRiga } from "@/lib/actions/ordinazioni";
 import Link from "next/link";
 import { useStationSSE } from "@/hooks/useStationSSE";
@@ -16,7 +16,7 @@ interface OrderItem {
   };
   quantita: number;
   stato: string;
-  destinazione: string;
+  postazione: string;
   timestampOrdine: Date;
   timestampInizio?: Date | null;
   timestampPronto?: Date | null;
@@ -49,10 +49,11 @@ interface Order {
 export default function OrdiniInCorsoPageOptimized() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"tutti" | "bar" | "cucina">("tutti");
+  const [filter, setFilter] = useState<"tutti" | "prepara" | "cucina">("tutti");
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isUnmounting, setIsUnmounting] = useState(false);
 
   // Use optimized SSE hook
   const { 
@@ -103,49 +104,57 @@ export default function OrdiniInCorsoPageOptimized() {
 
   // Load orders with cache support
   const loadOrders = useCallback(async () => {
+    // Don't make API calls if component is unmounting
+    if (isUnmounting) {
+      console.log('[Cameriere] Skipping loadOrders - component unmounting');
+      return;
+    }
+
     try {
       // Check cache first
       const cachedOrders = getCachedData<Order[]>('orders:my-tables');
-      if (cachedOrders && cachedOrders.length > 0) {
+      if (cachedOrders && cachedOrders.length > 0 && !isUnmounting) {
         console.log('[Cameriere] Using cached orders:', cachedOrders.length);
         setOrders(cachedOrders);
         setIsLoading(false);
       }
 
-      // Fetch fresh data
-      const data = await getOrdinazioniAperte();
-      const serializedData = serializeDecimalData(data);
-      
-      // Filter only active orders
-      const activeOrders = serializedData.filter(order => 
-        ["APERTA", "INVIATA", "IN_PREPARAZIONE", "PRONTA"].includes(order.stato)
-      );
-      
-      setOrders(activeOrders);
-      setIsLoading(false);
-      
-      // Update cache
-      if (activeOrders.length > 0) {
-        // Cache would be updated here via station cache
+      // Fetch fresh data only if not unmounting
+      if (!isUnmounting) {
+        const data = await getOrdinazioniAperte();
+        const serializedData = serializeDecimalData(data);
+        
+        // Filter only active orders
+        const activeOrders = serializedData.filter(order => 
+          ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"].includes(order.stato)
+        );
+        
+        // Only update state if component is still mounted
+        if (!isUnmounting) {
+          setOrders(activeOrders);
+          setIsLoading(false);
+        }
       }
       
     } catch (error) {
       console.error("Errore caricamento ordini:", error);
-      setIsLoading(false);
+      if (!isUnmounting) {
+        setIsLoading(false);
+      }
     }
-  }, [getCachedData]);
+  }, [getCachedData, isUnmounting]);
 
   // Handle order ready event
   const handleOrderReady = useCallback((data: any) => {
     console.log('[Cameriere] Order ready:', data);
     
     // Update order state in UI
-    setOrders(prev => prev.map(order => {
+    setOrders(prev => prev.map((order: Order) => {
       if (order.id === data.orderId) {
         return {
           ...order,
-          stato: 'PRONTA',
-          righe: order.righe.map(item => ({
+          stato: 'PRONTO',
+          righe: order.righe.map((item: OrderItem) => ({
             ...item,
             stato: 'PRONTO'
           }))
@@ -165,7 +174,7 @@ export default function OrdiniInCorsoPageOptimized() {
 
   // Handle order update
   const handleOrderUpdate = useCallback((data: any) => {
-    setOrders(prev => prev.map(order => {
+    setOrders(prev => prev.map((order: Order) => {
       if (order.id === data.orderId) {
         return {
           ...order,
@@ -179,13 +188,13 @@ export default function OrdiniInCorsoPageOptimized() {
   // Handle order delivered
   const handleOrderDelivered = useCallback((data: any) => {
     // Remove from active orders
-    setOrders(prev => prev.filter(order => order.id !== data.orderId));
+    setOrders(prev => prev.filter((order: Order) => order.id !== data.orderId));
   }, []);
 
   // Handle order paid
   const handleOrderPaid = useCallback((data: any) => {
     // Remove from active orders
-    setOrders(prev => prev.filter(order => order.id !== data.orderId));
+    setOrders(prev => prev.filter((order: Order) => order.id !== data.orderId));
   }, []);
 
   // Handle status update with optimistic updates
@@ -201,11 +210,11 @@ export default function OrdiniInCorsoPageOptimized() {
     );
 
     // Update UI immediately
-    setOrders(prev => prev.map(order => {
+    setOrders(prev => prev.map((order: Order) => {
       if (order.id === orderId) {
         return {
           ...order,
-          righe: order.righe.map(riga => 
+          righe: order.righe.map((riga: OrderItem) => 
             riga.id === item.id ? { ...riga, stato: newStatus } : riga
           )
         };
@@ -221,14 +230,14 @@ export default function OrdiniInCorsoPageOptimized() {
       
       if (!result.success) {
         // Rollback on failure
-        rollbackOptimisticUpdate(updateId);
+        if (updateId) rollbackOptimisticUpdate(updateId);
         
         // Revert UI
-        setOrders(prev => prev.map(order => {
+        setOrders(prev => prev.map((order: Order) => {
           if (order.id === orderId) {
             return {
               ...order,
-              righe: order.righe.map(riga => 
+              righe: order.righe.map((riga: OrderItem) => 
                 riga.id === item.id ? { ...riga, stato: item.stato } : riga
               )
             };
@@ -240,14 +249,14 @@ export default function OrdiniInCorsoPageOptimized() {
       }
     } catch (error) {
       // Rollback on error
-      rollbackOptimisticUpdate(updateId);
+      if (updateId) rollbackOptimisticUpdate(updateId);
       
       // Revert UI
-      setOrders(prev => prev.map(order => {
+      setOrders(prev => prev.map((order: Order) => {
         if (order.id === orderId) {
           return {
             ...order,
-            righe: order.righe.map(riga => 
+            righe: order.righe.map((riga: OrderItem) => 
               riga.id === item.id ? { ...riga, stato: item.stato } : riga
             )
           };
@@ -307,9 +316,9 @@ export default function OrdiniInCorsoPageOptimized() {
   };
 
   const getOrderStatus = (order: Order) => {
-    const allReady = order.righe.every(item => ["CONSEGNATO", "ANNULLATO"].includes(item.stato));
-    const hasReady = order.righe.some(item => item.stato === "PRONTO");
-    const inProgress = order.righe.some(item => item.stato === "IN_LAVORAZIONE");
+    const allReady = order.righe.every((item: OrderItem) => ["CONSEGNATO", "ANNULLATO"].includes(item.stato));
+    const hasReady = order.righe.some((item: OrderItem) => item.stato === "PRONTO");
+    const inProgress = order.righe.some((item: OrderItem) => item.stato === "IN_LAVORAZIONE");
     
     if (allReady) return "completed";
     if (hasReady) return "ready";
@@ -325,10 +334,10 @@ export default function OrdiniInCorsoPageOptimized() {
       .trim();
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order: Order) => {
     if (filter === "tutti") return true;
-    return order.righe.some(item => 
-      filter === "bar" ? item.destinazione === "BAR" : item.destinazione === "CUCINA"
+    return order.righe.some((item: OrderItem) => 
+      filter === "prepara" ? item.postazione === "PREPARA" : item.postazione === "CUCINA"
     );
   });
 
@@ -345,6 +354,15 @@ export default function OrdiniInCorsoPageOptimized() {
     loadOrders();
   }, [loadOrders]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('[OrdiniInCorso] Component unmounting, cleaning up...');
+      setIsUnmounting(true);
+      clearEventQueue();
+    };
+  }, [clearEventQueue]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -359,9 +377,17 @@ export default function OrdiniInCorsoPageOptimized() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Link href="/cameriere" className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-              <ArrowLeft className="h-6 w-6 text-white/70" />
-            </Link>
+            <button
+              onClick={() => {
+                console.log('[OrdiniInCorso] Navigating to /cameriere via button');
+                setIsUnmounting(true);
+                window.location.href = '/cameriere';
+              }}
+              className="flex items-center gap-2 px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-white/80 hover:text-white text-sm"
+              title="Torna alla dashboard"
+            >
+              ← Dashboard
+            </button>
             <h1 className="text-2xl font-bold text-foreground">Ordini in Corso</h1>
           </div>
           
@@ -402,14 +428,14 @@ export default function OrdiniInCorsoPageOptimized() {
             Tutti ({orders.length})
           </button>
           <button
-            onClick={() => setFilter("bar")}
+            onClick={() => setFilter("prepara")}
             className={`px-4 py-2 rounded-lg transition-colors ${
-              filter === "bar" 
+              filter === "prepara" 
                 ? "bg-white/20 text-white" 
                 : "bg-slate-700 text-muted-foreground hover:bg-slate-600"
             }`}
           >
-            Bar
+            Prepara
           </button>
           <button
             onClick={() => setFilter("cucina")}
@@ -432,7 +458,7 @@ export default function OrdiniInCorsoPageOptimized() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredOrders.map((order) => {
+          {filteredOrders.map((order: Order) => {
             const orderStatus = getOrderStatus(order);
             const isCollapsed = collapsedCards.has(order.id);
             const statusColors = {
@@ -477,7 +503,7 @@ export default function OrdiniInCorsoPageOptimized() {
                         {getElapsedTime(order.dataApertura)} fa
                       </span>
                       <span className="text-white/70 font-medium">
-                        €{typeof order.totale === 'number' ? order.totale.toFixed(2) : parseFloat(order.totale.toString()).toFixed(2)}
+                        €{order.totale.toFixed(2)}
                       </span>
                       
                       {/* Toggle Icon */}
@@ -496,19 +522,19 @@ export default function OrdiniInCorsoPageOptimized() {
                     {/* Order Items - Single Container */}
                     <div className="mt-3 p-3 bg-slate-900/50 rounded-lg border border-slate-600/30">
                       <div className="space-y-2">
-                        {order.righe.map((item) => (
+                        {order.righe.map((item: OrderItem) => (
                           <div key={item.id} className="flex items-center justify-between py-1">
                             <div className="flex items-center gap-3">
                               <span className="font-medium text-foreground">
                                 {item.quantita}x {item.prodotto.nome}
                               </span>
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                {item.destinazione === "CUCINA" ? (
+                                {item.postazione === "CUCINA" ? (
                                   <ChefHat className="h-3 w-3" />
                                 ) : (
                                   <Coffee className="h-3 w-3" />
                                 )}
-                                {item.destinazione}
+                                {item.postazione}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">

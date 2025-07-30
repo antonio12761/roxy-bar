@@ -53,7 +53,7 @@ export default function ContiScalariPage() {
       console.log("Caricamento conti scalari...");
       const result = await getTuttiContiScalari();
       
-      if (result.success) {
+      if (result.success && result.riepilogo) {
         setRiepilogo(result.riepilogo);
         console.log("✅ Conti caricati:", result.riepilogo);
       } else {
@@ -88,7 +88,7 @@ export default function ContiScalariPage() {
       );
 
       if (result.success) {
-        toast.success(result.message);
+        toast.success(result.message || "Pagamento registrato con successo");
         setShowPagamentoModal(false);
         setImportoPagamento("");
         setSelectedConto(null);

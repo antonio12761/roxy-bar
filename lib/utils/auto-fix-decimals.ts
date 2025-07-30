@@ -38,7 +38,7 @@ export function fixMultipleServerActions<T extends Record<string, Function>>(
   
   for (const [key, action] of Object.entries(actions)) {
     if (typeof action === 'function') {
-      fixedActions[key as keyof T] = autoFixDecimals(action) as T[keyof T];
+      fixedActions[key as keyof T] = autoFixDecimals(action as (...args: any[]) => Promise<unknown>) as unknown as T[keyof T];
     } else {
       fixedActions[key as keyof T] = action;
     }

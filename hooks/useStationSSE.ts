@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { StationType, shouldReceiveEvent } from '@/lib/sse/station-filters';
 import { getStationCache, StationCache } from '@/lib/cache/station-cache';
 import { SSEEventName, SSEEventData } from '@/lib/sse/sse-events';
+import { useAuthToken } from './useAuthToken';
 
 export interface ConnectionHealth {
   status: 'connected' | 'connecting' | 'disconnected' | 'error';
@@ -36,6 +37,8 @@ export interface OptimisticUpdate {
 }
 
 export function useStationSSE(config: StationSSEConfig) {
+  const { token, isLoading: tokenLoading } = useAuthToken();
+  
   const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth>({
     status: 'disconnected',
     quality: 'poor',
@@ -65,12 +68,19 @@ export function useStationSSE(config: StationSSEConfig) {
       return;
     }
 
+    // Don't connect if token is not available yet
+    if (tokenLoading || !token) {
+      console.log(`[${config.stationType}] Waiting for token...`);
+      return;
+    }
+
     setConnectionHealth(prev => ({ ...prev, status: 'connecting' }));
 
     const params = new URLSearchParams({
       station: config.stationType,
       userId: config.userId,
-      clientId: `${config.stationType}-${config.userId}-${Date.now()}`
+      clientId: `${config.stationType}-${config.userId}-${Date.now()}`,
+      token: token
     });
 
     const eventSource = new EventSource(`/api/sse?${params}`);
@@ -119,7 +129,7 @@ export function useStationSSE(config: StationSSEConfig) {
     eventSource.addEventListener('order:update', (e) => handleSSEEvent('order:update', JSON.parse(e.data)));
     eventSource.addEventListener('order:ready', (e) => handleSSEEvent('order:ready', JSON.parse(e.data)));
     
-  }, [config.stationType, config.userId]);
+  }, [config.stationType, config.userId, tokenLoading, token]);
 
   /**
    * Handle incoming SSE events with filtering and caching
@@ -304,11 +314,13 @@ export function useStationSSE(config: StationSSEConfig) {
     setConnectionHealth(prev => ({ ...prev, status: 'disconnected' }));
   }, []);
 
-  // Auto-connect on mount
+  // Auto-connect on mount and when token becomes available
   useEffect(() => {
-    connect();
+    if (!tokenLoading && token) {
+      connect();
+    }
     return disconnect;
-  }, [connect, disconnect]);
+  }, [connect, disconnect, tokenLoading, token]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -327,6 +339,6 @@ export function useStationSSE(config: StationSSEConfig) {
     applyOptimisticUpdate,
     rollbackOptimisticUpdate,
     getCachedData,
-    clearEventQueue: () => setEventQueue([])
+    clearEventQueue: useCallback(() => setEventQueue([]), [])
   };
 }

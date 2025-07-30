@@ -3,6 +3,9 @@
 import { loginUser, logoutUser, getCurrentUser, type AuthResult, type User } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+// Re-export getCurrentUser
+export { getCurrentUser };
+
 // Helper per determinare il redirect dopo login
 function getRedirectPath(role: string): string {
   switch (role) {
@@ -12,8 +15,6 @@ function getRedirectPath(role: string): string {
       return "/dashboard";
     case "SUPERVISORE":
       return "/supervisore";
-    case "OPERATORE":
-      return "/banco";
     case "CAMERIERE":
       return "/cameriere";
     case "PREPARA":

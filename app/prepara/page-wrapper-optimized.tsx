@@ -17,7 +17,7 @@ import {
   WifiOff,
   ClipboardList
 } from "lucide-react";
-import { getOrdinazioniAperte, aggiornaStatoRiga } from "@/lib/actions/ordinazioni";
+import { getOrdinazioniAperte, aggiornaStatoRiga, aggiornaStatoOrdinazione, sollecitaOrdinePronto, segnaOrdineRitirato } from "@/lib/actions/ordinazioni";
 import { useStationSSE } from "@/hooks/useStationSSE";
 import { StationType } from "@/lib/sse/station-filters";
 import { toast } from "@/lib/toast";
@@ -32,7 +32,7 @@ interface OrderItem {
   prezzo: number;
   stato: "INSERITO" | "IN_LAVORAZIONE" | "PRONTO" | "CONSEGNATO";
   timestamp: string;
-  destinazione: string;
+  postazione: string;
   note?: string | null;
 }
 
@@ -44,7 +44,7 @@ interface Ordinazione {
   timestamp: string;
   items: OrderItem[];
   totaleCosto: number;
-  stato: "APERTA" | "INVIATA" | "IN_PREPARAZIONE" | "PRONTA" | "CONSEGNATA";
+  stato: "ORDINATO" | "IN_PREPARAZIONE" | "PRONTO" | "CONSEGNATO";
   hasKitchenItems: boolean;
   cameriere?: string;
   note?: string;
@@ -75,43 +75,13 @@ export default function PreparaPageOptimized() {
     autoReconnect: true
   });
 
-  // Process SSE events
-  useEffect(() => {
-    eventQueue.forEach(({ event, data, timestamp }) => {
-      console.log(`[Prepara] Processing event: ${event}`, data);
-      
-      switch (event) {
-        case 'order:new':
-          if (data.items?.some((item: any) => item.destination === 'BAR')) {
-            handleNewOrder(data);
-          }
-          break;
-          
-        case 'order:item:update':
-          if (data.destination === 'BAR') {
-            handleItemUpdate(data);
-          }
-          break;
-          
-        case 'order:cancelled':
-          handleOrderCancelled(data);
-          break;
-          
-        case 'notification:reminder':
-          handleReminder(data);
-          break;
-      }
-    });
-    
-    // Clear processed events
-    clearEventQueue();
-  }, [eventQueue]);
+  // Process SSE events - Moved after function definitions
 
   // Load initial data with cache support
   const loadOrders = useCallback(async () => {
     try {
       // Check cache first
-      const cachedOrders = getCachedData<Ordinazione[]>('orders:active:bar');
+      const cachedOrders = getCachedData<Ordinazione[]>('orders:active:prepara');
       if (cachedOrders && cachedOrders.length > 0) {
         console.log('[Prepara] Using cached orders:', cachedOrders.length);
         setOrders(cachedOrders);
@@ -122,17 +92,75 @@ export default function PreparaPageOptimized() {
       const data = await getOrdinazioniAperte();
       const serializedData = serializeDecimalData(data);
       
-      // Transform and filter for BAR items only
-      const barOrders = serializedData
-        .filter(ord => ord.righe.some(item => item.destinazione === 'BAR'))
-        .map(ord => ({
+      // Debug: Log all orders and their destinations
+      console.log('[Prepara] All orders received:', serializedData.length);
+      
+      // Collect all unique destinations to see what's in the database
+      const allDestinations = new Set<string>();
+      serializedData.forEach((ord: any) => {
+        ord.righe.forEach((riga: any) => {
+          allDestinations.add(riga.postazione || 'NULL');
+        });
+      });
+      console.log('[Prepara] ALL UNIQUE DESTINATIONS IN DATABASE:', Array.from(allDestinations));
+      
+      // Check for null or empty destinations
+      const itemsWithoutDestination = serializedData.flatMap((ord: any) => 
+        ord.righe.filter((riga: any) => !riga.postazione || riga.postazione === '')
+      );
+      if (itemsWithoutDestination.length > 0) {
+        console.log(`[Prepara] WARNING: ${itemsWithoutDestination.length} items without destination!`);
+        itemsWithoutDestination.forEach((item: any) => {
+          console.log(`  - ${item.prodotto?.nome} (Order: ${item.ordinazioneId})`);
+        });
+      }
+      
+      // DETAILED DEBUG LOGGING FOR EACH ORDER
+      serializedData.forEach((ord: any, index: number) => {
+        console.log(`\n=== DEBUG ORDER ${index + 1} ===`);
+        console.log(`[Prepara] Order ID: ${ord.id}`);
+        console.log(`[Prepara] Order Type: ${ord.tipo}`);
+        console.log(`[Prepara] Order Stato: ${ord.stato}`);
+        console.log(`[Prepara] Number of righe: ${ord.righe.length}`);
+        
+        // Log each riga (item) in detail
+        ord.righe.forEach((riga: any, rigaIndex: number) => {
+          console.log(`  Riga ${rigaIndex + 1}:`);
+          console.log(`    - ID: ${riga.id}`);
+          console.log(`    - Prodotto: ${riga.prodotto?.nome || 'N/A'}`);
+          console.log(`    - Postazione: "${riga.postazione}"`); 
+          console.log(`    - Stato: ${riga.stato}`);
+          console.log(`    - Quantità: ${riga.quantita}`);
+        });
+        
+        // Check if any riga has PREPARA destination
+        const hasPreparaItems = ord.righe.some((item: any) => item.postazione === 'PREPARA');
+        console.log(`[Prepara] Has PREPARA items: ${hasPreparaItems}`);
+        
+        // Show exactly which items match PREPARA
+        const preparaItems = ord.righe.filter((item: any) => item.postazione === 'PREPARA');
+        console.log(`[Prepara] PREPARA items count: ${preparaItems.length}`);
+        preparaItems.forEach((item: any, itemIndex: number) => {
+          console.log(`  PREPARA Item ${itemIndex + 1}: ${item.prodotto?.nome} (ID: ${item.id})`);
+        });
+        
+        // Test the exact filter condition
+        const passesFilter = ord.righe.some((item: any) => item.postazione === 'PREPARA');
+        console.log(`[Prepara] Passes filter: ${passesFilter}`);
+        console.log(`=== END DEBUG ORDER ${index + 1} ===\n`);
+      });
+
+      // Transform and filter for PREPARA items only
+      const preparaOrders = serializedData
+        .filter((ord: any) => ord.righe.some((item: any) => item.postazione === 'PREPARA'))
+        .map((ord: any) => ({
           id: ord.id,
           tavolo: ord.tavolo?.numero || ord.tipo,
           nomeCliente: ord.nomeCliente || ord.note?.split('Cliente: ')[1]?.split(' - ')[0],
           timestamp: ord.dataApertura,
           items: ord.righe
-            .filter(item => item.destinazione === 'BAR')
-            .map(item => ({
+            .filter((item: any) => item.postazione === 'PREPARA')
+            .map((item: any) => ({
               id: item.id,
               ordinazioneId: ord.id,
               prodotto: item.prodotto.nome,
@@ -140,18 +168,20 @@ export default function PreparaPageOptimized() {
               prezzo: item.prezzo,
               stato: item.stato,
               timestamp: item.timestampOrdine,
-              destinazione: item.destinazione,
+              postazione: item.postazione,
               note: item.note
             })),
           totaleCosto: ord.totale,
           stato: ord.stato,
-          hasKitchenItems: ord.righe.some(item => item.destinazione === 'CUCINA'),
+          hasKitchenItems: ord.righe.some((item: any) => item.postazione === 'CUCINA'),
           cameriere: ord.cameriere?.nome,
           note: ord.note
         }))
         .filter(ord => ord.items.length > 0);
 
-      setOrders(barOrders);
+      console.log('[Prepara] Filtered PREPARA orders:', preparaOrders.length);
+
+      setOrders(preparaOrders);
       setIsLoading(false);
       
     } catch (error) {
@@ -210,7 +240,7 @@ export default function PreparaPageOptimized() {
       nomeCliente: data.customerName,
       timestamp: data.timestamp,
       items: data.items
-        .filter((item: any) => item.destination === 'BAR')
+        .filter((item: any) => item.destination === 'PREPARA')
         .map((item: any) => ({
           id: item.id,
           ordinazioneId: data.orderId,
@@ -219,10 +249,10 @@ export default function PreparaPageOptimized() {
           prezzo: 0, // Will be updated from DB
           stato: 'INSERITO',
           timestamp: data.timestamp,
-          destinazione: item.destination
+          postazione: item.destination
         })),
       totaleCosto: data.totalAmount,
-      stato: 'APERTA',
+      stato: 'ORDINATO',
       hasKitchenItems: data.items.some((item: any) => item.destination === 'CUCINA'),
       cameriere: data.waiterName
     };
@@ -230,16 +260,16 @@ export default function PreparaPageOptimized() {
     setOrders(prev => {
       const newOrders = [newOrder, ...prev];
       
-      // Auto-select if this is the first order or no order is currently selected
-      if (!selectedOrder || prev.length === 0) {
-        autoSelectFirstOrder(newOrder);
-      }
+      // Auto-select if this is the first order or no order is currently selected - DISABLED
+      // if (!selectedOrder || prev.length === 0) {
+      //   setTimeout(() => autoSelectFirstOrder(newOrder), 100);
+      // }
       
       return newOrders;
     });
     
     toast.success(`Nuovo ordine dal tavolo ${newOrder.tavolo}`);
-  }, [selectedOrder, autoSelectFirstOrder]);
+  }, [selectedOrder?.id, autoSelectFirstOrder]);
 
   // Handle item status update
   const handleItemUpdate = useCallback((data: any) => {
@@ -247,7 +277,7 @@ export default function PreparaPageOptimized() {
     
     setOrders(prev => prev.map(order => {
       if (order.id === data.orderId) {
-        return {
+        const updatedOrder = {
           ...order,
           items: order.items.map(item => 
             item.id === data.itemId 
@@ -255,6 +285,14 @@ export default function PreparaPageOptimized() {
               : item
           )
         };
+        
+        // Check if all items are now PRONTO
+        const allReady = updatedOrder.items.every(item => item.stato === 'PRONTO');
+        if (allReady) {
+          updatedOrder.stato = 'PRONTO';
+        }
+        
+        return updatedOrder;
       }
       return order;
     }));
@@ -297,7 +335,7 @@ export default function PreparaPageOptimized() {
       
       if (!result.success) {
         // Rollback on failure
-        rollbackOptimisticUpdate(updateId);
+        if (updateId) rollbackOptimisticUpdate(updateId);
         handleItemUpdate({
           orderId: item.ordinazioneId,
           itemId: item.id,
@@ -309,7 +347,7 @@ export default function PreparaPageOptimized() {
       }
     } catch (error) {
       // Rollback on error
-      rollbackOptimisticUpdate(updateId);
+      if (updateId) rollbackOptimisticUpdate(updateId);
       handleItemUpdate({
         orderId: item.ordinazioneId,
         itemId: item.id,
@@ -358,14 +396,16 @@ export default function PreparaPageOptimized() {
     if (!selectedOrder && orders.length > 0) {
       setSelectedOrder(orders[0]);
     }
-  }, [orders, selectedOrder]);
+  }, [orders.length, selectedOrder?.id]);
 
-  // Auto-start first item when a new order is selected
+  // Auto-start first item when a new order is selected - only for PREPARA items
   useEffect(() => {
     if (selectedOrder && selectedOrder.items.length > 0) {
-      const firstPendingItem = selectedOrder.items.find(item => item.stato === 'INSERITO');
+      const firstPendingItem = selectedOrder.items.find(item => 
+        item.stato === 'INSERITO' && item.postazione === 'PREPARA'
+      );
       if (firstPendingItem) {
-        console.log('[Prepara] Auto-starting first item for selected order:', firstPendingItem.id);
+        console.log('[Prepara] Auto-starting first PREPARA item for selected order:', firstPendingItem.id);
         
         // Auto-start with a small delay to ensure UI is ready
         const timeoutId = setTimeout(async () => {
@@ -380,12 +420,58 @@ export default function PreparaPageOptimized() {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [selectedOrder]);
+  }, [selectedOrder?.id, selectedOrder?.items?.find(item => item.stato === 'INSERITO' && item.postazione === 'PREPARA')?.id]);
 
   // Initial load
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Process SSE events
+  useEffect(() => {
+    if (eventQueue.length === 0) return;
+    
+    eventQueue.forEach(({ event, data, timestamp }) => {
+      console.log(`[Prepara] Processing event: ${event}`, data);
+      
+      switch (event) {
+        case 'order:new':
+          if (data.items?.some((item: any) => item.destination === 'PREPARA')) {
+            handleNewOrder(data);
+          }
+          break;
+          
+        case 'order:item:update':
+          if (data.destination === 'PREPARA') {
+            handleItemUpdate(data);
+          }
+          break;
+          
+        case 'order:cancelled':
+          handleOrderCancelled(data);
+          break;
+          
+        case 'order:ready':
+        case 'order:status-change':
+          // Update order status when it becomes ready
+          if (data.newStatus === 'PRONTO') {
+            setOrders(prev => prev.map(order => 
+              order.id === data.orderId 
+                ? { ...order, stato: 'PRONTO' }
+                : order
+            ));
+          }
+          break;
+          
+        case 'notification:reminder':
+          handleReminder(data);
+          break;
+      }
+    });
+    
+    // Clear processed events
+    clearEventQueue();
+  }, [eventQueue, handleNewOrder, handleItemUpdate, handleOrderCancelled, handleReminder, clearEventQueue]);
 
   // Connection quality indicator
   const getConnectionIcon = () => {
@@ -422,15 +508,15 @@ export default function PreparaPageOptimized() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background p-4">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
+      <div className="bg-card shadow-sm border-b border-border mb-4 rounded-lg">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Coffee className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-semibold">Postazione Bar</h1>
-              <span className="text-sm text-gray-500">
+              <h1 className="text-xl font-semibold text-foreground">Postazione Prepara</h1>
+              <span className="text-sm text-muted-foreground">
                 {orders.length} ordini attivi
               </span>
             </div>
@@ -450,10 +536,10 @@ export default function PreparaPageOptimized() {
               {/* Refresh Button */}
               <button
                 onClick={loadOrders}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
                 title="Aggiorna ordini"
               >
-                <RefreshCw className="h-5 w-5" />
+                <RefreshCw className="h-5 w-5 text-foreground" />
               </button>
             </div>
           </div>
@@ -461,18 +547,19 @@ export default function PreparaPageOptimized() {
       </div>
 
       {/* Main Content - 2 Column Layout */}
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-80px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)]">
         {/* Left Column - Orders List */}
         <div className="space-y-4 overflow-y-auto scrollbar-hide">
-          <h2 className="text-lg font-semibold flex items-center gap-2 sticky top-0 bg-gray-50 dark:bg-gray-900 pb-2">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 sticky top-0 bg-background pb-2">
             <ClipboardList className="h-5 w-5 text-primary" />
             Coda Ordini ({orders.length})
           </h2>
           
           {orders.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-              <Package className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Nessun ordine in coda</p>
+            <div className="text-center py-12 bg-card rounded-lg border border-border">
+              <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Nessun ordine in coda per PREPARA</p>
+              <p className="text-xs text-muted-foreground/60 mt-2">Debug: {isLoading ? 'Caricamento...' : 'Caricamento completato'}</p>
             </div>
           ) : (
             orders.map((order, index) => (
@@ -484,14 +571,15 @@ export default function PreparaPageOptimized() {
                 onStatusChange={handleStatusChange}
                 processingItems={processingItems}
                 position={index + 1}
+                onOrderRetired={loadOrders}
               />
             ))
           )}
         </div>
 
         {/* Right Column - Order Details */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2 sticky top-0 bg-gray-50 dark:bg-gray-900 pb-2">
+        <div className="col-span-2 space-y-4">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 sticky top-0 bg-background pb-2">
             <Check className="h-5 w-5 text-green-500" />
             Dettaglio Ordine
           </h2>
@@ -499,14 +587,22 @@ export default function PreparaPageOptimized() {
           {selectedOrder ? (
             <OrderDetailsPanel
               order={selectedOrder}
+              orders={orders}
               onStatusChange={handleStatusChange}
               processingItems={processingItems}
               isLoading={isLoadingOrderDetails}
+              onOrderCompleted={(nextOrder) => {
+                if (nextOrder) {
+                  setIsLoadingOrderDetails(true);
+                  setSelectedOrder(nextOrder);
+                  setTimeout(() => setIsLoadingOrderDetails(false), 500);
+                }
+              }}
             />
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center">
-              <AlertCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Seleziona un ordine dalla lista per vedere i dettagli</p>
+            <div className="bg-card rounded-lg border border-border p-12 text-center">
+              <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Seleziona un ordine dalla lista per vedere i dettagli</p>
             </div>
           )}
         </div>
@@ -523,6 +619,7 @@ interface OrderListCardProps {
   onStatusChange: (item: OrderItem, newStatus: any) => void;
   processingItems: Set<string>;
   position: number;
+  onOrderRetired: () => void;
 }
 
 function OrderListCard({
@@ -531,7 +628,8 @@ function OrderListCard({
   onSelect,
   onStatusChange,
   processingItems,
-  position
+  position,
+  onOrderRetired
 }: OrderListCardProps) {
   const getTimeElapsed = (timestamp: string) => {
     const minutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
@@ -547,7 +645,7 @@ function OrderListCard({
     if (allReady) {
       return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Completato</span>;
     } else if (hasReady) {
-      return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Parziale</span>;
+      return <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Parziale</span>;
     } else if (hasInProgress) {
       return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">In Corso</span>;
     }
@@ -556,37 +654,92 @@ function OrderListCard({
   
   return (
     <div 
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-primary shadow-lg ring-2 ring-primary/20' 
-          : 'border-gray-200 hover:border-primary/50 hover:shadow-md'
-      } ${position === 1 ? 'ring-2 ring-green-500/30 bg-green-50 dark:bg-green-900/10' : ''}`}
-      onClick={onSelect}
+      className={`rounded-lg shadow-sm border-2 transition-all ${
+        order.stato === 'PRONTO'
+          ? 'border-green-500 bg-green-700 shadow-lg ring-2 ring-green-500/30 cursor-default'
+          : isSelected 
+            ? 'border-primary shadow-lg ring-2 ring-primary/20 bg-card cursor-pointer' 
+            : 'border-border hover:border-primary/50 hover:shadow-md bg-card cursor-pointer'
+      } ${position === 1 && order.stato !== 'PRONTO' ? 'ring-2 ring-green-500/30 bg-green-50/10' : ''}`}
+      onClick={order.stato === 'PRONTO' ? undefined : onSelect}
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${
-              position === 1 ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700'
+              order.stato === 'PRONTO' 
+                ? 'bg-white text-green-700' 
+                : position === 1 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-muted text-muted-foreground'
             }`}>
               {typeof order.tavolo === 'string' ? order.tavolo.toUpperCase() : order.tavolo}
             </div>
             <div>
-              <div className="font-medium">{order.nomeCliente || 'Cliente'}</div>
-              <div className="text-xs text-gray-500">{getTimeElapsed(order.timestamp)} fa</div>
+              <div className={`font-medium ${order.stato === 'PRONTO' ? 'text-white' : 'text-foreground'}`}>
+                {order.nomeCliente || 'Cliente'}
+              </div>
+              <div className={`text-xs ${order.stato === 'PRONTO' ? 'text-green-100' : 'text-muted-foreground'}`}>
+                {getTimeElapsed(order.timestamp)} fa
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-semibold text-lg">€{typeof order.totaleCosto === 'number' ? order.totaleCosto.toFixed(2) : parseFloat(order.totaleCosto.toString()).toFixed(2)}</div>
+            <div className={`font-semibold text-lg ${order.stato === 'PRONTO' ? 'text-white' : 'text-foreground'}`}>
+              €{Number(order.totaleCosto).toFixed(2)}
+            </div>
           </div>
         </div>
         
         <div className="flex items-center justify-end text-sm">
-          {order.hasKitchenItems && (
-            <div className="flex items-center gap-1 text-orange-600">
-              <ChefHat className="h-3 w-3" />
-              <span className="text-xs">+ Cucina</span>
+          {order.stato === 'PRONTO' ? (
+            <div className="flex gap-2">
+              <button 
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const result = await sollecitaOrdinePronto(order.id);
+                    if (result.success) {
+                      toast.success('Sollecito inviato al cameriere');
+                    } else {
+                      toast.error(result.error || 'Errore durante il sollecito');
+                    }
+                  } catch (error) {
+                    toast.error('Errore durante il sollecito');
+                  }
+                }}
+                className="px-3 py-1 bg-yellow-500 text-white text-xs rounded-md hover:bg-yellow-600 transition-colors font-medium"
+              >
+                Sollecita
+              </button>
+              <button 
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const result = await segnaOrdineRitirato(order.id);
+                    if (result.success) {
+                      toast.success('Ordine segnato come ritirato');
+                      // Ricarica gli ordini per aggiornare la lista
+                      onOrderRetired();
+                    } else {
+                      toast.error(result.error || 'Errore durante il ritiro');
+                    }
+                  } catch (error) {
+                    toast.error('Errore durante il ritiro');
+                  }
+                }}
+                className="px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors font-medium"
+              >
+                Ritirato
+              </button>
             </div>
+          ) : (
+            order.hasKitchenItems && (
+              <div className="flex items-center gap-1 text-orange-600">
+                <ChefHat className="h-3 w-3" />
+                <span className="text-xs">+ Cucina</span>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -597,16 +750,20 @@ function OrderListCard({
 // Order Details Panel Component (Right Column)
 interface OrderDetailsPanelProps {
   order: Ordinazione;
+  orders: Ordinazione[];
   onStatusChange: (item: OrderItem, newStatus: any) => void;
   processingItems: Set<string>;
   isLoading: boolean;
+  onOrderCompleted: (nextOrder: Ordinazione | null) => void;
 }
 
 function OrderDetailsPanel({
   order,
+  orders,
   onStatusChange,
   processingItems,
-  isLoading
+  isLoading,
+  onOrderCompleted
 }: OrderDetailsPanelProps) {
   const getTimeElapsed = (timestamp: string) => {
     const minutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
@@ -640,24 +797,30 @@ function OrderDetailsPanel({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">
+      <div className="p-6 border-b bg-gray-50 dark:bg-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-semibold">Tavolo {order.tavolo}</h3>
-          <span className="text-sm text-gray-500">
-            {getTimeElapsed(order.timestamp)} fa
-          </span>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+              {typeof order.tavolo === 'string' ? order.tavolo.toUpperCase() : order.tavolo}
+            </div>
+            <div>
+              <div className="text-xl font-semibold">{order.nomeCliente || 'Cliente'}</div>
+              {order.cameriere && (
+                <div className="text-sm text-gray-500">
+                  Cameriere: {order.cameriere}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-lg font-semibold text-red-600">
+              {getTimeElapsed(order.timestamp)}
+            </div>
+            <div className="text-xs text-gray-500">
+              tempo attesa
+            </div>
+          </div>
         </div>
-        {order.nomeCliente && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <User className="h-4 w-4" />
-            <span>{order.nomeCliente}</span>
-          </div>
-        )}
-        {order.cameriere && (
-          <div className="text-sm text-gray-500 mt-1">
-            Cameriere: {order.cameriere}
-          </div>
-        )}
       </div>
 
       {/* Products List */}
@@ -669,46 +832,82 @@ function OrderDetailsPanel({
         
         <div className="space-y-3">
           {order.items.map(item => (
-            <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div key={item.id} className={`flex items-center justify-between p-4 rounded-lg ${
+              item.postazione !== 'PREPARA' 
+                ? 'bg-gray-200 dark:bg-gray-600 opacity-60' 
+                : 'bg-gray-50 dark:bg-gray-700'
+            }`}>
               <div className="flex-1">
-                <div className="font-medium">{item.quantita}x {item.prodotto}</div>
-                {item.note && (
-                  <div className="text-sm text-gray-500 mt-1">{item.note}</div>
-                )}
-                <div className={`text-xs mt-1 font-medium ${
-                  item.stato === 'INSERITO' ? 'text-gray-500' :
-                  item.stato === 'IN_LAVORAZIONE' ? 'text-blue-600' :
-                  item.stato === 'PRONTO' ? 'text-green-600' : 'text-gray-500'
+                <div className={`font-medium ${
+                  item.postazione !== 'PREPARA' ? 'text-gray-500' : ''
                 }`}>
-                  {item.stato === 'INSERITO' ? 'In Attesa' :
-                   item.stato === 'IN_LAVORAZIONE' ? 'In Preparazione' :
-                   item.stato === 'PRONTO' ? 'Pronto' : item.stato}
+                  {item.quantita}x {item.prodotto}
+                  {item.postazione === 'CUCINA' && (
+                    <span className="ml-2 text-xs text-orange-600 font-normal">
+                      (Cucina)
+                    </span>
+                  )}
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {processingItems.has(item.id) ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    {item.stato === 'IN_LAVORAZIONE' && (
-                      <button
-                        onClick={() => onStatusChange(item, 'PRONTO')}
-                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm font-medium transition-colors"
-                      >
-                        Segna Pronto
-                      </button>
-                    )}
-                    {item.stato === 'PRONTO' && (
-                      <div className="px-4 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">
-                        ✓ Pronto
-                      </div>
-                    )}
-                  </>
-                )}
               </div>
             </div>
           ))}
+        </div>
+        
+        {/* Order Ready Button */}
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="flex justify-center">
+            {order.items.every(item => item.stato === 'PRONTO') ? (
+              <div className="px-6 py-3 bg-green-100 text-green-800 rounded-lg text-lg font-semibold">
+                ✓ Ordine Completato
+              </div>
+            ) : (
+              <button
+                onClick={async () => {
+                  // Segna tutti gli item come PRONTO
+                  for (const item of order.items) {
+                    if (item.stato !== 'PRONTO') {
+                      await onStatusChange(item, 'PRONTO');
+                    }
+                  }
+                  
+                  // Aggiorna lo stato dell'ordine a PRONTO
+                  try {
+                    const result = await aggiornaStatoOrdinazione(order.id, 'PRONTO');
+                    if (result.success) {
+                      toast.success('Ordine pronto! Notifica inviata al cameriere');
+                    }
+                  } catch (error) {
+                    console.error('Errore aggiornamento stato ordine:', error);
+                  }
+                  
+                  // Auto-select next order after completion
+                  const currentIndex = orders.findIndex(o => o.id === order.id);
+                  const nextOrders = orders.filter((o, index) => 
+                    index > currentIndex && o.stato !== 'PRONTO'
+                  );
+                  
+                  if (nextOrders.length > 0) {
+                    setTimeout(() => {
+                      onOrderCompleted(nextOrders[0]);
+                    }, 800);
+                  } else {
+                    onOrderCompleted(null);
+                  }
+                }}
+                disabled={order.items.some(item => processingItems.has(item.id))}
+                className="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {order.items.some(item => processingItems.has(item.id)) ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
+                    Elaborazione...
+                  </>
+                ) : (
+                  'Ordine Pronto'
+                )}
+              </button>
+            )}
+          </div>
         </div>
         
         {order.hasKitchenItems && (
@@ -721,8 +920,8 @@ function OrderDetailsPanel({
         )}
         
         {order.note && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="text-blue-800 text-sm">
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600">
+            <div className="text-gray-800 dark:text-gray-200 text-sm">
               <strong>Note ordine:</strong> {order.note}
             </div>
           </div>

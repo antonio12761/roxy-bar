@@ -7,7 +7,7 @@ export async function GET() {
     // In un sistema reale, queste potrebbero essere memorizzate in una tabella dedicata
     const ordinazioniConsegnate = await prisma.ordinazione.findMany({
       where: {
-        stato: "CONSEGNATA",
+        stato: "CONSEGNATO",
         // Filtra solo quelle che potrebbero aver bisogno di scontrino
         dataChiusura: {
           gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Ultime 24 ore

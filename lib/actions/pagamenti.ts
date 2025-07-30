@@ -5,13 +5,15 @@ import { getCurrentUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
+import { creaScontrinoQueue, creaScontrinoBatch } from "@/lib/services/scontrino-queue";
+import crypto from "crypto";
 
 export async function getOrdinazioniDaPagare() {
   try {
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
-          not: "PAGATA"  // Escludi solo le ordinazioni già pagate (corretto da PAGATO a PAGATA)
+          not: "PAGATO"  // Escludi solo le ordinazioni già pagate
         },
         statoPagamento: {
           not: "COMPLETAMENTE_PAGATO"
@@ -98,7 +100,7 @@ export async function creaPagamento(
     }
 
     // Verifica permessi (CASSA o superiore)
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CASSA"].includes(utente.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -217,7 +219,7 @@ export async function creaPagamento(
       await prisma.ordinazione.update({
         where: { id: ordinazioneId },
         data: {
-          stato: "PAGATA",
+          stato: "PAGATO",
           statoPagamento: "COMPLETAMENTE_PAGATO",
           dataChiusura: new Date()
         }
@@ -254,6 +256,66 @@ export async function creaPagamento(
       console.log(`Ordinazione ${ordinazioneId} aggiornata a PARZIALMENTE_PAGATO`);
     }
 
+    // Crea scontrino nella queue
+    try {
+      const ordinazioneCompleta = await prisma.ordinazione.findUnique({
+        where: { id: ordinazioneId },
+        include: {
+          righe: {
+            where: { id: { in: righePagate } },
+            include: { prodotto: true }
+          },
+          cameriere: true,
+          tavolo: true
+        }
+      });
+
+      if (ordinazioneCompleta) {
+        const righeScontrino = ordinazioneCompleta.righe.map(riga => ({
+          prodotto: riga.prodotto.nome,
+          quantita: riga.quantita,
+          prezzoUnitario: riga.prezzo.toNumber(),
+          totaleRiga: riga.prezzo.toNumber() * riga.quantita,
+          isPagato: true,
+          pagatoDa: clienteNome
+        }));
+
+        const sessionePagamento = crypto.randomUUID();
+        
+        await creaScontrinoQueue("NON_FISCALE", {
+          tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+          clienteNome,
+          cameriereNome: ordinazioneCompleta.cameriere.nome,
+          righe: righeScontrino,
+          totale: importo,
+          modalitaPagamento: modalita,
+          ordinazioneIds: [ordinazioneId],
+          pagamentoIds: [pagamento.id],
+          sessionePagamento
+        });
+
+        await creaScontrinoQueue("FISCALE", {
+          tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+          clienteNome,
+          cameriereNome: ordinazioneCompleta.cameriere.nome,
+          righe: [{
+            prodotto: `Totale Ordine #${ordinazioneCompleta.numero}`,
+            quantita: 1,
+            prezzoUnitario: importo,
+            totaleRiga: importo
+          }],
+          totale: importo,
+          modalitaPagamento: modalita,
+          ordinazioneIds: [ordinazioneId],
+          pagamentoIds: [pagamento.id],
+          sessionePagamento
+        }, "ALTA");
+      }
+    } catch (scontrinoError) {
+      console.error("Errore creazione scontrini:", scontrinoError);
+      // Non bloccare il pagamento per errori scontrino
+    }
+
     revalidatePath("/cassa");
     revalidatePath("/cameriere");
 
@@ -285,7 +347,7 @@ export async function richiediPagamento(ordinazioneId: string) {
     }
 
     // Verifica permessi (CAMERIERE o superiore)
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CAMERIERE"].includes(utente.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -350,7 +412,7 @@ export async function richiediScontrino(
     }
 
     // Verifica permessi (CAMERIERE o superiore)
-    if (!["ADMIN", "MANAGER", "OPERATORE", "CAMERIERE"].includes(utente.ruolo)) {
+    if (!["ADMIN", "MANAGER", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -396,5 +458,255 @@ export async function richiediScontrino(
   } catch (error) {
     console.error("Errore richiesta scontrino:", error);
     return { success: false, error: "Errore interno del server" };
+  }
+}
+
+// Nuova funzione per pagare righe specifiche
+export async function creaPagamentoRigheSpecifiche(
+  righeIds: string[],
+  modalita: "POS" | "CONTANTI" | "MISTO",
+  clienteNome?: string
+) {
+  console.log("=== INIZIO creaPagamentoRigheSpecifiche ===");
+  
+  try {
+    console.log("creaPagamentoRigheSpecifiche called with:", {
+      righeIds,
+      modalita,
+      clienteNome
+    });
+    
+    const utente = await getCurrentUser();
+    if (!utente) {
+      return { success: false, error: "Utente non autenticato" };
+    }
+
+    // Verifica permessi (CASSA o superiore)
+    if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
+      return { success: false, error: "Permessi insufficienti" };
+    }
+
+    // Usa transazione per garantire atomicità
+    const result = await prisma.$transaction(async (prisma) => {
+      // Recupera le righe selezionate con i loro ordini
+      const righe = await prisma.rigaOrdinazione.findMany({
+        where: {
+          id: { in: righeIds },
+          isPagato: false // Solo righe non ancora pagate
+        },
+        include: {
+          prodotto: {
+            select: { nome: true }
+          },
+          ordinazione: {
+            include: {
+              tavolo: true
+            }
+          }
+        }
+      });
+
+      if (righe.length === 0) {
+        throw new Error("Nessuna riga trovata o tutte già pagate");
+      }
+
+      // Calcola il totale delle righe selezionate
+      const totaleImporto = righe.reduce((sum, riga) => 
+        sum + riga.prezzo.toNumber() * riga.quantita, 0
+      );
+
+      // Raggruppa righe per ordinazione
+      const righePerOrdinazione = righe.reduce((acc, riga) => {
+        const ordId = riga.ordinazioneId;
+        if (!acc[ordId]) {
+          acc[ordId] = [];
+        }
+        acc[ordId].push(riga);
+        return acc;
+      }, {} as Record<string, typeof righe>);
+
+      const pagamentiCreati = [];
+
+      // Crea un pagamento per ogni ordinazione coinvolta
+      for (const [ordinazioneId, righeOrd] of Object.entries(righePerOrdinazione)) {
+        const importoOrd = righeOrd.reduce((sum, riga) => 
+          sum + riga.prezzo.toNumber() * riga.quantita, 0
+        );
+
+        // Crea il pagamento
+        const pagamento = await prisma.pagamento.create({
+          data: {
+            ordinazioneId,
+            importo: importoOrd,
+            modalita,
+            clienteNome,
+            righeIds: righeOrd.map(r => r.id),
+            operatoreId: utente.id
+          }
+        });
+
+        pagamentiCreati.push(pagamento);
+
+        // Marca le righe come pagate
+        await prisma.rigaOrdinazione.updateMany({
+          where: {
+            id: { in: righeOrd.map(r => r.id) }
+          },
+          data: {
+            isPagato: true,
+            pagatoDa: clienteNome || utente.nome
+          }
+        });
+
+        // Controlla se l'ordinazione è completamente pagata
+        const righeRimanenti = await prisma.rigaOrdinazione.count({
+          where: {
+            ordinazioneId,
+            isPagato: false
+          }
+        });
+
+        // Aggiorna lo stato dell'ordinazione
+        const nuovoStatoPagamento = righeRimanenti === 0 ? 
+          "COMPLETAMENTE_PAGATO" : "PARZIALMENTE_PAGATO";
+
+        await prisma.ordinazione.update({
+          where: { id: ordinazioneId },
+          data: {
+            statoPagamento: nuovoStatoPagamento,
+            ...(nuovoStatoPagamento === "COMPLETAMENTE_PAGATO" && {
+              stato: "PAGATO"
+            })
+          }
+        });
+
+        console.log(`Ordinazione ${ordinazioneId} aggiornata a ${nuovoStatoPagamento}`);
+      }
+
+      return {
+        pagamentiCreati,
+        totaleImporto,
+        righeAggiornate: righe.length,
+        righeInfo: righe.map(r => ({
+          id: r.id,
+          ordinazioneId: r.ordinazioneId,
+          tavolo: r.ordinazione.tavolo
+        }))
+      };
+    });
+
+    // Invia notifiche fuori dalla transazione
+    const ordinazioniCoinvolte = [...new Set(result.righeInfo.map(r => r.ordinazioneId))];
+    
+    for (const ordId of ordinazioniCoinvolte) {
+      const rigaInfo = result.righeInfo.find(r => r.ordinazioneId === ordId);
+      if (rigaInfo) {
+        notificationManager.notifyOrderPaid({
+          orderId: ordId,
+          tableNumber: rigaInfo.tavolo ? parseInt(rigaInfo.tavolo.numero) : undefined,
+          orderType: 'TAVOLO',
+          items: [],
+          customerName: clienteNome || utente.nome,
+          waiterName: utente.nome
+        });
+      }
+    }
+
+    // Crea scontrini batch se più ordinazioni dallo stesso tavolo
+    try {
+      const tavoliCoinvolti = [...new Set(result.righeInfo.map(r => r.tavolo?.numero).filter(Boolean))];
+      
+      if (tavoliCoinvolti.length === 1 && tavoliCoinvolti[0]) {
+        // Batch printing per stesso tavolo
+        const tavoloNumero = tavoliCoinvolti[0];
+        const sessionePagamento = crypto.randomUUID();
+        
+        await creaScontrinoBatch(
+          tavoloNumero,
+          result.pagamentiCreati.map(p => p.id),
+          sessionePagamento
+        );
+      } else {
+        // Scontrini separati per tavoli diversi
+        for (const pagamento of result.pagamentiCreati) {
+          const ordinazioneCompleta = await prisma.ordinazione.findUnique({
+            where: { id: pagamento.ordinazioneId },
+            include: {
+              righe: {
+                where: { 
+                  id: { in: Array.isArray(pagamento.righeIds) ? pagamento.righeIds as string[] : [] }
+                },
+                include: { prodotto: true }
+              },
+              cameriere: true,
+              tavolo: true
+            }
+          });
+
+          if (ordinazioneCompleta) {
+            const righeScontrino = ordinazioneCompleta.righe.map(riga => ({
+              prodotto: riga.prodotto.nome,
+              quantita: riga.quantita,
+              prezzoUnitario: riga.prezzo.toNumber(),
+              totaleRiga: riga.prezzo.toNumber() * riga.quantita,
+              isPagato: true,
+              pagatoDa: clienteNome || utente.nome
+            }));
+
+            const sessionePagamento = crypto.randomUUID();
+            
+            await creaScontrinoQueue("NON_FISCALE", {
+              tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+              clienteNome: clienteNome || utente.nome,
+              cameriereNome: ordinazioneCompleta.cameriere.nome,
+              righe: righeScontrino,
+              totale: pagamento.importo.toNumber(),
+              modalitaPagamento: modalita,
+              ordinazioneIds: [pagamento.ordinazioneId],
+              pagamentoIds: [pagamento.id],
+              sessionePagamento
+            });
+
+            await creaScontrinoQueue("FISCALE", {
+              tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+              clienteNome: clienteNome || utente.nome,
+              cameriereNome: ordinazioneCompleta.cameriere.nome,
+              righe: [{
+                prodotto: `Pagamento Parziale`,
+                quantita: 1,
+                prezzoUnitario: pagamento.importo.toNumber(),
+                totaleRiga: pagamento.importo.toNumber()
+              }],
+              totale: pagamento.importo.toNumber(),
+              modalitaPagamento: modalita,
+              ordinazioneIds: [pagamento.ordinazioneId],
+              pagamentoIds: [pagamento.id],
+              sessionePagamento
+            }, "ALTA");
+          }
+        }
+      }
+    } catch (scontrinoError) {
+      console.error("Errore creazione scontrini batch:", scontrinoError);
+      // Non bloccare il pagamento per errori scontrino
+    }
+
+    revalidatePath("/cassa");
+    revalidatePath("/cameriere");
+
+    return { 
+      success: true, 
+      pagamenti: result.pagamentiCreati,
+      totaleImporto: result.totaleImporto,
+      righeAggiornate: result.righeAggiornate,
+      ordinazioniCoinvolte: ordinazioniCoinvolte.length
+    };
+  } catch (error) {
+    console.error("Errore creazione pagamento righe specifiche:", error);
+    console.error("Stack trace:", error instanceof Error ? error.stack : "No stack");
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Errore interno del server" 
+    };
   }
 }
