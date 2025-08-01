@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// GET /api/admin/permissions/user/:userId - Ottieni i permessi di un utente
-export async function GET_USER_PERMISSIONS(request: NextRequest, userId: string) {
+// Helper function - Ottieni i permessi di un utente
+async function getUserPermissions(request: NextRequest, userId: string) {
   try {
     const user = await checkAuth();
     if (!user) {

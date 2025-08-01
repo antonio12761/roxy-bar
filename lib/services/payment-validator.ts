@@ -265,12 +265,12 @@ export class PaymentValidationService {
           }
         },
         Pagamento: true,
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
         },
-        cameriere: {
+        User: {
           select: {
             nome: true
           }
@@ -283,9 +283,9 @@ export class PaymentValidationService {
   private calculateOrderTotal(ordinazione: any): number {
     let total = 0;
     
-    for (const riga of ordinazione.righe) {
+    for (const riga of ordinazione.RigaOrdinazione) {
       if (!riga.isDeleted && !riga.isPagato) {
-        const prezzoUnitario = riga.prezzo?.toNumber() || riga.prodotto?.prezzo?.toNumber() || 0;
+        const prezzoUnitario = riga.prezzo?.toNumber() || riga.Prodotto?.prezzo?.toNumber() || 0;
         total += prezzoUnitario * riga.quantita;
       }
     }
@@ -297,7 +297,7 @@ export class PaymentValidationService {
   private calculatePaidTotal(ordinazione: any): number {
     let total = 0;
     
-    for (const pagamento of ordinazione.pagamenti) {
+    for (const pagamento of ordinazione.Pagamento) {
       total += pagamento.importo?.toNumber() || 0;
     }
     
@@ -329,17 +329,17 @@ export class PaymentValidationService {
   private async validateItemPricing(ordinazione: any): Promise<ValidationError[]> {
     const errors: ValidationError[] = [];
     
-    for (const riga of ordinazione.righe) {
+    for (const riga of ordinazione.RigaOrdinazione) {
       if (riga.isDeleted) continue;
       
       const prezzoRiga = riga.prezzo?.toNumber() || 0;
-      const prezzoProdotto = riga.prodotto?.prezzo?.toNumber() || 0;
+      const prezzoProdotto = riga.Prodotto?.prezzo?.toNumber() || 0;
       
       // Verifica che il prezzo nella riga corrisponda al prezzo del prodotto
       if (Math.abs(prezzoRiga - prezzoProdotto) > 0.01) {
         errors.push({
           code: 'PRICE_MISMATCH',
-          message: `Prezzo non corrispondente per ${riga.prodotto.nome}: €${prezzoRiga.toFixed(2)} vs €${prezzoProdotto.toFixed(2)}`,
+          message: `Prezzo non corrispondente per ${riga.Prodotto.nome}: €${prezzoRiga.toFixed(2)} vs €${prezzoProdotto.toFixed(2)}`,
           severity: 'MEDIUM',
           field: `riga_${riga.id}`,
           expectedValue: prezzoProdotto,
@@ -352,7 +352,7 @@ export class PaymentValidationService {
       if (riga.quantita <= 0) {
         errors.push({
           code: 'INVALID_QUANTITY',
-          message: `Quantità non valida per ${riga.prodotto.nome}: ${riga.quantita}`,
+          message: `Quantità non valida per ${riga.Prodotto.nome}: ${riga.quantita}`,
           severity: 'HIGH',
           field: `riga_${riga.id}`,
           suggestedFix: 'Correggere o rimuovere la riga'
@@ -368,7 +368,7 @@ export class PaymentValidationService {
     const errors: ValidationError[] = [];
     const validMethods = ['CONTANTI', 'CARTA', 'SATISPAY', 'BONIFICO'];
     
-    for (const pagamento of ordinazione.pagamenti) {
+    for (const pagamento of ordinazione.Pagamento) {
       if (!validMethods.includes(pagamento.modalita)) {
         errors.push({
           code: 'INVALID_PAYMENT_METHOD',
@@ -398,11 +398,11 @@ export class PaymentValidationService {
     const errors: ValidationError[] = [];
     
     // Per ora implementazione base - può essere estesa
-    for (const riga of ordinazione.righe) {
+    for (const riga of ordinazione.RigaOrdinazione) {
       if (riga.sconto && riga.sconto > 0.5) { // Sconto > 50%
         errors.push({
           code: 'EXCESSIVE_DISCOUNT',
-          message: `Sconto eccessivo per ${riga.prodotto?.nome}: ${(riga.sconto * 100).toFixed(1)}%`,
+          message: `Sconto eccessivo per ${riga.Prodotto?.nome}: ${(riga.sconto * 100).toFixed(1)}%`,
           severity: 'MEDIUM',
           field: `riga_${riga.id}`,
           suggestedFix: 'Verificare autorizzazione per lo sconto'
@@ -417,9 +417,9 @@ export class PaymentValidationService {
   private validateDiscountWarnings(ordinazione: any): ValidationWarning[] {
     const warnings: ValidationWarning[] = [];
     
-    const totalDiscount = ordinazione.righe.reduce((sum: number, riga: any) => {
+    const totalDiscount = ordinazione.RigaOrdinazione.reduce((sum: number, riga: any) => {
       if (riga.sconto) {
-        const originalPrice = (riga.prodotto?.prezzo?.toNumber() || 0) * riga.quantita;
+        const originalPrice = (riga.Prodotto?.prezzo?.toNumber() || 0) * riga.quantita;
         return sum + (originalPrice * riga.sconto);
       }
       return sum;
@@ -504,7 +504,8 @@ export class PaymentValidationService {
         severity: result.isValid ? 'LOW' : (result.errors.some(e => e.severity === 'CRITICAL') ? 'HIGH' : 'MEDIUM'),
         category: 'PAYMENT',
         success: result.isValid,
-        errorMessage: result.errors.length > 0 ? result.errors[0].message : undefined
+        errorMessage: result.errors.length > 0 ? result.errors[0].message : undefined,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
     } catch (error) {

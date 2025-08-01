@@ -10,7 +10,7 @@ interface Category {
   icon?: string | null;
   order: number;
   productsCount: number;
-  subcategories?: any[];
+  subcategories: Subcategory[];
 }
 
 interface Subcategory {

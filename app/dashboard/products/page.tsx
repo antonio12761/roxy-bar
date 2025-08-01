@@ -34,7 +34,7 @@ interface Category {
   icon?: string | null;
   order: number;
   productsCount: number;
-  subcategories?: Subcategory[];
+  subcategories: Subcategory[];
 }
 
 interface Subcategory {
@@ -199,7 +199,13 @@ export default function ProductsPage() {
         getProducts()
       ]);
       
-      setCategories(categoriesData);
+      // Ensure all categories have subcategories array
+      const categoriesWithSubcategories = categoriesData.map(cat => ({
+        ...cat,
+        subcategories: cat.subcategories || []
+      }));
+      
+      setCategories(categoriesWithSubcategories);
       setProducts(productsData);
     } catch (error) {
       console.error("Errore caricamento dati:", error);

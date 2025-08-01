@@ -129,8 +129,8 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// POST /api/admin/users/permissions - Assegna/nega un permesso diretto a un utente
-export async function POST_PERMISSION(request: NextRequest) {
+// Helper function - Assegna/nega un permesso diretto a un utente
+async function postPermission(request: NextRequest) {
   try {
     const user = await checkAuth();
     if (!user) {

@@ -48,7 +48,7 @@ interface DeliveredOrder {
     importo: number;
     modalita: string;
   }>;
-  nomeCliente?: string;
+  nomeCliente?: string | null;
 }
 
 interface TableGroup {

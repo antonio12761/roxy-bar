@@ -186,7 +186,8 @@ export class ShiftManager {
         ipAddress,
         severity: 'LOW',
         category: 'SYSTEM',
-        success: true
+        success: true,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
       console.log(`[Shift] Turno ${shiftId} iniziato per ${user.nome}`);
@@ -263,7 +264,8 @@ export class ShiftManager {
         },
         severity: 'LOW',
         category: 'SYSTEM',
-        success: true
+        success: true,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
       console.log(`[Shift] Turno ${shiftId} completato: ${duration} minuti`);
@@ -378,7 +380,8 @@ export class ShiftManager {
         category: 'SYSTEM',
         success: true,
         relatedEntityType: 'USER',
-        relatedEntityId: toUserId
+        relatedEntityId: toUserId,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
       return {
@@ -474,7 +477,8 @@ export class ShiftManager {
         category: 'SYSTEM',
         success: true,
         relatedEntityType: 'USER',
-        relatedEntityId: handover.fromUserId
+        relatedEntityId: handover.fromUserId,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
       return {
