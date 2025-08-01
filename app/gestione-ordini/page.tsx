@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getOrdinazioniPerStato } from '@/lib/actions/ordinazioni'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/actions/auth'

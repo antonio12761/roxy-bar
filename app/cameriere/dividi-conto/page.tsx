@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { ArrowLeft, Split, Users, Euro, Plus, Minus, Check, X, MapPin, Calculator } from "lucide-react";
 import Link from "next/link";

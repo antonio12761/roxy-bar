@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { ArrowLeft, Bell, MapPin, AlertCircle, Coffee, Users, Clock, Send, CheckCircle } from "lucide-react";
 import Link from "next/link";

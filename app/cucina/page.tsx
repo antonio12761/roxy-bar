@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getCurrentUser } from "@/lib/auth-multi-tenant"
 import { redirect } from 'next/navigation'
 import CucinaPageWrapper from './page-wrapper-optimized'

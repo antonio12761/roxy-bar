@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import PreparaPageOptimized from "./page-wrapper-optimized";
 

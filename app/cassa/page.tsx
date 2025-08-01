@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getCurrentUser, generateToken } from "@/lib/auth-multi-tenant";
 import { SSEProvider } from "@/contexts/sse-context";
 import CassaPageWrapper from "./page-wrapper-optimized";
