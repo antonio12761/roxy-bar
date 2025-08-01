@@ -16,9 +16,9 @@ const nextConfig = {
     keepAlive: false,
   },
   
-  // Permetti accesso da dispositivi esterni in development
+  // Configurazioni sperimentali
   experimental: {
-    allowedDevOrigins: ['http://192.168.1.54:3000', 'http://localhost:3000'],
+    // Nessuna configurazione sperimentale per ora
   },
 };
 

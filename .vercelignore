@@ -1,0 +1,31 @@
+# Ignore build outputs
+.next/
+out/
+
+# Ignore dependencies
+node_modules/
+
+# Ignore test files
+*.test.*
+*.spec.*
+__tests__/
+
+# Ignore development files
+.env.local
+.env.development
+*.log
+
+# Ignore scripts that are not needed in production
+scripts/
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore editor files
+.vscode/
+.idea/
