@@ -47,23 +47,23 @@
     "zod": "^3.24.1",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
-  },
-  "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/inquirer": "^9.0.8",
-    "@types/jsonwebtoken": "^9.0.7",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.7",
-    "@types/uuid": "^10.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.8",
     "boxen": "^5.1.2",
     "dotenv": "^17.2.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.4.2",
     "inquirer": "^8.2.6",
-    "ora": "^5.4.1",
-    "typescript": "^5.8.3"
+    "ora": "^5.4.1"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
