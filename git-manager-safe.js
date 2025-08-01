@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// Configurazione sicurezza per Bar Roxy
+// Configurazione sicurezza per Siplit
 const SAFETY_CONFIG = {
   // Operazioni che richiedono doppia conferma
   DANGEROUS_OPERATIONS: [
@@ -207,7 +207,7 @@ function checkGitRepo() {
 function showBanner() {
   console.clear();
   const banner = boxen(
-    chalk.bold.cyan('🍺 Bar Roxy Git Manager') + chalk.green(' SAFE') + '\n' +
+    chalk.bold.cyan('🍺 Siplit Git Manager') + chalk.green(' SAFE') + '\n' +
     chalk.gray('Gestione sicura del repository del bar') + '\n' +
     chalk.yellow('Next.js + TypeScript + Prisma'),
     {
@@ -253,7 +253,7 @@ function getRepoInfo() {
     authStatus = chalk.yellow('⚠ Non autenticato');
   }
   
-  console.log(chalk.cyan('\n📊 Stato Repository Bar Roxy:'));
+  console.log(chalk.cyan('\n📊 Stato Repository Siplit:'));
   console.log(`   Branch: ${chalk.yellow(currentBranch)}`);
   console.log(`   File modificati: ${chalk.yellow(modifiedFiles)}`);
   console.log(`   Remote: ${remotes.includes('origin') ? chalk.green('✓ Configurato') : chalk.red('✗ Non configurato')}`);
@@ -2043,7 +2043,7 @@ async function sshConfig() {
 
 // Analisi TypeScript - Controlla errori TypeScript nel progetto
 async function checkTypeScriptErrors() {
-  console.log(chalk.cyan('\n🔍 Analisi TypeScript Bar Roxy in corso...\n'));
+  console.log(chalk.cyan('\n🔍 Analisi TypeScript Siplit in corso...\n'));
   
   const spinner = ora('Esecuzione analisi TypeScript personalizzata...').start();
   
@@ -2120,7 +2120,7 @@ async function checkTypeScriptErrors() {
     } else {
       spinner.succeed('Analisi TypeScript completata!');
       console.log(chalk.green('\n✅ Nessun errore TypeScript trovato!'));
-      console.log(chalk.gray('Il codice del Bar Roxy è pulito e pronto per il deploy.'));
+      console.log(chalk.gray('Il codice del Siplit è pulito e pronto per il deploy.'));
       return true;
     }
   } catch (error) {
@@ -2202,7 +2202,7 @@ async function deployToMain() {
   }
   
   // Check TypeScript/Build errors prima del deploy
-  console.log(chalk.cyan('\n🔍 Controllo pre-deploy Bar Roxy...'));
+  console.log(chalk.cyan('\n🔍 Controllo pre-deploy Siplit...'));
   const preDeploySpinner = ora('Analisi TypeScript personalizzata...').start();
   
   let hasErrors = false;

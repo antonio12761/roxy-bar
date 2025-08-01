@@ -325,8 +325,8 @@ export class DatabaseBackupManager {
           updatedAt: { gte: since }
         },
         include: {
-          righe: true,
-          pagamenti: true
+          RigaOrdinazione: true,
+          Pagamento: true
         }
       });
       if (ordinazioni.length > 0) data.ordinazioni = ordinazioni;
@@ -337,7 +337,7 @@ export class DatabaseBackupManager {
           timestamp: { gte: since }
         },
         include: {
-          ordinazione: {
+          Ordinazione: {
             select: {
               id: true,
               numero: true,

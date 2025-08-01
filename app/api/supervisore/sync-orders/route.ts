@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
     // 1. Trova tutti gli utenti con sessioni attive
     const activeUsers = await prisma.user.findMany({
       where: {
-        sessioni: {
+        Session: {
           some: {
             expires: {
               gt: new Date()
@@ -46,13 +46,13 @@ export async function GET() {
         }
       },
       include: {
-        cameriere: {
+        User: {
           select: {
             nome: true,
             cognome: true
           }
         },
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
@@ -66,9 +66,9 @@ export async function GET() {
     const issues = orphanedOrders.map(order => ({
       orderId: order.id,
       numeroOrdine: order.numero,
-      tavolo: order.tavolo?.numero,
+      tavolo: (order as any).Tavolo?.numero,
       stato: order.stato,
-      cameriere: `${order.cameriere.nome} ${order.cameriere.cognome}`,
+      cameriere: `${(order as any).User?.nome || ''} ${(order as any).User?.cognome || ''}`,
       dataApertura: order.dataApertura
     }));
 

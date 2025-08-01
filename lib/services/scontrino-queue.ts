@@ -1,9 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
+import { nanoid } from "nanoid";
 
 export interface RigaScontrino {
   prodotto: string;
@@ -54,6 +55,7 @@ export async function creaScontrinoQueue(
     // Crea record nella queue
     const scontrino = await prisma.queueScontrino.create({
       data: {
+        id: nanoid(),
         tipo,
         priorita,
         tavoloNumero: dati.tavoloNumero,
@@ -103,15 +105,15 @@ export async function creaScontrinoBatch(
         id: { in: pagamentiIds }
       },
       include: {
-        ordinazione: {
+        Ordinazione: {
           include: {
-            righe: {
+            RigaOrdinazione: {
               include: {
-                prodotto: true
+                Prodotto: true
               }
             },
-            cameriere: true,
-            tavolo: true
+            User: true,
+            Tavolo: true
           }
         }
       }
@@ -134,9 +136,9 @@ export async function creaScontrinoBatch(
       const righeIds = Array.isArray(pagamento.righeIds) ? pagamento.righeIds : [];
       
       for (const rigaId of righeIds) {
-        const riga = pagamento.ordinazione.righe.find(r => r.id === rigaId);
+        const riga = pagamento.Ordinazione.RigaOrdinazione.find((r: any) => r.id === rigaId);
         if (riga) {
-          const key = `${riga.prodotto.nome}-${riga.prezzo.toNumber()}`;
+          const key = `${riga.Prodotto.nome}-${riga.prezzo.toNumber()}`;
           
           if (righeMap.has(key)) {
             const rigaEsistente = righeMap.get(key)!;
@@ -144,7 +146,7 @@ export async function creaScontrinoBatch(
             rigaEsistente.totaleRiga += riga.prezzo.toNumber() * riga.quantita;
           } else {
             righeMap.set(key, {
-              prodotto: riga.prodotto.nome,
+              prodotto: riga.Prodotto.nome,
               quantita: riga.quantita,
               prezzoUnitario: riga.prezzo.toNumber(),
               totaleRiga: riga.prezzo.toNumber() * riga.quantita,
@@ -161,7 +163,7 @@ export async function creaScontrinoBatch(
     const datiScontrino: DatiScontrino = {
       tavoloNumero,
       clienteNome: primoP.clienteNome || undefined,
-      cameriereNome: primoP.ordinazione.cameriere.nome,
+      cameriereNome: primoP.Ordinazione.User.nome,
       righe,
       totale: totaleComplessivo,
       modalitaPagamento: pagamenti.length === 1 ? pagamenti[0].modalita : "MISTO",
@@ -220,7 +222,7 @@ export async function getProssimiScontrini(limite: number = 5) {
       ],
       take: limite,
       include: {
-        operatore: {
+        User: {
           select: { nome: true }
         }
       }

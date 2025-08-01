@@ -93,15 +93,30 @@ class SSEService {
     if (options.broadcast) {
       // Get all connected clients and filter by station
       const clients = sseManager.getConnectedClients();
+      
+      // Only log broadcast for non-heartbeat events
+      // Disabled for cleaner logs
+      
       for (const client of clients) {
-        if (client.stationType && shouldReceiveEvent(
+        const shouldSend = client.stationType && shouldReceiveEvent(
           client.stationType as StationType,
           eventName,
           data,
           client.userId
-        )) {
-          sent += sseManager.sendToClient(client.id, message) ? 1 : 0;
+        );
+        
+        if (shouldSend) {
+          const success = sseManager.sendToClient(client.id, message);
+          if (success) sent++;
+          
+          // Client send logging disabled for cleaner logs
         }
+      }
+      
+      // If no clients received the event and it's important, queue it
+      if (sent === 0 && (eventName === 'order:new' || eventName === 'order:merged') && options.tenantId) {
+        // Silently queue events for offline clients
+        this.queueEventForTenant(options.tenantId, eventName, data, options);
       }
     }
     // Send to specific user
@@ -163,7 +178,15 @@ class SSEService {
       }
     }
     
-    console.log(`[SSE] Event '${eventName}' sent to ${sent} clients (filtered by station)`);
+    // Event logging disabled for cleaner logs
+    // Only log critical warnings
+    if (eventName === 'order:new' && sent === 0) {
+      const clients = sseManager.getConnectedClients();
+      if (clients.length > 0) {
+        // Only log when we have clients but none received the event
+        console.warn(`[SSE] Warning: order:new event not delivered to any of ${clients.length} connected clients`);
+      }
+    }
   }
   
   /**
@@ -172,6 +195,35 @@ class SSEService {
   subscribeToChannels(clientId: string, channels: SSEChannel[]): void {
     for (const channel of channels) {
       sseManager.subscribeClientToChannel(clientId, channel);
+    }
+    
+    // Check for queued events when a client connects
+    const client = sseManager.getConnectedClients().find(c => c.id === clientId);
+    if (client && client.tenantId) {
+      this.checkAndDeliverQueuedEvents(client.tenantId);
+    }
+  }
+  
+  /**
+   * Check and deliver queued events for a tenant
+   */
+  private checkAndDeliverQueuedEvents(tenantId: string): void {
+    const key = `tenant:${tenantId}`;
+    const queue = this.eventQueue.get(key);
+    
+    if (queue && queue.length > 0) {
+      // Silently deliver queued events
+      setTimeout(() => {
+        for (const event of queue) {
+          this.emit(event.eventName as any, event.data, {
+            ...event.options,
+            queueIfOffline: false,
+            skipRateLimit: true // Skip rate limit for queued events
+          });
+        }
+        // Clear the queue after delivery
+        this.eventQueue.delete(key);
+      }, 500); // Increased delay to ensure client is fully initialized
     }
   }
   
@@ -244,13 +296,44 @@ class SSEService {
   }
   
   /**
+   * Queue an event for all users in a tenant
+   */
+  private queueEventForTenant(
+    tenantId: string,
+    eventName: SSEEventName,
+    data: any,
+    options: EmitOptions
+  ): void {
+    const key = `tenant:${tenantId}`;
+    const queue = this.eventQueue.get(key) || [];
+    const event: QueuedEvent = {
+      eventName,
+      data,
+      options: { ...options, tenantId, broadcast: false }, // Convert to tenant-specific
+      timestamp: Date.now(),
+      expiresAt: Date.now() + 300000, // 5 minutes TTL for tenant events
+      attempts: 0
+    };
+    
+    queue.push(event);
+    
+    // Limit queue size
+    if (queue.length > 50) {
+      queue.shift(); // Remove oldest
+    }
+    
+    this.eventQueue.set(key, queue);
+    // Silently queue orders
+  }
+  
+  /**
    * Process queued events periodically
    */
   private setupQueueProcessor(): void {
     setInterval(() => {
       const now = Date.now();
       
-      for (const [userId, queue] of this.eventQueue) {
+      for (const [key, queue] of this.eventQueue) {
         const validEvents = queue.filter(event => {
           // Remove expired events
           if (event.expiresAt && event.expiresAt < now) {
@@ -259,33 +342,60 @@ class SSEService {
           return true;
         });
         
-        // Try to deliver queued events
-        for (const event of validEvents) {
-          if (event.attempts < 3) {
-            event.attempts++;
-            this.emit(event.eventName as any, event.data, {
-              ...event.options,
-              queueIfOffline: false // Prevent re-queuing
-            });
+        // Check if this is a tenant queue
+        if (key.startsWith('tenant:')) {
+          const tenantId = key.substring(7);
+          // Check if we have any PREPARA clients for this tenant now
+          const tenantClients = sseManager.getTenantsClients(tenantId);
+          const preparaClients = tenantClients.filter(c => c.stationType === 'PREPARA');
+          
+          if (preparaClients.length > 0) {
+            // Silently deliver queued events
+            for (const event of validEvents) {
+              if (event.attempts < 3) {
+                event.attempts++;
+                this.emit(event.eventName as any, event.data, {
+                  ...event.options,
+                  queueIfOffline: false // Prevent re-queuing
+                });
+              }
+            }
+            // Clear the queue since we've delivered
+            this.eventQueue.delete(key);
+          }
+        } else {
+          // Regular user queue
+          for (const event of validEvents) {
+            if (event.attempts < 3) {
+              event.attempts++;
+              this.emit(event.eventName as any, event.data, {
+                ...event.options,
+                queueIfOffline: false // Prevent re-queuing
+              });
+            }
           }
         }
         
         // Update queue
-        if (validEvents.length > 0) {
-          this.eventQueue.set(userId, validEvents);
-        } else {
-          this.eventQueue.delete(userId);
+        if (validEvents.length > 0 && !key.startsWith('tenant:')) {
+          this.eventQueue.set(key, validEvents);
+        } else if (!key.startsWith('tenant:')) {
+          this.eventQueue.delete(key);
         }
       }
-    }, 30000); // Every 30 seconds
+    }, 5000); // Every 5 seconds (reduced from 30s)
   }
   
   /**
    * Setup heartbeat interval
    */
   private setupHeartbeat(): void {
+    let statusLogCounter = 0;
+    
     this.heartbeatInterval = setInterval(() => {
       sseManager.sendHeartbeat();
+      
+      // Status logging disabled for cleaner logs
       
       // Also send heartbeat event
       this.emit('system:heartbeat', {
@@ -295,7 +405,7 @@ class SSEService {
         broadcast: true,
         skipRateLimit: true
       });
-    }, 30000); // Every 30 seconds
+    }, 10000); // Every 10 seconds
   }
   
   /**

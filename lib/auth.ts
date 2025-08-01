@@ -29,6 +29,8 @@ export interface User {
   cognome: string;
   ruolo: Role;
   attivo: boolean;
+  tenantId?: string;
+  permissions?: string[];
 }
 
 export interface AuthResult {
@@ -66,7 +68,8 @@ export async function checkAuth(): Promise<User | null> {
         nome: true,
         cognome: true,
         ruolo: true,
-        attivo: true
+        attivo: true,
+        tenantId: true
       }
     });
 
@@ -74,7 +77,14 @@ export async function checkAuth(): Promise<User | null> {
       return null;
     }
 
-    return user as User;
+    // Carica i permessi dell'utente
+    const { PermissionService } = await import('./services/permission-service');
+    const permissions = await PermissionService.getUserPermissions(user.id);
+
+    return {
+      ...user,
+      permissions
+    } as User;
   } catch (error) {
     console.error('Auth check error:', error);
     return null;
@@ -109,17 +119,19 @@ export function verifyToken(token: string): { userId: string } | null {
   }
 }
 
-// Login con solo password
-export async function loginUser(password: string): Promise<AuthResult> {
+// Login con username e password
+export async function loginUser(username: string, password: string): Promise<AuthResult> {
   try {
-    console.log(`[LOGIN] Tentativo login con password: ${password}`);
-    // Cerca tutti gli utenti attivi
-    const users = await prisma.user.findMany({
+    console.log(`[LOGIN] Tentativo login con username: ${username}`);
+    
+    // Cerca l'utente per username
+    const user = await prisma.user.findUnique({
       where: {
-        attivo: true
+        username: username
       },
       select: {
         id: true,
+        username: true,
         email: true,
         password: true,
         nome: true,
@@ -127,42 +139,44 @@ export async function loginUser(password: string): Promise<AuthResult> {
         ruolo: true,
         attivo: true,
         bloccato: true,
+        tenantId: true,
       },
     });
-    console.log(`[LOGIN] Trovati ${users.length} utenti attivi:`, users.map(u => `${u.nome} (${u.ruolo})`));
 
-    // Verifica la password contro tutti gli utenti
-    let matchedUser = null;
-    for (const user of users) {
-      const isPasswordValid = await verifyPassword(password, user.password);
-      console.log(`[LOGIN] Controllo password per ${user.nome}: ${isPasswordValid ? 'MATCH' : 'NO MATCH'}`);
-      if (isPasswordValid) {
-        matchedUser = user;
-        break;
-      }
+    if (!user) {
+      console.log(`[LOGIN] Utente non trovato: ${username}`);
+      return { success: false, error: "Credenziali non valide" };
     }
 
-    if (!matchedUser) {
-      console.log(`[LOGIN] Nessun utente trovato con password fornita`);
-      return { success: false, error: "Password non valida" };
+    if (!user.attivo) {
+      console.log(`[LOGIN] Utente non attivo: ${username}`);
+      return { success: false, error: "Account non attivo" };
     }
 
-    console.log(`[LOGIN] Login riuscito per: ${matchedUser.nome} (${matchedUser.ruolo})`);
+    // Verifica la password
+    const isPasswordValid = await verifyPassword(password, user.password);
+    
+    if (!isPasswordValid) {
+      console.log(`[LOGIN] Password non valida per: ${username}`);
+      return { success: false, error: "Credenziali non valide" };
+    }
+
+    console.log(`[LOGIN] Login riuscito per: ${user.nome} (${user.ruolo})`);
 
     // Controlla se l'utente è bloccato
-    if (matchedUser.bloccato) {
+    if (user.bloccato) {
       return { success: false, error: "Utente bloccato. Contatta il supervisore per essere riattivato." };
     }
 
     // Aggiorna ultimo accesso
     await prisma.user.update({
-      where: { id: matchedUser.id },
+      where: { id: user.id },
       data: { ultimoAccesso: new Date() },
     });
 
     // Emetti evento SSE per notificare il login
     sseService.emit('user:presence', {
-      userId: matchedUser.id,
+      userId: user.id,
       status: 'online',
       lastActivity: new Date().toISOString()
     }, {
@@ -171,9 +185,9 @@ export async function loginUser(password: string): Promise<AuthResult> {
 
     // Emetti anche una notifica per il supervisore
     sseService.emit('notification:new', {
-      id: `login-${matchedUser.id}-${Date.now()}`,
+      id: `login-${user.id}-${Date.now()}`,
       title: 'Nuovo accesso',
-      message: `${matchedUser.nome} ${matchedUser.cognome} (${matchedUser.ruolo}) ha effettuato l'accesso`,
+      message: `${user.nome} ${user.cognome} (${user.ruolo}) ha effettuato l'accesso`,
       priority: 'normal',
       targetRoles: ['SUPERVISORE']
     }, {
@@ -181,16 +195,18 @@ export async function loginUser(password: string): Promise<AuthResult> {
     });
 
     // Genera token e salva sessione
-    const token = generateToken(matchedUser.id);
+    const token = generateToken(user.id);
     const isDevelopment = process.env.NODE_ENV === "development";
     
     await prisma.session.create({
       data: {
-        userId: matchedUser.id,
+        id: crypto.randomUUID(),
+        userId: user.id,
         token,
         expires: isDevelopment 
           ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 giorni in sviluppo
           : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 giorni in produzione
+        tenantId: user.tenantId
       },
     });
 
@@ -211,7 +227,7 @@ export async function loginUser(password: string): Promise<AuthResult> {
     
     console.log(`[LOGIN] Cookie set with name: ${COOKIE_NAME}, maxAge: ${isDev ? '30 days' : '1 day'}`);
 
-    const { password: _, ...userWithoutPassword } = matchedUser;
+    const { password: _, ...userWithoutPassword } = user;
     return { success: true, user: userWithoutPassword };
   } catch (error) {
     console.error("Errore login:", error);
@@ -248,7 +264,7 @@ export async function logoutUser(): Promise<{ success: boolean }> {
       // Trova l'utente dalla sessione prima di eliminarla
       const session = await prisma.session.findUnique({
         where: { token },
-        include: { user: true }
+        include: { User: true }
       });
 
       await prisma.session.deleteMany({
@@ -256,9 +272,9 @@ export async function logoutUser(): Promise<{ success: boolean }> {
       });
 
       // Se troviamo l'utente, emettiamo l'evento di logout
-      if (session?.user) {
+      if (session?.User) {
         sseService.emit('user:presence', {
-          userId: session.user.id,
+          userId: session.User.id,
           status: 'offline',
           lastActivity: new Date().toISOString()
         }, {
@@ -267,9 +283,9 @@ export async function logoutUser(): Promise<{ success: boolean }> {
 
         // Notifica al supervisore
         sseService.emit('notification:new', {
-          id: `logout-${session.user.id}-${Date.now()}`,
+          id: `logout-${session.User.id}-${Date.now()}`,
           title: 'Disconnessione',
-          message: `${session.user.nome} ${session.user.cognome} (${session.user.ruolo}) si è disconnesso`,
+          message: `${session.User.nome} ${session.User.cognome} (${session.User.ruolo}) si è disconnesso`,
           priority: 'normal',
           targetRoles: ['SUPERVISORE']
         }, {

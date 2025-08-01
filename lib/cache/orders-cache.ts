@@ -263,7 +263,10 @@ class OrdersCache {
       this.remove(id);
     }
 
-    console.log(`[OrdersCache] Cleanup: removed ${toRemove.length} expired entries`);
+    // Only log if we actually removed something
+    if (toRemove.length > 0) {
+      console.log(`[OrdersCache] Cleanup: removed ${toRemove.length} expired entries`);
+    }
   }
 
   private getTimestampField(status: string): string {

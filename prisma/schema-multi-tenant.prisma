@@ -1,0 +1,251 @@
+// Schema Multi-Tenant per Siplit
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// MODELLO TENANT (Organizzazione/Bar)
+model Tenant {
+  id                String              @id @default(cuid())
+  name              String              @unique
+  slug              String              @unique // URL-friendly name
+  description       String?
+  logo              String?             // URL logo
+  settings          Json?               // Configurazioni specifiche tenant
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Plan e limiti
+  plan              TenantPlan          @default(BASIC)
+  maxUsers          Int                 @default(10)
+  maxTables         Int                 @default(20)
+  maxProducts       Int                 @default(100)
+  
+  // Relazioni
+  users             User[]
+  categories        CategoriaMenu[]
+  products          Prodotto[]
+  tables            Tavolo[]
+  orders            Ordinazione[]
+  clients           Cliente[]
+  incassi           Incasso[]
+  payments          Pagamento[]
+  notifications     NotificaPagamento[]
+  auditLogs         AuditLog[]
+  
+  @@index([slug])
+  @@index([isActive])
+}
+
+enum TenantPlan {
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+// MODELLO USER AGGIORNATO
+model User {
+  id                        String                 @id @default(cuid())
+  username                  String                 @unique // Nuovo campo username
+  email                     String                 
+  password                  String
+  nome                      String
+  cognome                   String
+  ruolo                     Role
+  
+  // Multi-tenant
+  tenantId                  String
+  tenant                    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Stato e sicurezza
+  attivo                    Boolean                @default(true)
+  bloccato                  Boolean                @default(false)
+  emailVerified             DateTime?              // Email verificata
+  mustChangePassword        Boolean                @default(false)
+  passwordChangedAt         DateTime?
+  failedLoginAttempts       Int                    @default(0)
+  lockedUntil              DateTime?              // Blocco temporaneo dopo troppi tentativi
+  
+  // Tracking
+  ultimoAccesso             DateTime?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  createdBy                 String?                // ID dell'admin che ha creato l'utente
+  
+  // Relazioni esistenti
+  authorizationsSupervisore AuthorizationLog[]     @relation("SupervisoreAuth")
+  authorizationsUser        AuthorizationLog[]     @relation("AuthorizedUser")
+  dispositiviAutorizzati    DeviceWhitelist[]
+  incassiCreati             Incasso[]              @relation("IncassoCreatedBy")
+  notificheRicevute         NotificaPagamento[]    @relation("NotificaTo")
+  notificheInviate          NotificaPagamento[]    @relation("NotificaFrom")
+  ordinazioniCameriere      Ordinazione[]          @relation("OrdinazioneCameriere")
+  ordiniGestiti             OrdineFornitore[]      @relation("OrdineGestito")
+  pagamentiOperatore        Pagamento[]            @relation("PagamentiOperatore")
+  movimentiConto            MovimentoConto[]       @relation("MovimentiOperatore")
+  movimentiContoScalare     MovimentoContoScalare[] @relation("MovimentiContoScalareOperatore")
+  qrTokensCreati            QRAuthorizationToken[] @relation("QRTokenCreatedBy")
+  qrCodesGenerated          QRCodeToken[]          @relation("GeneratedQRCodes")
+  qrCodesUser               QRCodeToken[]          @relation("UserQRCodes")
+  richiestePagemento        RichiestaPagemento[]   @relation("RichiestePagementoCameriere")
+  sessioni                  Session[]
+  scontriniOperatore        QueueScontrino[]       @relation("ScontriniOperatore")
+  auditLogs                 AuditLog[]             @relation("AuditUser")
+  userSessions              UserSession[]          @relation("UserSessions")
+  userShifts                UserShift[]            @relation("UserShifts")
+  
+  @@unique([email, tenantId]) // Email unica per tenant
+  @@index([username])
+  @@index([tenantId, attivo])
+  @@index([tenantId, ruolo])
+}
+
+// RUOLI AGGIORNATI
+enum Role {
+  SUPER_ADMIN     // Super admin di sistema (può gestire tutti i tenant)
+  ADMIN           // Admin del tenant
+  MANAGER         // Manager del tenant
+  SUPERVISORE
+  CAMERIERE
+  PREPARA
+  BANCO
+  CUCINA
+  CASSA
+}
+
+// MODELLO REGISTRAZIONE ADMIN
+model AdminRegistration {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  token             String              @unique // Token per verificare email
+  tokenExpiry       DateTime            // Scadenza token
+  tenantName        String              // Nome del tenant da creare
+  tenantSlug        String              // Slug del tenant
+  adminUsername     String              // Username dell'admin
+  adminFirstName    String
+  adminLastName     String
+  status            RegistrationStatus  @default(PENDING)
+  completedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  @@index([token])
+  @@index([status])
+}
+
+enum RegistrationStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+// SESSIONI AGGIORNATE PER MULTI-TENANT
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tenantId  String   // Aggiunto per multi-tenant
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([expires])
+}
+
+// AUDIT LOG PER TRACCIARE AZIONI
+model AuditLog {
+  id          String        @id @default(cuid())
+  tenantId    String
+  userId      String
+  action      AuditAction
+  entityType  String?       // Tipo di entità (User, Product, Order, etc.)
+  entityId    String?       // ID dell'entità
+  oldData     Json?         // Dati precedenti
+  newData     Json?         // Nuovi dati
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime      @default(now())
+  
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User          @relation("AuditUser", fields: [userId], references: [id])
+  
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@index([entityType, entityId])
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PERMISSION_CHANGE
+  SETTINGS_CHANGE
+}
+
+// Le altre tabelle devono essere aggiornate per includere tenantId
+// Esempio per alcune tabelle principali:
+
+model CategoriaMenu {
+  id              Int               @id @default(autoincrement())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nome            String            
+  nomeDisplay     String
+  emoji           String?
+  descrizione     String?
+  ordinamento     Int               @default(0)
+  attiva          Boolean           @default(true)
+  coloreHex       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  pagineCategorie PaginaCategoria[]
+  prodotti        Prodotto[]
+  separatori      SeparatoreMenu[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId, ordinamento])
+}
+
+model Prodotto {
+  id                 Int                 @id @default(autoincrement())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nome               String              
+  nomeStampante      String?
+  prezzo             Decimal             @db.Decimal(10, 2)
+  iva                Int                 @default(10)
+  reparto            Reparto             @default(BAR)
+  categoriaMenuId    Int
+  categoriaMenu      CategoriaMenu       @relation(fields: [categoriaMenuId], references: [id])
+  postazione         Postazione          @default(BANCO)
+  immagine           String?
+  descrizione        String?
+  ordinamento        Int                 @default(0)
+  disponibile        Boolean             @default(true)
+  mostraInMenu       Boolean             @default(true)
+  evidenziato        Boolean             @default(false)
+  fornitoreId        Int?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  
+  @@unique([tenantId, nome])
+  @@index([tenantId, categoriaMenuId])
+  @@index([tenantId, disponibile])
+}
+
+// ... continuare per tutte le altre tabelle aggiungendo tenantId

@@ -14,8 +14,8 @@ export type Category = {
   updatedAt: Date;
   subcategories?: Subcategory[];
   _count?: {
-    products: number;
-    subcategories: number;
+    Product: number;
+    Subcategory: number;
   };
 };
 
@@ -28,7 +28,7 @@ export type Subcategory = {
   updatedAt: Date;
   category?: Category;
   _count?: {
-    products: number;
+    Product: number;
   };
 };
 
@@ -37,18 +37,18 @@ export async function getCategories() {
   try {
     const categories = await prisma.category.findMany({
       include: {
-        subcategories: {
+        Subcategory: {
           orderBy: { order: 'asc' },
           include: {
             _count: {
-              select: { products: true }
+              select: { Product: true }
             }
           }
         },
         _count: {
           select: { 
-            products: true,
-            subcategories: true 
+            Product: true,
+            Subcategory: true 
           }
         }
       },
@@ -67,18 +67,18 @@ export async function getCategoryById(id: number) {
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        subcategories: {
+        Subcategory: {
           orderBy: { order: 'asc' },
           include: {
             _count: {
-              select: { products: true }
+              select: { Product: true }
             }
           }
         },
         _count: {
           select: { 
-            products: true,
-            subcategories: true 
+            Product: true,
+            Subcategory: true 
           }
         }
       }
@@ -106,8 +106,8 @@ export async function createCategory(data: {
       include: {
         _count: {
           select: { 
-            products: true,
-            subcategories: true 
+            Product: true,
+            Subcategory: true 
           }
         }
       }
@@ -143,8 +143,8 @@ export async function updateCategory(
       include: {
         _count: {
           select: { 
-            products: true,
-            subcategories: true 
+            Product: true,
+            Subcategory: true 
           }
         }
       }
@@ -169,8 +169,8 @@ export async function deleteCategory(id: number) {
       include: {
         _count: {
           select: { 
-            products: true,
-            subcategories: true 
+            Product: true,
+            Subcategory: true 
           }
         }
       }
@@ -180,11 +180,11 @@ export async function deleteCategory(id: number) {
       throw new Error("Categoria non trovata");
     }
     
-    if (category._count.products > 0) {
+    if (category._count.Product > 0) {
       throw new Error("Impossibile eliminare una categoria con prodotti associati");
     }
     
-    if (category._count.subcategories > 0) {
+    if (category._count.Subcategory > 0) {
       throw new Error("Impossibile eliminare una categoria con sottocategorie associate");
     }
     
@@ -217,9 +217,9 @@ export async function getSubcategories(categoryId?: number) {
     const subcategories = await prisma.subcategory.findMany({
       where,
       include: {
-        category: true,
+        Category: true,
         _count: {
-          select: { products: true }
+          select: { Product: true }
         }
       },
       orderBy: [
@@ -248,9 +248,9 @@ export async function createSubcategory(data: {
         order: data.order || 0,
       },
       include: {
-        category: true,
+        Category: true,
         _count: {
-          select: { products: true }
+          select: { Product: true }
         }
       }
     });
@@ -283,9 +283,9 @@ export async function updateSubcategory(
         ...(data.order !== undefined && { order: data.order }),
       },
       include: {
-        category: true,
+        Category: true,
         _count: {
-          select: { products: true }
+          select: { Product: true }
         }
       }
     });
@@ -307,9 +307,7 @@ export async function deleteSubcategory(id: number) {
     const subcategory = await prisma.subcategory.findUnique({
       where: { id },
       include: {
-        _count: {
-          select: { products: true }
-        }
+        Product: true
       }
     });
     
@@ -317,7 +315,7 @@ export async function deleteSubcategory(id: number) {
       throw new Error("Sottocategoria non trovata");
     }
     
-    if (subcategory._count.products > 0) {
+    if (subcategory.Product && subcategory.Product.length > 0) {
       throw new Error("Impossibile eliminare una sottocategoria con prodotti associati");
     }
     

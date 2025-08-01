@@ -2,1007 +2,107 @@
   "_IMPORTANTE": "NON USARE MAI SCRIPT AUTOMATICI PER RISOLVERE QUESTI ERRORI. Ogni errore deve essere analizzato e risolto manualmente attraverso il ragionamento. Non creare o eseguire script di risoluzione automatica.",
   "_DIRECTIVE": "ALWAYS use manual reasoning to fix each error. NEVER use automated scripts or batch fixes.",
   "groupNumber": 3,
-  "totalErrors": 140,
+  "totalErrors": 12,
   "files": [
     {
-      "file": "lib/actions/pagamenti.ts",
-      "errorCount": 33,
+      "file": "components/cameriere/UnavailableProductsModal.tsx",
+      "errorCount": 6,
       "errors": [
         {
-          "line": 32,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'prodotto' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Prodotto'?"
-        },
-        {
-          "line": 49,
-          "col": 32,
+          "line": 51,
+          "col": 42,
           "code": "TS2339",
-          "message": "Property 'Pagamento' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         },
         {
-          "line": 49,
-          "col": 50,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 49,
-          "col": 55,
-          "code": "TS7006",
-          "message": "Parameter 'pag' implicitly has an 'any' type."
-        },
-        {
-          "line": 50,
-          "col": 31,
+          "line": 52,
+          "col": 38,
           "code": "TS2339",
-          "message": "Property 'RigaOrdinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 50,
-          "col": 55,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 50,
-          "col": 60,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 54,
-          "col": 31,
-          "code": "TS2339",
-          "message": "Property 'RigaOrdinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 54,
-          "col": 54,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 55,
-          "col": 34,
-          "code": "TS2339",
-          "message": "Property 'RigaOrdinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 55,
-          "col": 57,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         },
         {
           "line": 56,
-          "col": 53,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 56,
-          "col": 58,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 57,
-          "col": 59,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 57,
-          "col": 64,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 284,
-          "col": 11,
-          "code": "TS2353",
-          "message": "Object literal may only specify known properties, and 'righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'."
-        },
-        {
-          "line": 294,
-          "col": 52,
+          "col": 97,
           "code": "TS2339",
-          "message": "Property 'righe' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         },
         {
-          "line": 294,
-          "col": 62,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 306,
-          "col": 45,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 308,
-          "col": 46,
-          "code": "TS2551",
-          "message": "Property 'cameriere' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'cameriereId'?"
-        },
-        {
-          "line": 318,
-          "col": 45,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 320,
-          "col": 46,
-          "code": "TS2551",
-          "message": "Property 'cameriere' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'cameriereId'?"
-        },
-        {
-          "line": 402,
-          "col": 32,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ Pagamento: { id: string; note: string | null; timestamp: Date; ordinazioneId: string; importo: Decimal; modalita: ModalitaPagamento; clienteNome: string | null; clientePagatoreId: string | null; contributoId: string | null; righeIds: JsonValue; operatoreId: string; }[]; RigaOrdinazione: { ...; }[]; Tavolo: { ...; ...'. Did you mean 'Tavolo'?"
-        },
-        {
-          "line": 402,
-          "col": 62,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ Pagamento: { id: string; note: string | null; timestamp: Date; ordinazioneId: string; importo: Decimal; modalita: ModalitaPagamento; clienteNome: string | null; clientePagatoreId: string | null; contributoId: string | null; righeIds: JsonValue; operatoreId: string; }[]; RigaOrdinazione: { ...; }[]; Tavolo: { ...; ...'. Did you mean 'Tavolo'?"
-        },
-        {
-          "line": 518,
-          "col": 11,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'prodotto' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Prodotto'?"
-        },
-        {
-          "line": 614,
-          "col": 21,
-          "code": "TS2551",
-          "message": "Property 'ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 656,
-          "col": 15,
-          "code": "TS2353",
-          "message": "Object literal may only specify known properties, and 'righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'."
-        },
-        {
-          "line": 668,
-          "col": 56,
+          "line": 88,
+          "col": 80,
           "code": "TS2339",
-          "message": "Property 'righe' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         },
         {
-          "line": 668,
-          "col": 66,
-          "code": "TS7006",
-          "message": "Parameter 'riga' implicitly has an 'any' type."
-        },
-        {
-          "line": 680,
-          "col": 49,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 682,
-          "col": 50,
-          "code": "TS2551",
-          "message": "Property 'cameriere' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'cameriereId'?"
-        },
-        {
-          "line": 692,
-          "col": 49,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 694,
-          "col": 50,
-          "code": "TS2551",
-          "message": "Property 'cameriere' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'cameriereId'?"
-        }
-      ]
-    },
-    {
-      "file": "lib/services/table-auto-close.ts",
-      "errorCount": 20,
-      "errors": [
-        {
-          "line": 53,
-          "col": 11,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazioni' does not exist in type 'TavoloWhereInput'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 63,
-          "col": 11,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazioni' does not exist in type 'TavoloInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 114,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazione' does not exist in type 'PagamentoWhereInput'. Did you mean to write 'Ordinazione'?"
+          "line": 106,
+          "col": 69,
+          "code": "TS2339",
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         },
         {
           "line": 122,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazione' does not exist in type 'PagamentoInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 141,
-          "col": 36,
+          "col": 48,
           "code": "TS2339",
-          "message": "Property 'ordinazioni' does not exist on type '{ id: number; createdAt: Date; updatedAt: Date; numero: string; stato: StatoTavolo; note: string | null; nome: string | null; attivo: boolean; zona: string | null; ... 5 more ...; posizioneY: number; }'."
-        },
-        {
-          "line": 141,
-          "col": 56,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 141,
-          "col": 61,
-          "code": "TS7006",
-          "message": "Parameter 'ord' implicitly has an 'any' type."
-        },
-        {
-          "line": 142,
-          "col": 46,
-          "code": "TS7006",
-          "message": "Parameter 'pSum' implicitly has an 'any' type."
-        },
-        {
-          "line": 142,
-          "col": 52,
-          "code": "TS7006",
-          "message": "Parameter 'pag' implicitly has an 'any' type."
-        },
-        {
-          "line": 164,
-          "col": 36,
-          "code": "TS2551",
-          "message": "Property 'ordinazione' does not exist on type '{ id: string; note: string | null; timestamp: Date; ordinazioneId: string; importo: Decimal; modalita: ModalitaPagamento; clienteNome: string | null; clientePagatoreId: string | null; contributoId: string | null; righeIds: JsonValue; operatoreId: string; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 165,
-          "col": 38,
-          "code": "TS2551",
-          "message": "Property 'ordinazione' does not exist on type '{ id: string; note: string | null; timestamp: Date; ordinazioneId: string; importo: Decimal; modalita: ModalitaPagamento; clienteNome: string | null; clientePagatoreId: string | null; contributoId: string | null; righeIds: JsonValue; operatoreId: string; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 202,
-          "col": 11,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazioni' does not exist in type 'TavoloInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 233,
-          "col": 34,
-          "code": "TS2339",
-          "message": "Property 'ordinazioni' does not exist on type '{ id: number; createdAt: Date; updatedAt: Date; numero: string; stato: StatoTavolo; note: string | null; nome: string | null; attivo: boolean; zona: string | null; ... 5 more ...; posizioneY: number; }'."
-        },
-        {
-          "line": 233,
-          "col": 54,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 233,
-          "col": 59,
-          "code": "TS7006",
-          "message": "Parameter 'ord' implicitly has an 'any' type."
-        },
-        {
-          "line": 245,
-          "col": 46,
-          "code": "TS2339",
-          "message": "Property 'ordinazioni' does not exist on type '{ id: number; createdAt: Date; updatedAt: Date; numero: string; stato: StatoTavolo; note: string | null; nome: string | null; attivo: boolean; zona: string | null; ... 5 more ...; posizioneY: number; }'."
-        },
-        {
-          "line": 246,
-          "col": 34,
-          "code": "TS2339",
-          "message": "Property 'ordinazioni' does not exist on type '{ id: number; createdAt: Date; updatedAt: Date; numero: string; stato: StatoTavolo; note: string | null; nome: string | null; attivo: boolean; zona: string | null; ... 5 more ...; posizioneY: number; }'."
-        },
-        {
-          "line": 411,
-          "col": 11,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'pagamenti' does not exist in type 'OrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Pagamento'?"
-        },
-        {
-          "line": 424,
-          "col": 41,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 425,
-          "col": 65,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
+          "message": "Property 'danger' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; }'."
         }
       ]
     },
     {
-      "file": "lib/actions/categories.ts",
-      "errorCount": 14,
-      "errors": [
-        {
-          "line": 50,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'CategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 80,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'CategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 101,
-          "col": 7,
-          "code": "TS2322",
-          "message": "Type '{ name: string; icon: string | null; order: number; }' is not assignable to type '(Without<CategoryCreateInput, CategoryUncheckedCreateInput> & CategoryUncheckedCreateInput) | (Without<...> & CategoryCreateInput)'."
-        },
-        {
-          "line": 109,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'CategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 146,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'CategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 172,
-          "col": 13,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'CategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 183,
-          "col": 18,
-          "code": "TS2339",
-          "message": "Property '_count' does not exist on type '{ name: string; id: number; createdAt: Date; updatedAt: Date; order: number; icon: string | null; }'."
-        },
-        {
-          "line": 187,
-          "col": 18,
-          "code": "TS2339",
-          "message": "Property '_count' does not exist on type '{ name: string; id: number; createdAt: Date; updatedAt: Date; order: number; icon: string | null; }'."
-        },
-        {
-          "line": 222,
-          "col": 21,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'SubcategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 245,
-          "col": 7,
-          "code": "TS2322",
-          "message": "Type '{ name: string; categoryId: number; order: number; }' is not assignable to type '(Without<SubcategoryCreateInput, SubcategoryUncheckedCreateInput> & SubcategoryUncheckedCreateInput) | (Without<...> & SubcategoryCreateInput)'."
-        },
-        {
-          "line": 253,
-          "col": 21,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'SubcategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 288,
-          "col": 21,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'SubcategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 311,
-          "col": 21,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'products' does not exist in type 'SubcategoryCountOutputTypeSelect<DefaultArgs>'. Did you mean to write 'Product'?"
-        },
-        {
-          "line": 320,
-          "col": 21,
-          "code": "TS2339",
-          "message": "Property '_count' does not exist on type '{ name: string; id: number; createdAt: Date; updatedAt: Date; order: number; categoryId: number; }'."
-        }
-      ]
-    },
-    {
-      "file": "lib/actions/annullamento-ordini.ts",
-      "errorCount": 11,
-      "errors": [
-        {
-          "line": 184,
-          "col": 18,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 185,
-          "col": 22,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 185,
-          "col": 41,
-          "code": "TS2551",
-          "message": "Property 'Tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 185,
-          "col": 59,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 185,
-          "col": 78,
-          "code": "TS2551",
-          "message": "Property 'Tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 186,
-          "col": 20,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 192,
-          "col": 18,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 193,
-          "col": 22,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 193,
-          "col": 41,
-          "code": "TS2551",
-          "message": "Property 'Tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 193,
-          "col": 59,
-          "code": "TS18048",
-          "message": "'result.ordinazione' is possibly 'undefined'."
-        },
-        {
-          "line": 193,
-          "col": 78,
-          "code": "TS2551",
-          "message": "Property 'Tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        }
-      ]
-    },
-    {
-      "file": "app/api/cassa/receipt-requests/route.ts",
-      "errorCount": 9,
-      "errors": [
-        {
-          "line": 17,
-          "col": 9,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'tavolo' does not exist in type 'OrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Tavolo'?"
-        },
-        {
-          "line": 43,
-          "col": 26,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 45,
-          "col": 37,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 45,
-          "col": 51,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 46,
-          "col": 35,
-          "code": "TS2339",
-          "message": "Property 'pagamenti' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'."
-        },
-        {
-          "line": 46,
-          "col": 53,
-          "code": "TS7006",
-          "message": "Parameter 'sum' implicitly has an 'any' type."
-        },
-        {
-          "line": 46,
-          "col": 58,
-          "code": "TS7006",
-          "message": "Parameter 'pag' implicitly has an 'any' type."
-        },
-        {
-          "line": 51,
-          "col": 23,
-          "code": "TS2551",
-          "message": "Property 'tavolo' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'tavoloId'?"
-        },
-        {
-          "line": 53,
-          "col": 28,
-          "code": "TS2551",
-          "message": "Property 'cameriere' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; numero: number; tavoloId: number | null; clienteId: string | null; cameriereId: string; stato: StatoOrdinazione; ... 6 more ...; statoPagamento: StatoPagamento; }'. Did you mean 'cameriereId'?"
-        }
-      ]
-    },
-    {
-      "file": "lib/auth.ts",
-      "errorCount": 9,
-      "errors": [
-        {
-          "line": 201,
-          "col": 7,
-          "code": "TS2322",
-          "message": "Type '{ userId: any; token: string; expires: Date; }' is not assignable to type '(Without<SessionCreateInput, SessionUncheckedCreateInput> & SessionUncheckedCreateInput) | (Without<...> & SessionCreateInput)'."
-        },
-        {
-          "line": 202,
-          "col": 17,
-          "code": "TS2304",
-          "message": "Cannot find name 'matchedUser'."
-        },
-        {
-          "line": 264,
-          "col": 20,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'user' does not exist in type 'SessionInclude<DefaultArgs>'. Did you mean to write 'User'?"
-        },
-        {
-          "line": 272,
-          "col": 20,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        },
-        {
-          "line": 274,
-          "col": 27,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        },
-        {
-          "line": 283,
-          "col": 33,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        },
-        {
-          "line": 285,
-          "col": 31,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        },
-        {
-          "line": 285,
-          "col": 52,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        },
-        {
-          "line": 285,
-          "col": 77,
-          "code": "TS2339",
-          "message": "Property 'user' does not exist on type '{ id: string; token: string; createdAt: Date; tenantId: string; userId: string; expires: Date; }'."
-        }
-      ]
-    },
-    {
-      "file": "lib/actions/prodotti.ts",
-      "errorCount": 7,
-      "errors": [
-        {
-          "line": 33,
-          "col": 18,
-          "code": "TS2322",
-          "message": "Type '\"ORDINATO\"' is not assignable to type 'StatoRigaOrdinazione'."
-        },
-        {
-          "line": 48,
-          "col": 67,
-          "code": "TS2367",
-          "message": "This comparison appears to be unintentional because the types 'StatoRigaOrdinazione' and '\"ORDINATO\"' have no overlap."
-        },
-        {
-          "line": 58,
-          "col": 31,
-          "code": "TS2551",
-          "message": "Property 'Ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 59,
-          "col": 31,
-          "code": "TS2551",
-          "message": "Property 'Ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 79,
-          "col": 31,
-          "code": "TS2551",
-          "message": "Property 'Ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 80,
-          "col": 31,
-          "code": "TS2551",
-          "message": "Property 'Ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        },
-        {
-          "line": 83,
-          "col": 30,
-          "code": "TS2551",
-          "message": "Property 'Ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        }
-      ]
-    },
-    {
-      "file": "components/ui/ThemeSelector.tsx",
-      "errorCount": 5,
-      "errors": [
-        {
-          "line": 4,
-          "col": 30,
-          "code": "TS7016",
-          "message": "Could not find a declaration file for module 'react-dom'. '/home/colai/projects/bar/guestone/bar-roxy-clean/node_modules/react-dom/index.js' implicitly has an 'any' type."
-        },
-        {
-          "line": 16,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 103,
-          "col": 40,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 110,
-          "col": 40,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 110,
-          "col": 74,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "app/api/products/procedures/route.ts",
-      "errorCount": 4,
-      "errors": [
-        {
-          "line": 21,
-          "col": 32,
-          "code": "TS2551",
-          "message": "Property 'ProductProcedure' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'productProcedure'?"
-        },
-        {
-          "line": 61,
-          "col": 14,
-          "code": "TS2551",
-          "message": "Property 'ProductProcedure' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'productProcedure'?"
-        },
-        {
-          "line": 66,
-          "col": 32,
-          "code": "TS2551",
-          "message": "Property 'ProductProcedure' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'productProcedure'?"
-        },
-        {
-          "line": 124,
-          "col": 14,
-          "code": "TS2551",
-          "message": "Property 'ProductProcedure' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'productProcedure'?"
-        }
-      ]
-    },
-    {
-      "file": "app/cameriere/ordini-in-corso/page-optimized.tsx",
-      "errorCount": 4,
-      "errors": [
-        {
-          "line": 59,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 820,
-          "col": 32,
-          "code": "TS2304",
-          "message": "Cannot find name 'Loader2'."
-        },
-        {
-          "line": 860,
-          "col": 37,
-          "code": "TS2339",
-          "message": "Property 'numero' does not exist on type 'Order'."
-        },
-        {
-          "line": 862,
-          "col": 11,
-          "code": "TS2719",
-          "message": "Type 'OrderItem[]' is not assignable to type 'OrderItem[]'. Two different types with this name exist, but they are unrelated."
-        }
-      ]
-    },
-    {
-      "file": "app/api/admin/users/route.ts",
-      "errorCount": 3,
-      "errors": [
-        {
-          "line": 309,
-          "col": 9,
-          "code": "TS2367",
-          "message": "This comparison appears to be unintentional because the types 'Role' and '\"SUPER_ADMIN\"' have no overlap."
-        },
-        {
-          "line": 424,
-          "col": 9,
-          "code": "TS2367",
-          "message": "This comparison appears to be unintentional because the types 'Role' and '\"SUPER_ADMIN\"' have no overlap."
-        },
-        {
-          "line": 443,
-          "col": 9,
-          "code": "TS2820",
-          "message": "Type '\"User\"' is not assignable to type 'EntityType'. Did you mean '\"USER\"'?"
-        }
-      ]
-    },
-    {
-      "file": "components/dashboard/DashboardHeader.tsx",
-      "errorCount": 3,
-      "errors": [
-        {
-          "line": 14,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 116,
-          "col": 44,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        },
-        {
-          "line": 117,
-          "col": 40,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "lib/services/priority-manager.ts",
-      "errorCount": 3,
-      "errors": [
-        {
-          "line": 88,
-          "col": 9,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazione' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 211,
-          "col": 9,
-          "code": "TS2561",
-          "message": "Object literal may only specify known properties, but 'ordinazione' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
-        },
-        {
-          "line": 233,
-          "col": 27,
-          "code": "TS2551",
-          "message": "Property 'ordinazione' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; stato: StatoRigaOrdinazione; note: string | null; ordinazioneId: string; prodottoId: number; quantita: number; ... 11 more ...; glassesCount: number | null; }'. Did you mean 'ordinazioneId'?"
-        }
-      ]
-    },
-    {
-      "file": "components/ui/tab-bookmarks.tsx",
+      "file": "app/cameriere/cambia-tavolo/page.tsx",
       "errorCount": 2,
       "errors": [
         {
-          "line": 22,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
+          "line": 279,
+          "col": 57,
+          "code": "TS2365",
+          "message": "Operator '+' cannot be applied to types 'number' and 'Decimal'."
         },
         {
-          "line": 105,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
+          "line": 383,
+          "col": 51,
+          "code": "TS2365",
+          "message": "Operator '+' cannot be applied to types 'number' and 'Decimal'."
         }
       ]
     },
     {
-      "file": "app/api/admin/roles/route.ts",
-      "errorCount": 1,
+      "file": "lib/actions/ordinazioni.ts",
+      "errorCount": 2,
       "errors": [
         {
-          "line": 96,
-          "col": 7,
-          "code": "TS2322",
-          "message": "Type '{ id: string; name: any; description: any; tenantId: string | undefined; }' is not assignable to type '(Without<CustomRoleCreateInput, CustomRoleUncheckedCreateInput> & CustomRoleUncheckedCreateInput) | (Without<...> & CustomRoleCreateInput)'."
-        }
-      ]
-    },
-    {
-      "file": "app/api/auth/login/route.ts",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 16,
-          "col": 56,
-          "code": "TS2554",
-          "message": "Expected 2 arguments, but got 3."
-        }
-      ]
-    },
-    {
-      "file": "app/dashboard/categorie/page.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 65,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "app/dashboard/products-spreadsheet/page.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 128,
+          "line": 1741,
           "col": 9,
-          "code": "TS2353",
-          "message": "Object literal may only specify known properties, and 'nome' does not exist in type '{ name: string; description?: string | undefined; price?: number | undefined; imageUrl?: string | undefined; categoryId?: number | undefined; subcategoryId?: number | undefined; available?: boolean | undefined; requiresGlasses?: boolean | undefined; }'."
-        }
-      ]
-    },
-    {
-      "file": "app/dashboard/products/components/ProductCard.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 26,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "app/gestione-ordini/page.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 15,
-          "col": 23,
           "code": "TS2322",
-          "message": "Type '({ RigaOrdinazione: ({ Prodotto: { id: number; createdAt: Date; updatedAt: Date; nome: string; descrizione: string | null; prezzo: Decimal; postazione: DestinazioneRiga | null; ... 19 more ...; requiresGlasses: boolean; }; } & { ...; })[]; Tavolo: { ...; } | null; User: { ...; }; } & { ...; })[]' is not assignable to type 'OrdinazioneCompleta[]'."
-        }
-      ]
-    },
-    {
-      "file": "components/auth-guard.tsx",
-      "errorCount": 1,
-      "errors": [
+          "message": "Type 'string | undefined' is not assignable to type 'number | undefined'."
+        },
         {
-          "line": 21,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "components/cameriere/NumericKeypad.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 18,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "components/cameriere/ProductNotesModal.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 37,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "components/cassa/payment-history.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 51,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "components/prepara/ProductAvailabilityModal.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 32,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "components/ui/ThemedDrawer.tsx",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 21,
-          "col": 18,
-          "code": "TS7053",
-          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
-        }
-      ]
-    },
-    {
-      "file": "lib/services/payment-validator.ts",
-      "errorCount": 1,
-      "errors": [
-        {
-          "line": 257,
+          "line": 1747,
           "col": 9,
-          "code": "TS2353",
-          "message": "Object literal may only specify known properties, and 'righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'."
+          "code": "TS2322",
+          "message": "Type 'string | undefined' is not assignable to type 'number | undefined'."
+        }
+      ]
+    },
+    {
+      "file": "app/dashboard/categories/page.tsx",
+      "errorCount": 1,
+      "errors": [
+        {
+          "line": 90,
+          "col": 21,
+          "code": "TS2352",
+          "message": "Conversion of type '({ _count: { Subcategory: number; Product: number; }; Subcategory: ({ _count: { Product: number; }; } & { name: string; id: number; createdAt: Date; updatedAt: Date; order: number; categoryId: number; })[]; } & { ...; })[]' to type 'CategoryWithSubcategories[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+        }
+      ]
+    },
+    {
+      "file": "app/supervisore/page-wrapper-optimized.tsx",
+      "errorCount": 1,
+      "errors": [
+        {
+          "line": 651,
+          "col": 46,
+          "code": "TS7053",
+          "message": "Element implicitly has an 'any' type because expression of type 'ThemeMode' can't be used to index type '{ light: ThemeColors; dark: ThemeColors; }'."
         }
       ]
     }

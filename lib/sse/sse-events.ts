@@ -80,8 +80,127 @@ export interface SSEEventMap {
   'order:cancelled': {
     orderId: string;
     tableNumber?: number;
-    orderType: string;
+    orderType?: string;
     reason?: string;
+    approvedBy?: string;
+    timestamp: string;
+  };
+  
+  'order:cancellation-request': {
+    requestId: string;
+    orderId: string;
+    tableNumber?: number;
+    reason: string;
+    requestedBy: string;
+    timestamp: string;
+  };
+  
+  'order:cancellation-rejected': {
+    requestId: string;
+    orderId: string;
+    tableNumber?: number;
+    rejectedBy: string;
+    reason?: string;
+    timestamp: string;
+  };
+  
+  'order:merged': {
+    orderId: string;
+    tableNumber: number;
+    newItems: Array<{
+      id: string;
+      productName: string;
+      quantity: number;
+      station: string;
+    }>;
+    totalAmount: number;
+    mergedBy: string;
+  };
+  
+  'merge:request': {
+    id: string;
+    ordinazioneId: string;
+    tavoloId: number;
+    numeroTavolo: string;
+    numeroOrdine: number;
+    richiedenteName: string;
+    prodotti: Array<{
+      prodottoId: number;
+      nome: string;
+      quantita: number;
+      prezzo?: number;
+      note?: string;
+    }>;
+  };
+  
+  // Order item events
+  'order:item-cancelled': {
+    orderId: string;
+    itemId: string;
+    productName?: string;
+    tableNumber?: number;
+    cancelledBy: string;
+    timestamp: string;
+  };
+  
+  'order:item-modified': {
+    orderId: string;
+    itemId: string;
+    productName?: string;
+    oldQuantity: number;
+    newQuantity: number;
+    tableNumber?: number;
+    modifiedBy: string;
+    timestamp: string;
+  };
+  
+  'order:table_changed': {
+    fromTable: string;
+    toTable: string;
+    ordersCount: number;
+  };
+  
+  // Table events
+  'table:updated': {
+    tableNumber: string;
+    newStatus: string;
+  };
+  
+  // Product events
+  'product:availability': {
+    productId: number;
+    productName: string;
+    available: boolean;
+    updatedBy?: string;
+    timestamp: string;
+  };
+  
+  'product:unavailable-in-order': {
+    productId: number;
+    productName: string;
+    affectedOrders: Array<{
+      orderId: string;
+      orderNumber: number;
+      tableNumber?: string;
+      itemId: string;
+      quantity: number;
+      status: string;
+    }>;
+    timestamp: string;
+  };
+  
+  'product:unavailable-urgent': {
+    productId: number;
+    productName: string;
+    affectedOrders: Array<{
+      orderId: string;
+      orderNumber: number;
+      tableNumber?: string;
+      itemId: string;
+      quantity: number;
+      waiterName?: string;
+      status: string;
+    }>;
     timestamp: string;
   };
   
@@ -112,6 +231,12 @@ export interface SSEEventMap {
   'system:heartbeat': {
     timestamp: string;
     serverTime: string;
+  };
+  
+  'system:reset': {
+    message: string;
+    resetBy: string;
+    timestamp: string;
   };
   
   // Data sync events
@@ -235,6 +360,11 @@ export const SSEEventChannels: Partial<Record<SSEEventName, SSEChannel[]>> = {
   'order:delivered': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
   'order:paid': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
   'order:cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
+  'order:merged': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
+  'merge:request': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE],
+  'product:availability': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE],
+  'product:unavailable-in-order': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE],
+  'product:unavailable-urgent': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE, SSEChannels.NOTIFICATIONS],
   'notification:new': [SSEChannels.NOTIFICATIONS],
   'system:announcement': [SSEChannels.SYSTEM],
   'station:request': [SSEChannels.NOTIFICATIONS],

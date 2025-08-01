@@ -548,7 +548,7 @@ export class ShiftManager {
           status: 'ACTIVE'
         },
         include: {
-          user: {
+          User: {
             select: { nome: true, ruolo: true }
           }
         }
@@ -559,8 +559,8 @@ export class ShiftManager {
       const shiftData: ShiftData = {
         id: dbShift.id,
         userId: dbShift.userId,
-        userName: dbShift.user.nome,
-        userRole: dbShift.user.ruolo,
+        userName: dbShift.User.nome,
+        userRole: dbShift.User.ruolo,
         startTime: dbShift.startTime,
         endTime: dbShift.endTime || undefined,
         duration: dbShift.duration || undefined,
@@ -611,14 +611,14 @@ export class ShiftManager {
           }
         },
         include: {
-          pagamenti: true,
-          righe: true
+          Pagamento: true,
+          RigaOrdinazione: true
         }
       });
 
       const ordersHandled = orders.length;
       const revenue = orders.reduce((sum, order) => 
-        sum + order.pagamenti.reduce((pSum, payment) => 
+        sum + order.Pagamento.reduce((pSum: number, payment: any) => 
           pSum + payment.importo.toNumber(), 0
         ), 0
       );
@@ -632,8 +632,8 @@ export class ShiftManager {
       let completedOrders = 0;
       
       for (const order of orders) {
-        if (order.pagamenti.length > 0) {
-          const lastPayment = order.pagamenti.sort((a, b) => 
+        if (order.Pagamento.length > 0) {
+          const lastPayment = order.Pagamento.sort((a: any, b: any) => 
             b.timestamp.getTime() - a.timestamp.getTime()
           )[0];
           
@@ -696,7 +696,7 @@ export class ShiftManager {
       const tables = await prisma.tavolo.findMany({
         where: {
           stato: 'OCCUPATO',
-          ordinazioni: {
+          Ordinazione: {
             some: {
               cameriereId: userId,
               stato: {
@@ -768,7 +768,7 @@ export class ShiftManager {
           status: 'COMPLETED'
         },
         include: {
-          user: {
+          User: {
             select: { nome: true, ruolo: true }
           }
         }

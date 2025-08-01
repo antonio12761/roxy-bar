@@ -1,17 +1,16 @@
-import { getCurrentUser } from "@/lib/auth";
-import { generateToken } from "@/lib/auth";
-import { SSEProvider } from "@/contexts/sse-context";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import PreparaPageOptimized from "./page-wrapper-optimized";
 
 export default async function PreparaPage() {
   const user = await getCurrentUser();
   
-  // Genera un token per l'SSE (questo sarà accessibile solo lato server)
-  const token = user ? generateToken(user.id) : null;
+  // Prepara dati utente serializzabili
+  const serializedUser = user ? {
+    id: user.id,
+    nome: user.nome,
+    cognome: user.cognome,
+    ruolo: user.ruolo
+  } : null;
   
-  return (
-    <SSEProvider token={token || undefined}>
-      <PreparaPageOptimized />
-    </SSEProvider>
-  );
+  return <PreparaPageOptimized currentUser={serializedUser} />;
 }

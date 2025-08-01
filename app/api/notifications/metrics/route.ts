@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth-multi-tenant";
 import { prisma } from "@/lib/db";
 import { sseMetrics } from "@/lib/sse/sse-metrics";
 import { sseLogger } from "@/lib/sse/sse-logger";

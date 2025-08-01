@@ -1,9 +1,9 @@
-import { checkAuth } from '@/lib/auth'
+import { getCurrentUser } from "@/lib/auth-multi-tenant"
 import { redirect } from 'next/navigation'
 import CucinaPageWrapper from './page-wrapper-optimized'
 
 export default async function CucinaPage() {
-  const user = await checkAuth()
+  const user = await getCurrentUser()
   
   if (!user) {
     redirect('/login')

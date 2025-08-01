@@ -37,7 +37,7 @@ export class ContributoService {
         riferimentoId: input.riferimentoId,
         importo: input.importo,
         descrizione: input.descrizione,
-      },
+      } as any,
     });
     
     return {
@@ -125,16 +125,16 @@ export class ContributoService {
       prisma.contributoCliente.findMany({
         where: { clienteId },
         include: {
-          clientePagatore: true,
-          tavolo: true,
+          Cliente_ContributoCliente_clientePagatoreIdToCliente: true,
+          Tavolo: true,
         },
         orderBy: { timestamp: "desc" },
       }),
       prisma.contributoCliente.findMany({
         where: { clientePagatoreId: clienteId },
         include: {
-          cliente: true,
-          tavolo: true,
+          Cliente_ContributoCliente_clienteIdToCliente: true,
+          Tavolo: true,
         },
         orderBy: { timestamp: "desc" },
       }),
@@ -166,8 +166,8 @@ export class ContributoService {
     const result = await prisma.contributoCliente.findMany({
       where: { tavoloId },
       include: {
-        cliente: true,
-        clientePagatore: true,
+        Cliente_ContributoCliente_clienteIdToCliente: true,
+        Cliente_ContributoCliente_clientePagatoreIdToCliente: true,
       },
       orderBy: { timestamp: "desc" },
     });
@@ -201,7 +201,7 @@ export class ContributoService {
     // Ordinazioni del cliente
     const ordinazioni = await prisma.ordinazione.findMany({
       where: { clienteId },
-      include: { righe: true },
+      include: { RigaOrdinazione: true },
     });
 
     // Contributi effettuati

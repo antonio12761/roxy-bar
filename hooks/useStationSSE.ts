@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { StationType, shouldReceiveEvent } from '@/lib/sse/station-filters';
 import { getStationCache, StationCache } from '@/lib/cache/station-cache';
 import { SSEEventName, SSEEventData } from '@/lib/sse/sse-events';
-import { useAuthToken } from './useAuthToken';
+import { useSSE } from '@/contexts/sse-context';
 
 export interface ConnectionHealth {
   status: 'connected' | 'connecting' | 'disconnected' | 'error';
@@ -20,6 +20,7 @@ export interface ConnectionHealth {
 export interface StationSSEConfig {
   stationType: StationType;
   userId: string;
+  token?: string;
   autoReconnect?: boolean;
   maxReconnectAttempts?: number;
   heartbeatInterval?: number;
@@ -37,7 +38,8 @@ export interface OptimisticUpdate {
 }
 
 export function useStationSSE(config: StationSSEConfig) {
-  const { token, isLoading: tokenLoading } = useAuthToken();
+  // The SSE context already handles the connection
+  const sseContext = useSSE();
   
   const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth>({
     status: 'disconnected',
@@ -65,22 +67,24 @@ export function useStationSSE(config: StationSSEConfig) {
    */
   const connect = useCallback(() => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
+      console.log(`[${config.stationType}] Already connected`);
       return;
     }
 
     // Don't connect if token is not available yet
-    if (tokenLoading || !token) {
-      console.log(`[${config.stationType}] Waiting for token...`);
+    if (!config.token) {
+      console.log(`[${config.stationType}] Waiting for token... token: ${config.token ? 'present' : 'missing'}`);
       return;
     }
 
+    console.log(`[${config.stationType}] Connecting to SSE... userId: ${config.userId}`);
     setConnectionHealth(prev => ({ ...prev, status: 'connecting' }));
 
     const params = new URLSearchParams({
       station: config.stationType,
       userId: config.userId,
       clientId: `${config.stationType}-${config.userId}-${Date.now()}`,
-      token: token
+      token: config.token
     });
 
     const eventSource = new EventSource(`/api/sse?${params}`);
@@ -129,7 +133,7 @@ export function useStationSSE(config: StationSSEConfig) {
     eventSource.addEventListener('order:update', (e) => handleSSEEvent('order:update', JSON.parse(e.data)));
     eventSource.addEventListener('order:ready', (e) => handleSSEEvent('order:ready', JSON.parse(e.data)));
     
-  }, [config.stationType, config.userId, tokenLoading, token]);
+  }, [config.stationType, config.userId, config.token]);
 
   /**
    * Handle incoming SSE events with filtering and caching
@@ -316,11 +320,11 @@ export function useStationSSE(config: StationSSEConfig) {
 
   // Auto-connect on mount and when token becomes available
   useEffect(() => {
-    if (!tokenLoading && token) {
+    if (config.token) {
       connect();
     }
     return disconnect;
-  }, [connect, disconnect, tokenLoading, token]);
+  }, [connect, disconnect, config.token]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -339,6 +343,6 @@ export function useStationSSE(config: StationSSEConfig) {
     applyOptimisticUpdate,
     rollbackOptimisticUpdate,
     getCachedData,
-    clearEventQueue: useCallback(() => setEventQueue([]), [])
+    clearEventQueue: useCallback(() => setEventQueue(() => []), [])
   };
 }

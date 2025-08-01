@@ -108,7 +108,7 @@ export async function getTavoliConContiAperti() {
     const tavoli = await prisma.tavolo.findMany({
       where: {
         stato: "OCCUPATO",
-        ordinazioni: {
+        Ordinazione: {
           some: {
             statoPagamento: {
               in: ["NON_PAGATO", "PARZIALMENTE_PAGATO"],
@@ -117,15 +117,15 @@ export async function getTavoliConContiAperti() {
         },
       },
       include: {
-        ordinazioni: {
+        Ordinazione: {
           where: {
             statoPagamento: {
               in: ["NON_PAGATO", "PARZIALMENTE_PAGATO"],
             },
           },
           include: {
-            cliente: true,
-            righe: true,
+            Cliente: true,
+            RigaOrdinazione: true,
           },
         },
       },
@@ -147,18 +147,26 @@ export async function aggiungiProdottoAltroTavolo(
   prodottoId: number,
   quantita: number,
   prezzo: number,
-  clienteBeneficiarioId?: string
+  clienteBeneficiarioId?: string,
+  note?: string
 ) {
   try {
     // Crea la riga ordinazione
     const rigaOrdinazione = await prisma.rigaOrdinazione.create({
       data: {
+        id: crypto.randomUUID(),
         ordinazioneId: ordinazioneDestinazioneId,
         prodottoId,
         quantita,
         prezzo,
         clienteOrdinanteId,
         clienteBeneficiarioId,
+        note,
+        stato: "INSERITO",
+        postazione: "PREPARA",
+        timestampOrdine: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
 
@@ -176,7 +184,7 @@ export async function aggiungiProdottoAltroTavolo(
     // Crea il contributo
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: ordinazioneDestinazioneId },
-      include: { tavolo: true },
+      include: { Tavolo: true },
     });
 
     if (ordinazione?.tavoloId) {

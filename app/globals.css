@@ -2,6 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Previeni zoom su iOS */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* PWA e iPhone safe areas */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    /* Rimuovo padding-top dal body per gestirlo negli header */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Per i layout con header fisso */
+  .fixed-header {
+    top: env(safe-area-inset-top);
+  }
+  
+  /* Per i layout con bottom navigation */
+  .bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Helper classes per safe areas */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+}
+
+/* Standalone mode adjustments */
+@media all and (display-mode: standalone) {
+  body {
+    /* Stili specifici per PWA */
+  }
+}
+
+/* iPhone notch/Dynamic Island support */
+@supports (padding: max(0px)) {
+  .notch-safe {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+}
+
+/* iPhone-style signal searching animation */
+@keyframes signal-search {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scaleY(0.3);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
@@ -64,15 +138,7 @@
   border-color: hsl(var(--border));
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-}
-
-/* Forza dark mode di default */
-html {
-  @apply dark;
-}
+/* Body styles are now handled by ThemeBodyWrapper */
 
 /* Hide scrollbar but keep scroll functionality */
 .scrollbar-hide {
@@ -81,4 +147,138 @@ html {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
+}
+
+/* Liquid Glass Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translate(-20px, -20px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-10px, 20px) scale(0.9);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translate(-20px, -20px) scale(1);
+  }
+  33% {
+    transform: translate(-30px, 20px) scale(0.9);
+  }
+  66% {
+    transform: translate(20px, -10px) scale(1.1);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* v0 Glassmorphism Input Style */
+.v0-input {
+  @apply w-full h-12 px-4 pr-12 text-white placeholder-gray-500 transition-all duration-200;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.v0-input:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.v0-input:focus {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(251, 146, 60, 0.5); /* Amber/Orange focus color */
+  box-shadow: 
+    0 0 0 3px rgba(251, 146, 60, 0.1),
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.v0-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Dark theme adjustments */
+.dark .v0-input {
+  color: white;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Error state */
+.v0-input.error {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.v0-input.error:focus {
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 
+    0 0 0 3px rgba(239, 68, 68, 0.1),
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.animate-float {
+  animation: float 20s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 20s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 8s linear infinite;
+}
+
+/* Ripple effect animation */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
 }

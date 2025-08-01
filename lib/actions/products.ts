@@ -1,31 +1,73 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
+import { nanoid } from "nanoid";
 
 // Ottieni tutte le categorie
 export async function getCategories() {
   try {
-    const categories = await prisma.category.findMany({
-      include: {
-        subcategories: {
-          orderBy: { order: 'asc' }
-        },
-        _count: {
-          select: {
-            products: true
-          }
-        }
+    // Get unique categories from prodotto table
+    const categorieFromProdotti = await prisma.prodotto.findMany({
+      where: {
+        isDeleted: false
       },
-      orderBy: { order: 'asc' }
+      select: {
+        categoria: true
+      },
+      distinct: ['categoria']
     });
 
-    return categories.map(category => ({
-      ...category,
-      productsCount: category._count.products
+    // Parse categories to extract main categories and subcategories
+    const categoryMap = new Map<string, { subcategories: Set<string>, count: number }>();
+    
+    for (const { categoria } of categorieFromProdotti) {
+      if (categoria.includes(' > ')) {
+        const [mainCat, subCat] = categoria.split(' > ');
+        if (!categoryMap.has(mainCat)) {
+          categoryMap.set(mainCat, { subcategories: new Set(), count: 0 });
+        }
+        categoryMap.get(mainCat)!.subcategories.add(subCat);
+      } else {
+        if (!categoryMap.has(categoria)) {
+          categoryMap.set(categoria, { subcategories: new Set(), count: 0 });
+        }
+      }
+    }
+
+    // Count products for each category
+    for (const [catName, catData] of categoryMap) {
+      const count = await prisma.prodotto.count({
+        where: {
+          OR: [
+            { categoria: catName },
+            { categoria: { startsWith: `${catName} > ` } }
+          ],
+          isDeleted: false
+        }
+      });
+      catData.count = count;
+    }
+
+    // Convert to array format expected by the UI
+    const categories = Array.from(categoryMap.entries()).map(([name, data], index) => ({
+      id: index + 1, // Generate temporary IDs
+      name,
+      icon: null,
+      order: index,
+      productsCount: data.count,
+      subcategories: Array.from(data.subcategories).map((subName, subIndex) => ({
+        id: (index + 1) * 1000 + subIndex, // Generate temporary subcategory IDs
+        name: subName,
+        order: subIndex,
+        categoryId: index + 1,
+        productsCount: 0 // We'll calculate this if needed
+      }))
     }));
+
+    return categories.sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error("Errore recupero categorie:", error);
     return [];
@@ -40,7 +82,7 @@ export async function getSubcategories(categoryId: number) {
       include: {
         _count: {
           select: {
-            products: true
+            Product: true
           }
         }
       },
@@ -49,7 +91,7 @@ export async function getSubcategories(categoryId: number) {
 
     return subcategories.map(sub => ({
       ...sub,
-      productsCount: sub._count.products
+      productsCount: sub._count.Product
     }));
   } catch (error) {
     console.error("Errore recupero sottocategorie:", error);
@@ -65,67 +107,127 @@ export async function getProducts(filters?: {
   available?: boolean;
 }) {
   try {
-    const where: any = {};
+    const where: any = {
+      isDeleted: false
+    };
 
-    if (filters?.categoryId) {
-      where.categoryId = filters.categoryId;
-    }
-    
-    if (filters?.subcategoryId) {
-      where.subcategoryId = filters.subcategoryId;
+    // Since we're using temporary IDs for categories, we need to match by name
+    if (filters?.categoryId || filters?.subcategoryId) {
+      // First get the categories to map IDs to names
+      const categories = await getCategories();
+      
+      if (filters.subcategoryId) {
+        // Find the subcategory
+        for (const cat of categories) {
+          const subcat = cat.subcategories.find(s => s.id === filters.subcategoryId);
+          if (subcat) {
+            where.categoria = `${cat.name} > ${subcat.name}`;
+            break;
+          }
+        }
+      } else if (filters.categoryId) {
+        // Find the category
+        const category = categories.find(c => c.id === filters.categoryId);
+        if (category) {
+          where.OR = [
+            { categoria: category.name },
+            { categoria: { startsWith: `${category.name} > ` } }
+          ];
+        }
+      }
     }
 
     if (filters?.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } }
+      const searchConditions = [
+        { nome: { contains: filters.search, mode: 'insensitive' } },
+        { descrizione: { contains: filters.search, mode: 'insensitive' } }
       ];
+      
+      if (where.OR) {
+        // Combine with existing OR conditions
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions }
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
     }
 
     if (filters?.available !== undefined) {
-      where.available = filters.available;
+      where.disponibile = filters.available;
     }
 
     const products = await prisma.prodotto.findMany({
       where,
-      include: {
-        category: true,
-        subcategory: {
-          include: {
-            category: true
-          }
-        }
-      },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Serializza Decimal per il client e mappa i nomi dei campi
-    return products.map(product => ({
-      id: product.id,
-      name: product.nome,
-      description: product.descrizione || undefined,
-      price: product.prezzo ? product.prezzo.toNumber() : undefined,
-      imageUrl: product.immagine || undefined,
-      available: product.disponibile,
-      categoryId: product.categoryId || undefined,
-      subcategoryId: product.subcategoryId || undefined,
-      category: product.category ? {
-        ...product.category,
-        icon: product.category.icon || undefined,
-        productsCount: 0, // This would need to be calculated separately
-        subcategories: [] // This would need to be fetched separately
-      } : undefined,
-      subcategory: product.subcategory ? {
-        ...product.subcategory,
-        productsCount: 0, // This would need to be calculated separately
-        category: product.subcategory.category ? {
-          ...product.subcategory.category,
-          icon: product.subcategory.category.icon || undefined,
-          productsCount: 0,
-          subcategories: []
-        } : undefined
-      } : undefined
-    }));
+    // Get categories for mapping
+    const categories = await getCategories();
+
+    // Convert to the format expected by the UI
+    return products.map(product => {
+      let categoryId: number | undefined;
+      let subcategoryId: number | undefined;
+      let category: any;
+      let subcategory: any;
+
+      if (product.categoria.includes(' > ')) {
+        const [mainCat, subCat] = product.categoria.split(' > ');
+        const mainCategory = categories.find(c => c.name === mainCat);
+        if (mainCategory) {
+          categoryId = mainCategory.id;
+          category = {
+            id: mainCategory.id,
+            name: mainCategory.name,
+            icon: mainCategory.icon,
+            order: mainCategory.order,
+            productsCount: mainCategory.productsCount,
+            subcategories: mainCategory.subcategories
+          };
+          
+          const subCategory = mainCategory.subcategories.find(s => s.name === subCat);
+          if (subCategory) {
+            subcategoryId = subCategory.id;
+            subcategory = {
+              ...subCategory,
+              category: category
+            };
+          }
+        }
+      } else {
+        const mainCategory = categories.find(c => c.name === product.categoria);
+        if (mainCategory) {
+          categoryId = mainCategory.id;
+          category = {
+            id: mainCategory.id,
+            name: mainCategory.name,
+            icon: mainCategory.icon,
+            order: mainCategory.order,
+            productsCount: mainCategory.productsCount,
+            subcategories: mainCategory.subcategories
+          };
+        }
+      }
+
+      return {
+        id: product.id,
+        name: product.nome,
+        description: product.descrizione || undefined,
+        price: product.prezzo.toNumber(),
+        imageUrl: product.immagine || undefined,
+        available: product.disponibile,
+        requiresGlasses: product.requiresGlasses,
+        categoryId,
+        subcategoryId,
+        category,
+        subcategory,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
+      };
+    });
   } catch (error) {
     console.error("Errore recupero prodotti:", error);
     return [];
@@ -141,6 +243,7 @@ export async function createProduct(data: {
   categoryId?: number;
   subcategoryId?: number;
   available?: boolean;
+  requiresGlasses?: boolean;
 }) {
   try {
     const user = await getCurrentUser();
@@ -158,9 +261,29 @@ export async function createProduct(data: {
       return { success: false, error: "Nome prodotto obbligatorio" };
     }
 
-    // Se è specificata una sottocategoria, non serve la categoria
-    if (data.subcategoryId && data.categoryId) {
-      data.categoryId = undefined;
+    // Get categories to map IDs to names
+    const categories = await getCategories();
+    let categoryName = "";
+
+    if (data.subcategoryId) {
+      // Find the subcategory
+      for (const cat of categories) {
+        const subcat = cat.subcategories.find(s => s.id === data.subcategoryId);
+        if (subcat) {
+          categoryName = `${cat.name} > ${subcat.name}`;
+          break;
+        }
+      }
+    } else if (data.categoryId) {
+      // Find the category
+      const category = categories.find(c => c.id === data.categoryId);
+      if (category) {
+        categoryName = category.name;
+      }
+    }
+
+    if (!categoryName) {
+      return { success: false, error: "Categoria non valida" };
     }
 
     const product = await prisma.prodotto.create({
@@ -169,50 +292,32 @@ export async function createProduct(data: {
         descrizione: data.description?.trim(),
         prezzo: data.price || 0,
         immagine: data.imageUrl?.trim(),
-        categoria: "Generale", // Campo obbligatorio nella tabella Prodotto
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId,
-        disponibile: data.available ?? true
-      },
-      include: {
-        category: true,
-        subcategory: {
-          include: {
-            category: true
-          }
-        }
+        categoria: categoryName,
+        disponibile: data.available ?? true,
+        glutenFree: false,
+        vegano: false,
+        vegetariano: false,
+        updatedAt: new Date()
       }
     });
 
     revalidatePath("/dashboard/products");
     
+    // Convert back to the format expected by the UI
+    const createdProduct = await getProducts({ search: product.nome });
+    const productFormatted = createdProduct.find(p => p.id === product.id);
+    
     return { 
       success: true, 
-      product: {
+      product: productFormatted || {
         id: product.id,
         name: product.nome,
         description: product.descrizione || undefined,
-        price: product.prezzo ? product.prezzo.toNumber() : undefined,
+        price: product.prezzo.toNumber(),
         imageUrl: product.immagine || undefined,
         available: product.disponibile,
-        categoryId: product.categoryId || undefined,
-        subcategoryId: product.subcategoryId || undefined,
-        category: product.category ? {
-          ...product.category,
-          icon: product.category.icon || undefined,
-          productsCount: 0,
-          subcategories: []
-        } : undefined,
-        subcategory: product.subcategory ? {
-          ...product.subcategory,
-          productsCount: 0,
-          category: product.subcategory.category ? {
-            ...product.subcategory.category,
-            icon: product.subcategory.category.icon || undefined,
-            productsCount: 0,
-            subcategories: []
-          } : undefined
-        } : undefined
+        categoryId: data.categoryId,
+        subcategoryId: data.subcategoryId
       }
     };
   } catch (error) {
@@ -232,6 +337,7 @@ export async function updateProduct(
     categoryId?: number;
     subcategoryId?: number;
     available?: boolean;
+    requiresGlasses?: boolean;
   }
 ) {
   try {
@@ -246,63 +352,62 @@ export async function updateProduct(
 
     const updateData: any = {};
     
-    if (data.name !== undefined) updateData.name = data.name.trim();
-    if (data.description !== undefined) updateData.description = data.description?.trim();
-    if (data.price !== undefined) updateData.price = data.price;
-    if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl?.trim();
-    if (data.available !== undefined) updateData.available = data.available;
+    if (data.name !== undefined) updateData.nome = data.name.trim();
+    if (data.description !== undefined) updateData.descrizione = data.description?.trim();
+    if (data.price !== undefined) updateData.prezzo = data.price;
+    if (data.imageUrl !== undefined) updateData.immagine = data.imageUrl?.trim();
+    if (data.available !== undefined) updateData.disponibile = data.available;
+    if (data.requiresGlasses !== undefined) updateData.requiresGlasses = data.requiresGlasses;
     
-    // Gestione categoria/sottocategoria
-    if (data.subcategoryId !== undefined) {
-      updateData.subcategoryId = data.subcategoryId;
-      updateData.categoryId = null; // Reset categoria se si specifica sottocategoria
-    } else if (data.categoryId !== undefined) {
-      updateData.categoryId = data.categoryId;
-      updateData.subcategoryId = null; // Reset sottocategoria se si specifica categoria
+    // Handle category updates
+    if (data.categoryId !== undefined || data.subcategoryId !== undefined) {
+      const categories = await getCategories();
+      let categoryName = "";
+
+      if (data.subcategoryId) {
+        // Find the subcategory
+        for (const cat of categories) {
+          const subcat = cat.subcategories.find(s => s.id === data.subcategoryId);
+          if (subcat) {
+            categoryName = `${cat.name} > ${subcat.name}`;
+            break;
+          }
+        }
+      } else if (data.categoryId) {
+        // Find the category
+        const category = categories.find(c => c.id === data.categoryId);
+        if (category) {
+          categoryName = category.name;
+        }
+      }
+
+      if (categoryName) {
+        updateData.categoria = categoryName;
+      }
     }
 
     const product = await prisma.prodotto.update({
       where: { id },
-      data: updateData,
-      include: {
-        category: true,
-        subcategory: {
-          include: {
-            category: true
-          }
-        }
-      }
+      data: updateData
     });
 
     revalidatePath("/dashboard/products");
     
+    // Convert back to the format expected by the UI
+    const updatedProducts = await getProducts({ search: product.nome });
+    const productFormatted = updatedProducts.find(p => p.id === product.id);
+    
     return { 
       success: true, 
-      product: {
+      product: productFormatted || {
         id: product.id,
         name: product.nome,
         description: product.descrizione || undefined,
-        price: product.prezzo ? product.prezzo.toNumber() : undefined,
+        price: product.prezzo.toNumber(),
         imageUrl: product.immagine || undefined,
         available: product.disponibile,
-        categoryId: product.categoryId || undefined,
-        subcategoryId: product.subcategoryId || undefined,
-        category: product.category ? {
-          ...product.category,
-          icon: product.category.icon || undefined,
-          productsCount: 0,
-          subcategories: []
-        } : undefined,
-        subcategory: product.subcategory ? {
-          ...product.subcategory,
-          productsCount: 0,
-          category: product.subcategory.category ? {
-            ...product.subcategory.category,
-            icon: product.subcategory.category.icon || undefined,
-            productsCount: 0,
-            subcategories: []
-          } : undefined
-        } : undefined
+        categoryId: data.categoryId,
+        subcategoryId: data.subcategoryId
       }
     };
   } catch (error) {
@@ -323,8 +428,10 @@ export async function deleteProduct(id: number) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
-    await prisma.prodotto.delete({
-      where: { id }
+    // Mark as deleted instead of actually deleting
+    await prisma.prodotto.update({
+      where: { id },
+      data: { isDeleted: true }
     });
 
     revalidatePath("/dashboard/products");
@@ -356,17 +463,50 @@ export async function createCategory(data: {
       return { success: false, error: "Nome categoria obbligatorio" };
     }
 
-    const category = await prisma.category.create({
+    // Check if category already exists
+    const existingProduct = await prisma.prodotto.findFirst({
+      where: {
+        categoria: data.name.trim(),
+        isDeleted: false
+      }
+    });
+
+    if (existingProduct) {
+      return { success: false, error: "Categoria già esistente" };
+    }
+
+    // Create a placeholder product to make the category visible
+    await prisma.prodotto.create({
       data: {
-        name: data.name.trim(),
-        icon: data.icon?.trim(),
-        order: data.order ?? 0
+        nome: `_CATEGORIA_PLACEHOLDER_${data.name.trim()}`,
+        categoria: data.name.trim(),
+        prezzo: 0,
+        disponibile: false,
+        descrizione: "Placeholder per categoria vuota - non eliminare",
+        glutenFree: false,
+        vegano: false,
+        vegetariano: false,
+        updatedAt: new Date()
       }
     });
 
     revalidatePath("/dashboard/products");
     
-    return { success: true, category };
+    // Get updated categories
+    const categories = await getCategories();
+    const createdCategory = categories.find(c => c.name === data.name.trim());
+    
+    return { 
+      success: true, 
+      category: createdCategory || {
+        id: categories.length,
+        name: data.name.trim(),
+        icon: data.icon || null,
+        order: data.order ?? 0,
+        productsCount: 0,
+        subcategories: []
+      }
+    };
   } catch (error) {
     console.error("Errore creazione categoria:", error);
     return { success: false, error: "Errore interno del server" };
@@ -393,20 +533,61 @@ export async function createSubcategory(data: {
       return { success: false, error: "Nome sottocategoria obbligatorio" };
     }
 
-    const subcategory = await prisma.subcategory.create({
+    // Get categories to find the parent category name
+    const categories = await getCategories();
+    const parentCategory = categories.find(c => c.id === data.categoryId);
+    
+    if (!parentCategory) {
+      return { success: false, error: "Categoria padre non trovata" };
+    }
+
+    const fullCategoryName = `${parentCategory.name} > ${data.name.trim()}`;
+
+    // Check if subcategory already exists
+    const existingProduct = await prisma.prodotto.findFirst({
+      where: {
+        categoria: fullCategoryName,
+        isDeleted: false
+      }
+    });
+
+    if (existingProduct) {
+      return { success: false, error: "Sottocategoria già esistente" };
+    }
+
+    // Create a placeholder product to make the subcategory visible
+    await prisma.prodotto.create({
       data: {
-        name: data.name.trim(),
-        categoryId: data.categoryId,
-        order: data.order ?? 0
-      },
-      include: {
-        category: true
+        nome: `_CATEGORIA_PLACEHOLDER_${fullCategoryName}`,
+        categoria: fullCategoryName,
+        prezzo: 0,
+        disponibile: false,
+        descrizione: "Placeholder per categoria vuota - non eliminare",
+        glutenFree: false,
+        vegano: false,
+        vegetariano: false,
+        updatedAt: new Date()
       }
     });
 
     revalidatePath("/dashboard/products");
     
-    return { success: true, subcategory };
+    // Get updated categories
+    const updatedCategories = await getCategories();
+    const updatedParentCategory = updatedCategories.find(c => c.id === data.categoryId);
+    const createdSubcategory = updatedParentCategory?.subcategories.find(s => s.name === data.name.trim());
+    
+    return { 
+      success: true, 
+      subcategory: createdSubcategory || {
+        id: (data.categoryId * 1000) + (updatedParentCategory?.subcategories.length || 0),
+        name: data.name.trim(),
+        order: data.order ?? 0,
+        categoryId: data.categoryId,
+        productsCount: 0,
+        category: parentCategory
+      }
+    };
   } catch (error) {
     console.error("Errore creazione sottocategoria:", error);
     return { success: false, error: "Errore interno del server" };
@@ -608,10 +789,13 @@ export async function importProductsCSV(formData: FormData) {
           });
           updatedCount++;
         } else {
-          // Create new product (without specifying id)
+          // Create new product (with generated id)
           const { id, createdAt, updatedAt, ...createData } = product;
           await prisma.prodotto.create({
-            data: createData
+            data: {
+              ...createData,
+              id: Math.floor(Math.random() * 1000000000) + Date.now() // Generate numeric id
+            }
           });
           createdCount++;
         }

@@ -15,7 +15,8 @@ import {
   Loader2,
   Wifi,
   WifiOff,
-  ClipboardList
+  ClipboardList,
+  Palette
 } from "lucide-react";
 import { getOrdinazioniAperte, aggiornaStatoRiga, aggiornaStatoOrdinazione, sollecitaOrdinePronto, segnaOrdineRitirato } from "@/lib/actions/ordinazioni";
 import { useStationSSE } from "@/hooks/useStationSSE";
@@ -23,6 +24,7 @@ import { StationType } from "@/lib/sse/station-filters";
 import { toast } from "@/lib/toast";
 import UserDisplay from "@/components/UserDisplay";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface OrderItem {
   id: string;
@@ -51,6 +53,10 @@ interface Ordinazione {
 }
 
 export default function CucinaPageOptimized() {
+  const { currentTheme, themeMode, setTheme, availableThemes } = useTheme();
+  const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  
   const [orders, setOrders] = useState<Ordinazione[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
@@ -508,7 +514,7 @@ export default function CucinaPageOptimized() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen p-4" style={{ backgroundColor: colors.bg.main }}>
       {/* Header */}
       <div className="bg-card shadow-sm border-b border-border mb-4 rounded-lg">
         <div className="px-4 py-3">
@@ -528,6 +534,68 @@ export default function CucinaPageOptimized() {
                 <span className={`text-sm ${getConnectionColor()}`}>
                   {connectionHealth.latency}ms
                 </span>
+              </div>
+              
+              {/* Theme Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowThemeMenu(!showThemeMenu)}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.bg.hover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <Palette className="h-5 w-5" style={{ color: colors.text.secondary }} />
+                </button>
+
+                {showThemeMenu && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-2 z-50" style={{ 
+                    backgroundColor: colors.bg.card, 
+                    borderColor: colors.border.primary,
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
+                  }}>
+                    <h3 className="px-4 py-2 text-sm font-semibold" style={{ color: colors.text.primary }}>
+                      Seleziona tema
+                    </h3>
+                    <div className="max-h-60 overflow-y-auto">
+                      {availableThemes.map((theme) => (
+                        <button
+                          key={theme.id}
+                          onClick={() => {
+                            setTheme(theme.id);
+                            setShowThemeMenu(false);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm transition-colors duration-200 flex items-center gap-3"
+                          style={{
+                            backgroundColor: currentTheme.id === theme.id ? colors.bg.hover : 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = colors.bg.hover;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = currentTheme.id === theme.id ? colors.bg.hover : 'transparent';
+                          }}
+                        >
+                          <div 
+                            className="w-4 h-4 rounded-full border border-white/30"
+                            style={{
+                              backgroundColor: theme.colors[themeMode as keyof typeof theme.colors].bg.dark
+                            }}
+                          />
+                          <span style={{ color: colors.text.primary }}>{theme.name}</span>
+                          {currentTheme.id === theme.id && (
+                            <span className="ml-auto text-xs text-green-400">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* User Display */}

@@ -28,6 +28,7 @@ import { getCategorieGerarchicheV2, creaCategoriaV2, rinominaCategoriaV2, elimin
 import { getProdotti } from "@/lib/actions/ordinazioni";
 import { bulkUpdateProductsWithPriceAdjustment } from "@/lib/actions/bulk-edit";
 import { exportProductsCSV, importProductsCSV } from "@/lib/actions/products";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface CategoriaGerarchica {
   nome: string;
@@ -60,6 +61,9 @@ interface Product {
 }
 
 export default function CategoriePage() {
+  const { currentTheme, themeMode } = useTheme();
+  const colors = currentTheme.colors[themeMode === 'system' ? 'dark' : themeMode];
+  
   const [categorieGerarchiche, setCategorieGerarchiche] = useState<CategoriaGerarchica[]>([]);
   const [categorieFlat, setCategorieFlat] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,6 +114,15 @@ export default function CategoriePage() {
   useEffect(() => {
     loadCategorie();
   }, []);
+
+  // Auto-select first category when categories are loaded
+  useEffect(() => {
+    if (categorieGerarchiche.length > 0 && !selectedCategory) {
+      const firstCategory = categorieGerarchiche[0].nome;
+      setSelectedCategory(firstCategory);
+      loadProdotti(firstCategory);
+    }
+  }, [categorieGerarchiche]);
 
   // Filter products based on search and filters
   const filteredProdotti = prodotti.filter(product => {
@@ -526,15 +539,7 @@ export default function CategoriePage() {
         }, 800); // Ritardo per evitare aperture accidentali
       }
       
-      // Auto-carica prodotti se non è già la categoria selezionata
-      if (selectedCategory !== categoryName) {
-        setTimeout(() => {
-          if (draggedOver === categoryName) { // Verifica che siamo ancora sopra
-            loadProdotti(categoryName);
-            setSelectedCategory(categoryName);
-          }
-        }, 1000);
-      }
+      // Removed auto-loading of products to prevent unwanted category switching
     }
   };
 
@@ -862,16 +867,16 @@ export default function CategoriePage() {
 
   return (
     <AuthGuard allowedRoles={["ADMIN", "MANAGER"]}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="min-h-screen p-6">
       
       {/* Create Category Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Crea Nuova Categoria Principale</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>Crea Nuova Categoria Principale</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Nome Categoria
                 </label>
                 <input
@@ -879,7 +884,8 @@ export default function CategoriePage() {
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Es: APERITIVI, DISTILLATI, VINI..."
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full p-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCreateCategory();
@@ -891,14 +897,20 @@ export default function CategoriePage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
               >
                 Annulla
               </button>
               <button
                 onClick={handleCreateCategory}
                 disabled={!newCategoryName.trim()}
-                className="flex-1 p-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.button.success, color: colors.button.successText }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
               >
                 Crea Categoria
               </button>
@@ -909,18 +921,19 @@ export default function CategoriePage() {
 
       {/* Create Subcategory Modal */}
       {showCreateSubModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Crea Sottocategoria</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>Crea Sottocategoria</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Categoria Principale
                 </label>
                 <select
                   value={selectedParentCategory}
                   onChange={(e) => setSelectedParentCategory(e.target.value)}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Seleziona categoria...</option>
                   {categorieGerarchiche.map((cat) => (
@@ -931,7 +944,7 @@ export default function CategoriePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Nome Sottocategoria
                 </label>
                 <input
@@ -939,7 +952,8 @@ export default function CategoriePage() {
                   value={newSubcategoryName}
                   onChange={(e) => setNewSubcategoryName(e.target.value)}
                   placeholder="Es: Gin, Whisky, Vodka..."
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full p-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCreateSubcategory();
                     if (e.key === 'Escape') setShowCreateSubModal(false);
@@ -947,22 +961,28 @@ export default function CategoriePage() {
                 />
               </div>
               {selectedParentCategory && (
-                <div className="text-sm text-muted-foreground bg-slate-900 p-3 rounded">
-                  Sarà creata: <span className="text-white/70">{selectedParentCategory} &gt; {newSubcategoryName}</span>
+                <div className="text-sm p-3 rounded" style={{ backgroundColor: colors.bg.darker, color: colors.text.muted }}>
+                  Sarà creata: <span style={{ color: colors.text.secondary }}>{selectedParentCategory} &gt; {newSubcategoryName}</span>
                 </div>
               )}
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowCreateSubModal(false)}
-                className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
               >
                 Annulla
               </button>
               <button
                 onClick={handleCreateSubcategory}
                 disabled={!newSubcategoryName.trim() || !selectedParentCategory}
-                className="flex-1 p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.button.primary, color: colors.button.primaryText }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
               >
                 Crea Sottocategoria
               </button>
@@ -973,22 +993,22 @@ export default function CategoriePage() {
 
       {/* Move to Subcategory Modal */}
       {showMoveToSubcategoryModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Sposta Prodotti Selezionati</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>Sposta Prodotti Selezionati</h3>
             <div className="space-y-4">
-              <div className="bg-slate-900 p-3 rounded max-h-40 overflow-y-auto">
-                <h4 className="text-sm font-medium text-white/70 mb-2">
+              <div className="p-3 rounded max-h-40 overflow-y-auto" style={{ backgroundColor: colors.bg.darker }}>
+                <h4 className="text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   {globalSelectedProducts.length} prodotti selezionati:
                 </h4>
                 {globalSelectedProducts.map((product) => (
-                  <div key={product.id} className="text-xs text-muted-foreground">
+                  <div key={product.id} className="text-xs" style={{ color: colors.text.muted }}>
                     • {product.nome} (da {product.categoria})
                   </div>
                 ))}
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Categoria di destinazione
                 </label>
                 <select
@@ -997,7 +1017,8 @@ export default function CategoriePage() {
                       handleBatchMoveToSubcategory(e.target.value);
                     }
                   }}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   defaultValue=""
                 >
                   <option value="">Seleziona categoria...</option>
@@ -1012,7 +1033,10 @@ export default function CategoriePage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowMoveToSubcategoryModal(false)}
-                className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
               >
                 Annulla
               </button>
@@ -1023,18 +1047,19 @@ export default function CategoriePage() {
 
       {/* Merge Modal */}
       {showMergeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Unisci Categorie</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>Unisci Categorie</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Categoria da unire (scomparirà)
                 </label>
                 <select
                   value={mergeSource}
                   onChange={(e) => setMergeSource(e.target.value)}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Seleziona categoria</option>
                   {categorieFlat.map((cat) => (
@@ -1045,13 +1070,14 @@ export default function CategoriePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Categoria di destinazione
                 </label>
                 <select
                   value={mergeTarget}
                   onChange={(e) => setMergeTarget(e.target.value)}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Seleziona categoria</option>
                   {categorieFlat.filter(cat => cat.nome !== mergeSource).map((cat) => (
@@ -1065,14 +1091,20 @@ export default function CategoriePage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowMergeModal(false)}
-                className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
               >
                 Annulla
               </button>
               <button
                 onClick={handleMergeCategories}
                 disabled={!mergeSource || !mergeTarget || mergeSource === mergeTarget}
-                className="flex-1 p-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.text.error, color: 'white' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 Unisci
               </button>
@@ -1083,31 +1115,32 @@ export default function CategoriePage() {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Importa Prodotti da CSV</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>Importa Prodotti da CSV</h3>
             
             {!importResult ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                     Seleziona file CSV
                   </label>
                   <input
                     type="file"
                     accept=".csv"
                     onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/15 file:text-white hover:file:bg-white/20"
+                    className="w-full p-3 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold"
+                    style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   />
                 </div>
                 
                 {importFile && (
-                  <div className="bg-slate-900 p-3 rounded text-sm text-muted-foreground">
+                  <div className="p-3 rounded text-sm" style={{ backgroundColor: colors.bg.darker, color: colors.text.muted }}>
                     📄 {importFile.name}
                   </div>
                 )}
                 
-                <div className="text-xs text-muted-foreground space-y-1">
+                <div className="text-xs space-y-1" style={{ color: colors.text.muted }}>
                   <p>⚠️ Note importanti:</p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>Il file deve essere in formato CSV</li>
@@ -1119,20 +1152,20 @@ export default function CategoriePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="bg-green-900/20 border border-white/15-700 p-4 rounded">
-                  <h4 className="text-white/60 font-semibold mb-2">✅ Importazione completata!</h4>
+                <div className="p-4 rounded" style={{ backgroundColor: `${colors.button.success}20`, borderColor: colors.border.success, borderWidth: '1px', borderStyle: 'solid' }}>
+                  <h4 className="font-semibold mb-2" style={{ color: colors.text.success }}>✅ Importazione completata!</h4>
                   <div className="space-y-1 text-sm">
                     <p>📝 Aggiornati: <span className="font-bold">{importResult.updated}</span> prodotti</p>
                     <p>🆕 Creati: <span className="font-bold">{importResult.created}</span> prodotti</p>
                     {importResult.errors > 0 && (
-                      <p>❌ Errori: <span className="font-bold text-white/50">{importResult.errors}</span></p>
+                      <p>❌ Errori: <span className="font-bold" style={{ color: colors.text.error }}>{importResult.errors}</span></p>
                     )}
                   </div>
                 </div>
                 
                 {importResult.errorDetails && importResult.errorDetails.length > 0 && (
-                  <div className="bg-red-900/20 border border-white/10-700 p-3 rounded max-h-40 overflow-y-auto">
-                    <h5 className="text-white/50 text-sm font-semibold mb-1">Dettagli errori:</h5>
+                  <div className="p-3 rounded max-h-40 overflow-y-auto" style={{ backgroundColor: `${colors.text.error}20`, borderColor: colors.border.error, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <h5 className="text-sm font-semibold mb-1" style={{ color: colors.text.error }}>Dettagli errori:</h5>
                     <ul className="text-xs text-red-300 space-y-1">
                       {importResult.errorDetails.map((error, idx) => (
                         <li key={idx}>• {error}</li>
@@ -1152,7 +1185,10 @@ export default function CategoriePage() {
                       setImportFile(null);
                       setImportResult(null);
                     }}
-                    className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                    className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
                     disabled={isImporting}
                   >
                     Annulla
@@ -1160,7 +1196,10 @@ export default function CategoriePage() {
                   <button
                     onClick={handleImportCSV}
                     disabled={!importFile || isImporting}
-                    className="flex-1 p-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg flex items-center justify-center gap-2"
+                    className="flex-1 p-3 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                    style={{ backgroundColor: colors.button.success, color: colors.button.successText }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
                   >
                     {isImporting ? (
                       <>
@@ -1182,7 +1221,10 @@ export default function CategoriePage() {
                     setImportFile(null);
                     setImportResult(null);
                   }}
-                  className="w-full p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="w-full p-3 rounded-lg transition-colors duration-200"
+                  style={{ backgroundColor: colors.button.primary, color: colors.button.primaryText }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
                 >
                   Chiudi
                 </button>
@@ -1194,16 +1236,16 @@ export default function CategoriePage() {
 
       {/* Bulk Edit Modal */}
       {showBulkEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 w-full max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text.primary }}>
               Modifica {selectedProducts.length} Prodotti
             </h3>
             
             <div className="space-y-4">
               {/* Availability Toggle */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Disponibilità
                 </label>
                 <select
@@ -1212,7 +1254,8 @@ export default function CategoriePage() {
                     ...prev,
                     disponibile: e.target.value === '' ? null : e.target.value === 'true'
                   }))}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Non modificare</option>
                   <option value="true">Disponibile</option>
@@ -1222,7 +1265,7 @@ export default function CategoriePage() {
               
               {/* Terminated Toggle */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Stato Terminato
                 </label>
                 <select
@@ -1231,7 +1274,8 @@ export default function CategoriePage() {
                     ...prev,
                     terminato: e.target.value === '' ? null : e.target.value === 'true'
                   }))}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Non modificare</option>
                   <option value="true">Terminato</option>
@@ -1241,7 +1285,7 @@ export default function CategoriePage() {
               
               {/* Category Change */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Sposta in Categoria
                 </label>
                 <select
@@ -1250,7 +1294,8 @@ export default function CategoriePage() {
                     ...prev,
                     categoria: e.target.value || null
                   }))}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                 >
                   <option value="">Non modificare</option>
                   {categorieFlat.map((cat) => (
@@ -1263,7 +1308,7 @@ export default function CategoriePage() {
               
               {/* Price Adjustment */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
                   Modifica Prezzo
                 </label>
                 <div className="flex gap-2">
@@ -1285,7 +1330,8 @@ export default function CategoriePage() {
                         }));
                       }
                     }}
-                    className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                    className="flex-1 p-3 rounded-lg"
+                    style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   >
                     <option value="">Non modificare</option>
                     <option value="fixed">Importo fisso (€)</option>
@@ -1305,12 +1351,13 @@ export default function CategoriePage() {
                         } : null
                       }))}
                       placeholder={bulkEditData.priceAdjustment.type === 'percentage' ? '10' : '2.50'}
-                      className="w-32 p-3 bg-slate-900 border border-slate-700 rounded-lg text-foreground"
+                      className="w-32 p-3 rounded-lg"
+                      style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
                     />
                   )}
                 </div>
                 {bulkEditData.priceAdjustment && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs mt-1" style={{ color: colors.text.muted }}>
                     {bulkEditData.priceAdjustment.type === 'fixed' 
                       ? `${bulkEditData.priceAdjustment.value >= 0 ? 'Aumenta' : 'Diminuisce'} di €${Math.abs(bulkEditData.priceAdjustment.value)}`
                       : `${bulkEditData.priceAdjustment.value >= 0 ? 'Aumenta' : 'Diminuisce'} del ${Math.abs(bulkEditData.priceAdjustment.value)}%`
@@ -1320,7 +1367,7 @@ export default function CategoriePage() {
               </div>
               
               {/* Summary */}
-              <div className="bg-slate-900 p-3 rounded text-sm text-muted-foreground">
+              <div className="p-3 rounded text-sm" style={{ backgroundColor: colors.bg.darker, color: colors.text.muted }}>
                 <p className="font-semibold mb-1">Riepilogo modifiche:</p>
                 <ul className="space-y-1 text-xs">
                   {bulkEditData.disponibile !== null && (
@@ -1354,13 +1401,19 @@ export default function CategoriePage() {
                     priceAdjustment: null
                   });
                 }}
-                className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
               >
                 Annulla
               </button>
               <button
                 onClick={handleBulkEdit}
-                className="flex-1 p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: '#9333ea', color: 'white' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7c3aed'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
               >
                 Applica Modifiche
               </button>
@@ -1372,33 +1425,45 @@ export default function CategoriePage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
-          <Link href="/dashboard" className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-            <ArrowLeft className="h-6 w-6 text-white/70" />
+          <Link href="/dashboard" className="p-2 rounded-lg transition-colors"
+            style={{ color: colors.text.secondary }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+            <ArrowLeft className="h-6 w-6" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Gestione Categorie</h1>
-            <p className="text-muted-foreground">Organizza categorie e sottocategorie dei prodotti</p>
+            <h1 className="text-3xl font-bold" style={{ color: colors.text.primary }}>Gestione Categorie</h1>
+            <p style={{ color: colors.text.muted }}>Organizza categorie e sottocategorie dei prodotti</p>
           </div>
         </div>
         
         <div className="flex gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: colors.button.success, color: colors.button.successText }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
           >
             <Plus className="h-4 w-4" />
             Nuova Categoria
           </button>
           <button
             onClick={() => setShowCreateSubModal(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: colors.button.primary, color: colors.button.primaryText }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
           >
             <Plus className="h-4 w-4" />
             Nuova Sottocategoria
           </button>
           <button
             onClick={() => setShowMergeModal(true)}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-2"
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: '#ea580c', color: 'white' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#c2410c'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ea580c'}
           >
             <Merge className="h-4 w-4" />
             Unisci Categorie
@@ -1417,7 +1482,10 @@ export default function CategoriePage() {
           {globalSelectedProducts.length > 0 && (
             <button
               onClick={() => setShowMoveToSubcategoryModal(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
+              className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: colors.button.success, color: colors.button.successText }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
             >
               <Save className="h-4 w-4" />
               Sposta {globalSelectedProducts.length} Prodotti
@@ -1426,7 +1494,10 @@ export default function CategoriePage() {
           <div className="flex-1" />
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2"
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: '#059669', color: 'white' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#047857'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#059669'}
             title="Importa prodotti da file CSV"
           >
             <Upload className="h-4 w-4" />
@@ -1434,7 +1505,10 @@ export default function CategoriePage() {
           </button>
           <button
             onClick={handleDownloadCSV}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"
+            className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+            style={{ backgroundColor: '#4f46e5', color: 'white' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4338ca'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
             title="Scarica tutti i prodotti in formato CSV per Excel"
           >
             <Download className="h-4 w-4" />
@@ -1444,793 +1518,237 @@ export default function CategoriePage() {
         
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Hierarchical Categories List */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              Categorie ({categorieGerarchiche.length})
-            </h2>
-            {draggedItem && (
-              <div className="text-sm text-white/70 flex items-center gap-2 animate-pulse">
-                <span>🖱️ Trascinando categoria "{draggedItem}" - Rilascia su una categoria per creare sottocategoria</span>
-              </div>
-            )}
-            {isDraggingProduct && draggedProduct && (
-              <div className="text-sm text-cyan-400 flex items-center gap-2 animate-pulse">
-                <span>🛒 Trascinando prodotto "{draggedProduct.nome}" - Rilascia su una categoria per spostarlo</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Zona drop per nuove categorie principali */}
-          {draggedItem && (
-            <div 
-              className={`mb-4 p-4 border-2 border-dashed rounded-lg transition-all ${
-                draggedOver === 'root' 
-                  ? 'border-white/15-500 bg-white/10/10' 
-                  : 'border-slate-600 bg-slate-900/30'
-              }`}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, 'root')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => {
-                e.preventDefault();
-                const sourceCategory = e.dataTransfer.getData('text/plain');
-                // Trasforma in categoria principale
-                const newName = sourceCategory.split(' > ').pop() || sourceCategory;
-                handleDrop(e, newName);
-              }}
-            >
-              <div className="text-center text-muted-foreground">
-                🏠 Rilascia qui per creare una categoria principale
-              </div>
-            </div>
-          )}
-          
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Caricamento categorie...
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-              {categorieGerarchiche.map((categoria) => (
-                <div key={categoria.nome} className="border border-slate-700 rounded-lg">
-                  {/* Categoria Principale */}
-                  <div 
-                    className={`flex items-center justify-between p-4 bg-slate-900/50 transition-all duration-200 cursor-move border-2 border-transparent hover:border-white/20-400/50 ${
-                      draggedOver === categoria.nome && isDraggingProduct 
-                        ? 'bg-white/10/20 border-white/15-500 shadow-lg scale-102' 
-                        : draggedOver === categoria.nome 
-                        ? 'bg-white/15/20 border-white/20-500' 
-                        : ''
-                    } ${
-                      draggedItem === categoria.nome ? 'opacity-50 scale-95' : ''
-                    }`}
-                    draggable={!isDraggingProduct}
-                    onDragStart={(e) => !isDraggingProduct && handleDragStart(e, categoria.nome)}
-                    onDragOver={handleDragOver}
-                    onDragEnter={(e) => {
-                      if (isDraggingProduct) {
-                        handleProductDragEnter(e, categoria.nome);
-                      } else {
-                        handleDragEnter(e, categoria.nome);
-                      }
-                    }}
-                    onDragLeave={(e) => {
-                      if (isDraggingProduct) {
-                        handleProductDragLeave(e);
-                      } else {
-                        handleDragLeave(e);
-                      }
-                    }}
-                    onDrop={(e) => handleDrop(e, categoria.nome)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <div 
-                      className="flex items-center gap-3 flex-1 cursor-pointer"
-                      onClick={() => loadProdotti(categoria.nome)}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleCategory(categoria.nome);
-                        }}
-                        className="p-1 hover:bg-slate-700 rounded"
-                      >
-                        {categoria.sottocategorie.length > 0 ? (
-                          expandedCategories.has(categoria.nome) ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )
-                        ) : (
-                          <div className="w-4 h-4" />
-                        )}
-                      </button>
-                      <span className="text-lg text-white/70 cursor-move hover:text-amber-300 transition-colors" title="Clicca e trascina per spostare">
-                        ⋮⋮
-                      </span>
-                      <span className="text-2xl">{getCategoryEmoji(categoria.nome)}</span>
-                      <div>
-                        <div className="font-medium text-foreground flex items-center gap-2">
-                          {editingCategory === categoria.nome ? (
-                            <input
-                              type="text"
-                              value={newName}
-                              onChange={(e) => setNewName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleSaveEdit();
-                                } else if (e.key === 'Escape') {
-                                  setEditingCategory(null);
-                                  setNewName("");
-                                }
-                              }}
-                              className="bg-slate-900 border border-white/20-500 rounded px-2 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              autoFocus
-                              onBlur={() => {
-                                // Save on blur to handle all cases
-                                handleSaveEdit();
-                              }}
-                            />
-                          ) : (
-                            <>
-                              {categoria.nome}
-                              <span className="text-xs text-white/70" title="Categoria trascinabile">🖱️</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {categoria.prodottiCount} prodotti totali
-                          {categoria.prodottiDiretti > 0 && ` (${categoria.prodottiDiretti} diretti)`}
-                          {categoria.sottocategorie.length > 0 && ` • ${categoria.sottocategorie.length} sottocategorie`}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingCategory(categoria.nome);
-                          setNewName(categoria.nome);
-                        }}
-                        className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      {(categoria.prodottiCount === 0 || categoria.prodottiDiretti === 0) && (
-                        <button
-                          onClick={() => handleDeleteCategory(categoria.nome)}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded"
-                          title="Elimina categoria"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Sottocategorie */}
-                  {expandedCategories.has(categoria.nome) && categoria.sottocategorie.length > 0 && (
-                    <div className="border-t border-slate-700 bg-slate-900/40">
-                      {categoria.sottocategorie.map((sub) => (
-                        <div
-                          key={sub.fullPath}
-                          className={`flex items-center justify-between p-3 pl-16 hover:bg-slate-900/60 cursor-move border-b border-slate-700/50 last:border-b-0 transition-all duration-200 border-l-4 border-l-slate-600 hover:border-l-amber-400 ${
-                            draggedOver === sub.fullPath && isDraggingProduct 
-                              ? 'bg-white/10/20 border-white/15-500 shadow-lg scale-102' 
-                              : draggedOver === sub.fullPath 
-                              ? 'bg-white/15/20 border-white/20-500' 
-                              : ''
-                          } ${
-                            draggedItem === sub.fullPath ? 'opacity-50 scale-95' : ''
-                          }`}
-                          draggable={!isDraggingProduct}
-                          onClick={() => !isDraggingProduct && loadProdotti(sub.fullPath)}
-                          onDragStart={(e) => {
-                            if (!isDraggingProduct) {
-                              e.stopPropagation();
-                              handleDragStart(e, sub.fullPath);
-                            }
-                          }}
-                          onDragOver={handleDragOver}
-                          onDragEnter={(e) => {
-                            e.stopPropagation();
-                            if (isDraggingProduct) {
-                              handleProductDragEnter(e, sub.fullPath);
-                            } else {
-                              handleDragEnter(e, sub.fullPath);
-                            }
-                          }}
-                          onDragLeave={(e) => {
-                            if (isDraggingProduct) {
-                              handleProductDragLeave(e);
-                            } else {
-                              handleDragLeave(e);
-                            }
-                          }}
-                          onDrop={(e) => {
-                            e.stopPropagation();
-                            handleDrop(e, sub.fullPath);
-                          }}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl text-slate-500">└─</span>
-                            <span className="text-sm text-white/70 cursor-move hover:text-amber-300 transition-colors" title="Clicca e trascina per spostare">
-                              ⋮⋮
-                            </span>
-                            <div>
-                              <div className="font-medium text-foreground flex items-center gap-2">
-                                {editingCategory === sub.fullPath ? (
-                                  <input
-                                    type="text"
-                                    value={newName}
-                                    onChange={(e) => setNewName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleSaveEdit();
-                                      } else if (e.key === 'Escape') {
-                                        setEditingCategory(null);
-                                        setNewName("");
-                                      }
-                                    }}
-                                    className="bg-slate-900 border border-white/20-500 rounded px-2 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                                    autoFocus
-                                    onBlur={() => {
-                                      // Save on blur to handle all cases
-                                      handleSaveEdit();
-                                    }}
-                                  />
-                                ) : (
-                                  <>
-                                    {sub.nome}
-                                    <span className="text-xs text-white/70" title="Sottocategoria trascinabile">🖱️</span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {sub.prodottiCount} prodotti
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingCategory(sub.fullPath);
-                                setNewName(sub.nome);
-                              }}
-                              className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteCategory(sub.fullPath);
-                              }}
-                              className="p-1 bg-red-600 hover:bg-red-700 text-white rounded"
-                              title="Elimina sottocategoria"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Products in Selected Category */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              {globalSelectionMode 
-                ? `Selezione Globale (${globalSelectedProducts.length} selezionati)` 
-                : selectedCategory 
-                  ? `Prodotti in "${selectedCategory}"${
-                      selectedCategory && !selectedCategory.includes(' > ') && 
-                      (categorieGerarchiche.find(cat => cat.nome === selectedCategory)?.sottocategorie.length || 0) > 0
-                        ? ' (Categoria Principale)' 
-                        : ''
-                    }` 
-                  : "Seleziona una Categoria"
-              }
-            </h2>
-            {selectedProducts.length > 0 && !globalSelectionMode && (
-              <div className="flex items-center gap-2">
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleMoveProducts(e.target.value);
-                      e.target.value = "";
-                    }
-                  }}
-                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-sm text-foreground"
-                >
-                  <option value="">Sposta in...</option>
-                  {categorieFlat
-                    .filter(cat => cat.nome !== selectedCategory)
-                    .map((cat) => (
-                      <option key={cat.nome} value={cat.nome}>
-                        {cat.nome}
-                      </option>
-                    ))}
-                  
-                  {/* Aggiungi opzioni per creare sottocategorie comuni */}
-                  {selectedCategory && !selectedCategory.includes(' > ') && (
-                    <>
-                      <option disabled>─── Crea sottocategorie ───</option>
-                      {selectedCategory === 'APERITIVI' && (
-                        <>
-                          <option value={`${selectedCategory} > Gin`}>📁 Crea "APERITIVI {'>'} Gin"</option>
-                          <option value={`${selectedCategory} > Vodka`}>📁 Crea "APERITIVI {'>'} Vodka"</option>
-                          <option value={`${selectedCategory} > Rum`}>📁 Crea "APERITIVI {'>'} Rum"</option>
-                          <option value={`${selectedCategory} > Whisky`}>📁 Crea "APERITIVI {'>'} Whisky"</option>
-                        </>
-                      )}
-                      {selectedCategory === 'DISTILLATI' && (
-                        <>
-                          <option value={`${selectedCategory} > Whisky`}>📁 Crea "DISTILLATI {'>'} Whisky"</option>
-                          <option value={`${selectedCategory} > Cognac`}>📁 Crea "DISTILLATI {'>'} Cognac"</option>
-                          <option value={`${selectedCategory} > Grappa`}>📁 Crea "DISTILLATI {'>'} Grappa"</option>
-                        </>
-                      )}
-                      {selectedCategory === 'VINI' && (
-                        <>
-                          <option value={`${selectedCategory} > Rosso`}>📁 Crea "VINI {'>'} Rosso"</option>
-                          <option value={`${selectedCategory} > Bianco`}>📁 Crea "VINI {'>'} Bianco"</option>
-                          <option value={`${selectedCategory} > Rosato`}>📁 Crea "VINI {'>'} Rosato"</option>
-                          <option value={`${selectedCategory} > Spumante`}>📁 Crea "VINI {'>'} Spumante"</option>
-                        </>
-                      )}
-                    </>
-                  )}
-                </select>
-                <span className="text-sm text-muted-foreground">
-                  {selectedProducts.length} selezionati
-                </span>
-              </div>
-            )}
-            
-            {/* Pulsanti spostamento rapido verso sottocategorie */}
-            {selectedCategory && selectedProducts.length > 0 && !globalSelectionMode && (
-              <div className="space-y-2">
-                {/* Sottocategorie esistenti */}
-                {(categorieGerarchiche
-                  .find(cat => cat.nome === selectedCategory)
-                  ?.sottocategorie.length || 0) > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-muted-foreground">Sposta in sottocategorie esistenti:</span>
-                    {categorieGerarchiche
-                      .find(cat => cat.nome === selectedCategory)
-                      ?.sottocategorie.map((sub) => (
-                        <button
-                          key={sub.fullPath}
-                          onClick={() => handleMoveProducts(sub.fullPath)}
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
-                        >
-                          → {sub.nome}
-                        </button>
-                      ))}
-                  </div>
-                )}
-                
-                {/* Pulsante per creare nuova sottocategoria e spostare */}
+      {/* Categories as Horizontal Tabs */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: colors.text.primary }}>
+          <Tag className="h-5 w-5" />
+          Categorie
+        </h2>
+        <div className="flex flex-wrap gap-2 p-4 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            {categorieGerarchiche.map((categoria) => (
+              <button
+                key={categoria.nome}
+                onClick={() => {
+                  setSelectedCategory(categoria.nome);
+                  loadProdotti(categoria.nome);
+                }}
+                className="px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:opacity-80 flex-shrink-0"
+                style={{
+                  backgroundColor: selectedCategory === categoria.nome ? colors.button.primary : colors.bg.hover,
+                  color: selectedCategory === categoria.nome ? colors.button.primaryText : colors.text.primary,
+                  border: `1px solid ${colors.border.primary}`
+                }}
+              >
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Crea e sposta in:</span>
-                  <input
-                    type="text"
-                    placeholder="Nome sottocategoria (es: Gin, Vodka)"
-                    className="px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs text-foreground placeholder-muted-foreground"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const input = e.target as HTMLInputElement;
-                        if (input.value.trim()) {
-                          handleCreateAndMoveToSubcategory(selectedCategory!, input.value.trim());
-                          input.value = '';
-                        }
-                      }
-                    }}
-                  />
-                  <span className="text-xs text-muted-foreground">← Enter per creare</span>
+                  <span className="text-sm">{getCategoryEmoji(categoria.nome)}</span>
+                  <span className="text-sm">{categoria.nome}</span>
+                  <span className="text-xs" style={{ color: selectedCategory === categoria.nome ? colors.button.primaryText : colors.text.muted }}>
+                    ({categoria.prodottiCount})
+                  </span>
                 </div>
+              </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Left Column - Products in Selected Category */}
+        <div className="rounded-lg p-6" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: colors.text.primary }}>
+              <Package className="h-5 w-5" />
+              {selectedCategory ? `Prodotti in "${selectedCategory}"` : "Seleziona una categoria"}
+            </h2>
+            {selectedCategory && prodotti.length > 0 && (
+              <div className="text-sm" style={{ color: colors.text.muted }}>
+                {filteredProdotti.length} di {prodotti.length} prodotti
               </div>
             )}
           </div>
           
-          {/* Search and Filter Section */}
-          {(selectedCategory || globalSelectionMode) && prodotti.length > 0 && (
-            <div className="space-y-3 mb-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Search and Filter Bar */}
+          {selectedCategory && prodotti.length > 0 && (
+            <div className="mb-4 flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-4 w-4" style={{ color: colors.text.muted }} />
                 <input
                   type="text"
                   placeholder="Cerca prodotti..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full pl-10 pr-4 py-2 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: colors.bg.input,
+                    borderColor: colors.border.primary,
+                    color: colors.text.primary,
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
+                  }}
                 />
               </div>
-              
-              {/* Filter Controls */}
-              <div className="flex flex-wrap gap-2">
-                <select
-                  value={filterAvailable === null ? '' : filterAvailable.toString()}
-                  onChange={(e) => setFilterAvailable(e.target.value === '' ? null : e.target.value === 'true')}
-                  className="px-3 py-1 bg-slate-900 border border-slate-700 rounded text-sm text-foreground"
-                >
-                  <option value="">Tutti i prodotti</option>
-                  <option value="true">Solo disponibili</option>
-                  <option value="false">Solo non disponibili</option>
-                </select>
-                
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    placeholder="Prezzo min"
-                    value={filterPriceRange.min || ''}
-                    onChange={(e) => setFilterPriceRange(prev => ({...prev, min: e.target.value ? Number(e.target.value) : null}))}
-                    className="w-24 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-sm text-foreground placeholder-muted-foreground"
-                  />
-                  <span className="text-muted-foreground">-</span>
-                  <input
-                    type="number"
-                    placeholder="Prezzo max"
-                    value={filterPriceRange.max || ''}
-                    onChange={(e) => setFilterPriceRange(prev => ({...prev, max: e.target.value ? Number(e.target.value) : null}))}
-                    className="w-24 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-sm text-foreground placeholder-muted-foreground"
-                  />
-                </div>
-                
-                {(searchQuery || filterAvailable !== null || filterPriceRange.min !== null || filterPriceRange.max !== null) && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setFilterAvailable(null);
-                      setFilterPriceRange({min: null, max: null});
-                    }}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded flex items-center gap-1"
-                  >
-                    <X className="h-3 w-3" />
-                    Cancella filtri
-                  </button>
-                )}
-                
-                {selectedProducts.length > 0 && (
-                  <button
-                    onClick={() => setShowBulkEditModal(true)}
-                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded flex items-center gap-1 ml-auto"
-                  >
-                    <Settings className="h-3 w-3" />
-                    Modifica {selectedProducts.length} prodotti
-                  </button>
-                )}
-              </div>
-              
-              {/* Results count */}
-              {(searchQuery || filterAvailable !== null || filterPriceRange.min !== null || filterPriceRange.max !== null) && (
-                <div className="text-sm text-muted-foreground">
-                  Trovati {filteredProdotti.length} prodotti su {prodotti.length}
-                </div>
-              )}
             </div>
           )}
           
-          {!globalSelectionMode && !selectedCategory ? (
-            <div className="text-center py-12 text-muted-foreground">
+          {/* Products List */}
+          {!selectedCategory ? (
+            <div className="text-center py-12" style={{ color: colors.text.muted }}>
               <Package className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p>Clicca su una categoria per vedere i prodotti</p>
+              <p>Seleziona una categoria dai tab sopra per vedere i prodotti</p>
             </div>
-          ) : filteredProdotti.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+          ) : isLoading ? (
+            <div className="text-center py-12" style={{ color: colors.text.muted }}>
+              <p>Caricamento prodotti...</p>
+            </div>
+          ) : prodotti.length === 0 ? (
+            <div className="text-center py-12" style={{ color: colors.text.muted }}>
               <Package className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p>{prodotti.length === 0 ? "Nessun prodotto in questa categoria" : "Nessun prodotto trovato con i filtri applicati"}</p>
+              <p>Nessun prodotto in questa categoria</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {filteredProdotti.map((prodotto) => (
                 <div
                   key={prodotto.id}
+                  draggable
                   data-product-draggable
-                  draggable={true}
-                  className={`flex items-center justify-between p-3 border rounded-lg cursor-move transition-all duration-200 ${
-                    selectedProducts.includes(prodotto.id)
-                      ? "bg-white/15/20 border-white/20-500"
-                      : "bg-slate-900/50 border-slate-700 hover:bg-slate-900"
-                  } ${
-                    draggedProduct?.id === prodotto.id 
-                      ? "opacity-60 scale-95 shadow-lg border-white/15-400" 
-                      : ""
-                  }`}
-                  onDragStart={(e) => {
-                    e.stopPropagation();
-                    handleProductDragStart(e, prodotto);
-                  }}
+                  onDragStart={(e) => handleProductDragStart(e, prodotto)}
                   onDragEnd={handleProductDragEnd}
-                  onClick={(e) => {
-                    // Solo se non stiamo trascinando
-                    if (!isDraggingProduct) {
-                      if (globalSelectionMode) {
-                        toggleGlobalProductSelection(prodotto);
-                      } else {
-                        setSelectedProducts(prev => 
-                          prev.includes(prodotto.id)
-                            ? prev.filter(id => id !== prodotto.id)
-                            : [...prev, prodotto.id]
-                        );
-                      }
-                    }
+                  className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 cursor-move hover:shadow-lg"
+                  style={{
+                    backgroundColor: colors.bg.hover,
+                    borderColor: colors.border.primary,
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
                   }}
                 >
-                  <div className="flex-1">
-                    <div className="font-medium text-foreground flex items-center gap-2">
-                      <span className="text-white/60 cursor-move hover:text-blue-300 mr-1" title="Trascina per spostare">
-                        🖱️
-                      </span>
-                      {editingProduct === prodotto.id ? (
-                        <input
-                          type="text"
-                          value={newProductName}
-                          onChange={(e) => setNewProductName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveProductEdit();
-                            } else if (e.key === 'Escape') {
-                              setEditingProduct(null);
-                              setNewProductName("");
-                            }
-                          }}
-                          className="bg-slate-900 border border-white/15-500 rounded px-2 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          autoFocus
-                          onBlur={() => {
-                            setEditingProduct(null);
-                            setNewProductName("");
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          {prodotto.nome}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingProduct(prodotto.id);
-                              setNewProductName(prodotto.nome);
-                            }}
-                            className="p-1 text-white/60 hover:text-blue-300 hover:bg-slate-700 rounded transition-colors"
-                            title="Modifica nome prodotto"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </button>
-                        </span>
-                      )}
-                      {!globalSelectionMode && selectedCategory && !prodotto.categoria.includes(' > ') && (
-                        <span className="bg-green-700 px-1 py-0.5 rounded text-xs">
-                          Principale
-                        </span>
-                      )}
-                      {isDraggingProduct && draggedProduct?.id === prodotto.id && (
-                        <span className="animate-pulse text-white/60 text-xs">
-                          Trascinando...
-                        </span>
-                      )}
+                  <div className="flex items-center gap-3">
+                    <div className="cursor-move opacity-50 hover:opacity-100 transition-opacity">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 4.5C7 5.32843 6.32843 6 5.5 6C4.67157 6 4 5.32843 4 4.5C4 3.67157 4.67157 3 5.5 3C6.32843 3 7 3.67157 7 4.5Z" fill="currentColor"/>
+                        <path d="M7 10C7 10.8284 6.32843 11.5 5.5 11.5C4.67157 11.5 4 10.8284 4 10C4 9.17157 4.67157 8.5 5.5 8.5C6.32843 8.5 7 9.17157 7 10Z" fill="currentColor"/>
+                        <path d="M5.5 17C6.32843 17 7 16.3284 7 15.5C7 14.6716 6.32843 14 5.5 14C4.67157 14 4 14.6716 4 15.5C4 16.3284 4.67157 17 5.5 17Z" fill="currentColor"/>
+                        <path d="M16 4.5C16 5.32843 15.3284 6 14.5 6C13.6716 6 13 5.32843 13 4.5C13 3.67157 13.6716 3 14.5 3C15.3284 3 16 3.67157 16 4.5Z" fill="currentColor"/>
+                        <path d="M14.5 11.5C15.3284 11.5 16 10.8284 16 10C16 9.17157 15.3284 8.5 14.5 8.5C13.6716 8.5 13 9.17157 13 10C13 10.8284 13.6716 11.5 14.5 11.5Z" fill="currentColor"/>
+                        <path d="M16 15.5C16 16.3284 15.3284 17 14.5 17C13.6716 17 13 16.3284 13 15.5C13 14.6716 13.6716 14 14.5 14C15.3284 14 16 14.6716 16 15.5Z" fill="currentColor"/>
+                      </svg>
                     </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <span>€{prodotto.prezzo.toFixed(2)}</span>
-                      {globalSelectionMode && (
-                        <span className="bg-blue-700 px-2 py-1 rounded text-xs">
-                          {prodotto.categoria}
-                        </span>
-                      )}
-                      {prodotto.codice && (
-                        <span className="bg-slate-700 px-2 py-1 rounded text-xs">
-                          #{prodotto.codice}
-                        </span>
-                      )}
+                    <div>
+                      <div className="font-medium" style={{ color: colors.text.primary }}>
+                        {prodotto.nome}
+                      </div>
+                      <div className="text-sm" style={{ color: colors.text.muted }}>
+                        €{prodotto.prezzo.toFixed(2)}
+                      </div>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded border-2 ${
-                    globalSelectionMode 
-                      ? globalSelectedProducts.some(p => p.id === prodotto.id)
-                        ? "bg-purple-500 border-purple-500"
-                        : "border-slate-500"
-                      : selectedProducts.includes(prodotto.id)
-                        ? "bg-white/15 border-white/20-500"
-                        : "border-slate-500"
-                  }`} />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded" style={{
+                      backgroundColor: prodotto.disponibile ? colors.button.success : colors.text.error,
+                      color: 'white'
+                    }}>
+                      {prodotto.disponibile ? 'Disponibile' : 'Non disponibile'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Third Column - All Categories for Quick Move */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+        
+        {/* Right Column - Quick Move */}
+        <div className="rounded-lg p-6" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: colors.text.primary }}>
               <Tag className="h-5 w-5" />
               Sposta Veloce
             </h2>
-            <div className="text-xs text-muted-foreground">
-              {isDraggingProduct && draggedProduct ? (
-                <span className="text-white/60 animate-pulse">
-                  Trascinando: {draggedProduct.nome}
-                </span>
-              ) : selectedProducts.length > 0 ? (
-                <span className="text-white/70">
-                  {selectedProducts.length} prodotti selezionati
-                </span>
-              ) : (
-                "Trascina prodotti qui"
-              )}
-            </div>
           </div>
           
-          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-            {categorieGerarchiche.map((categoria) => (
-              <div key={categoria.nome} className="space-y-1">
-                {/* Categoria Principale */}
-                <div
-                  className={`p-3 bg-slate-900/50 border rounded-lg transition-all cursor-pointer hover:bg-slate-900 ${
-                    draggedProduct && draggedOver === categoria.nome
-                      ? 'bg-white/10/20 border-white/15-500 shadow-lg scale-102'
-                      : 'border-slate-700'
-                  } ${
-                    selectedCategory === categoria.nome
-                      ? 'ring-2 ring-amber-500'
-                      : ''
-                  }`}
-                  onClick={() => loadProdotti(categoria.nome)}
-                  onDragOver={handleDragOver}
-                  onDragEnter={(e) => {
-                    if (isDraggingProduct) {
-                      setDraggedOver(categoria.nome);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setDraggedOver(null);
-                    }
-                  }}
-                  onDrop={(e) => handleCategoryDropProduct(e, categoria.nome)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+          {/* Categories Grid for Quick Move */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 relative" style={{ padding: '4px' }}>
+            {categorieGerarchiche
+              .filter(categoria => categoria.nome !== selectedCategory) // Exclude current category
+              .map((categoria) => (
+              <div
+                key={categoria.nome}
+                className="rounded-lg p-3 transition-all duration-200 hover:scale-105 cursor-pointer relative group"
+                style={{
+                  backgroundColor: isDraggingProduct && draggedOver === categoria.nome ? colors.button.primaryHover : colors.bg.hover,
+                  borderColor: isDraggingProduct && draggedOver === categoria.nome ? colors.button.primary : colors.border.primary,
+                  borderWidth: isDraggingProduct && draggedOver === categoria.nome ? '2px' : '1px',
+                  borderStyle: 'solid',
+                  minHeight: '90px',
+                  zIndex: isDraggingProduct && draggedOver === categoria.nome ? 10 : 1,
+                  position: 'relative'
+                }}
+                onDragOver={handleDragOver}
+                onDragEnter={(e) => handleProductDragEnter(e, categoria.nome)}
+                onDragLeave={handleProductDragLeave}
+                onDrop={(e) => handleCategoryDropProduct(e, categoria.nome)}
+              >
+                {/* Drop indicator animation */}
+                {isDraggingProduct && draggedOver === categoria.nome && (
+                  <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+                    background: `linear-gradient(45deg, ${colors.button.primary}20 25%, transparent 25%, transparent 75%, ${colors.button.primary}20 75%, ${colors.button.primary}20)`,
+                    backgroundSize: '20px 20px',
+                    animation: 'move-bg 0.5s linear infinite'
+                  }} />
+                )}
+                
+                <div className="flex flex-col h-full justify-between relative z-10">
+                  <div>
+                    <div className="flex items-center gap-1 mb-1">
                       <span className="text-lg">{getCategoryEmoji(categoria.nome)}</span>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {categoria.nome}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {categoria.prodottiCount} prodotti
-                        </div>
+                      <h3 className="font-semibold text-xs" style={{ color: colors.text.primary }}>
+                        {categoria.nome}
+                      </h3>
+                    </div>
+                    <div className="text-xs" style={{ color: colors.text.muted }}>
+                      {categoria.prodottiCount} prod.
+                    </div>
+                  </div>
+                  
+                  {/* Drop zone indicator */}
+                  {isDraggingProduct && draggedOver === categoria.nome && (
+                    <div className="mt-1 text-xs text-center p-1 rounded" style={{
+                      backgroundColor: colors.button.primary + '20',
+                      color: colors.button.primary,
+                      border: `1px dashed ${colors.button.primary}`,
+                      fontSize: '10px'
+                    }}>
+                      📦 Rilascia qui
+                    </div>
+                  )}
+                  
+                  {/* Subcategories preview */}
+                  {categoria.sottocategorie.length > 0 && (
+                    <div className="mt-1 pt-1" style={{ borderTop: `1px solid ${colors.border.secondary}` }}>
+                      <div className="text-xs" style={{ color: colors.text.muted, fontSize: '10px' }}>
+                        {categoria.sottocategorie.length} sottoc.
                       </div>
                     </div>
-                    {draggedProduct && draggedOver === categoria.nome && (
-                      <div className="text-xs text-white/60 animate-pulse">
-                        Rilascia qui
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-                
-                {/* Sottocategorie */}
-                {categoria.sottocategorie.length > 0 && (
-                  <div className="ml-4 space-y-1">
-                    {categoria.sottocategorie.map((sub) => (
-                      <div
-                        key={sub.fullPath}
-                        className={`p-2 bg-slate-900/30 border rounded transition-all cursor-pointer hover:bg-slate-900/50 ${
-                          draggedProduct && draggedOver === sub.fullPath
-                            ? 'bg-white/10/20 border-white/15-500 shadow-lg scale-102'
-                            : 'border-slate-700/50'
-                        } ${
-                          selectedCategory === sub.fullPath
-                            ? 'ring-2 ring-amber-500'
-                            : ''
-                        }`}
-                        onClick={() => loadProdotti(sub.fullPath)}
-                        onDragOver={handleDragOver}
-                        onDragEnter={(e) => {
-                          if (isDraggingProduct) {
-                            e.stopPropagation();
-                            setDraggedOver(sub.fullPath);
-                          }
-                        }}
-                        onDragLeave={(e) => {
-                          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                            setDraggedOver(null);
-                          }
-                        }}
-                        onDrop={(e) => {
-                          e.stopPropagation();
-                          handleCategoryDropProduct(e, sub.fullPath);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-500">└</span>
-                            <div>
-                              <div className="text-sm font-medium text-foreground">
-                                {sub.nome}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {sub.prodottiCount} prodotti
-                              </div>
-                            </div>
-                          </div>
-                          {draggedProduct && draggedOver === sub.fullPath && (
-                            <div className="text-xs text-white/60 animate-pulse">
-                              Rilascia
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             ))}
-            
-            {/* Sezione per creare nuove sottocategorie al volo */}
-            {draggedProduct && (
-              <div className="mt-4 pt-4 border-t border-slate-700">
-                <div className="text-sm text-muted-foreground mb-2">
-                  Crea nuova sottocategoria:
-                </div>
-                {categorieGerarchiche.map((categoria) => (
-                  <div
-                    key={`new-${categoria.nome}`}
-                    className="p-3 mb-2 bg-green-900/20 border-2 border-dashed border-white/15-700 rounded-lg hover:bg-green-900/30 transition-all"
-                    onDragOver={handleDragOver}
-                    onDragEnter={(e) => setDraggedOver(`new-sub-${categoria.nome}`)}
-                    onDragLeave={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                        setDraggedOver(null);
-                      }
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const productData = e.dataTransfer.getData('application/product');
-                      if (productData) {
-                        const product = JSON.parse(productData);
-                        // Prompt per nome sottocategoria
-                        const subName = prompt(`Crea nuova sottocategoria in ${categoria.nome}:`);
-                        if (subName && subName.trim()) {
-                          const newCategoryPath = `${categoria.nome} > ${subName.trim()}`;
-                          handleCategoryDropProduct(e, newCategoryPath);
-                        }
-                      }
-                      setDraggedOver(null);
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Plus className="h-4 w-4 text-white/60" />
-                      <span className="text-sm text-white/60">
-                        Nuova in {categoria.nome}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
+          
+          {/* Add CSS for animation */}
+          <style jsx>{`
+            @keyframes move-bg {
+              0% {
+                background-position: 0 0;
+              }
+              100% {
+                background-position: 20px 20px;
+              }
+            }
+          `}</style>
         </div>
       </div>
+      
     </div>
     </AuthGuard>
   );

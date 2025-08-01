@@ -22,9 +22,9 @@ class SSEManager extends EventEmitter {
   private clients: Map<string, SSEClient> = new Map();
   
   // Limiti configurabili
-  private readonly maxClientsPerUser = 3;
-  private readonly maxTotalClients = 500;
-  private readonly clientTimeout = 5 * 60 * 1000; // 5 minuti
+  private readonly maxClientsPerUser = 5; // Increased from 3
+  private readonly maxTotalClients = 1000; // Increased from 500
+  private readonly clientTimeout = 2 * 60 * 1000; // 2 minutes (reduced from 5)
   
   private encoder: TextEncoder;
   
@@ -66,7 +66,8 @@ class SSEManager extends EventEmitter {
     }
     
     this.clients.set(client.id, client);
-    console.log(`[SSE] Client connected: ${client.id} (user: ${client.userId})`);
+    // Log only for debugging issues
+    // console.log(`[SSE Manager] Client added: ${client.id} (user: ${client.userId}, station: ${client.stationType}, total: ${this.clients.size})`);
     
     // Invia messaggio di benvenuto
     this.sendToClient(client.id, {
@@ -89,7 +90,8 @@ class SSEManager extends EventEmitter {
         // Controller già chiuso
       }
       this.clients.delete(clientId);
-      console.log(`[SSE] Client disconnected: ${clientId}`);
+      // Log only for debugging issues
+      // console.log(`[SSE Manager] Client removed: ${clientId} (station: ${client.stationType}, remaining: ${this.clients.size})`);
     }
   }
   
@@ -212,7 +214,7 @@ class SSEManager extends EventEmitter {
           this.removeClient(clientId);
         }
       }
-    }, 60000); // Ogni minuto
+    }, 30000); // Every 30 seconds (reduced from 60s)
   }
   
   // Heartbeat per tutti i client

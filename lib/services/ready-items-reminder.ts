@@ -67,23 +67,23 @@ export class ReadyItemsReminderManager {
           }
         },
         include: {
-          prodotto: {
+          Prodotto: {
             select: {
               nome: true
             }
           },
-          ordinazione: {
+          Ordinazione: {
             select: {
               id: true,
               numero: true,
               nomeCliente: true,
               cameriereId: true,
-              tavolo: {
+              Tavolo: {
                 select: {
                   numero: true
                 }
               },
-              cameriere: {
+              User: {
                 select: {
                   nome: true
                 }
@@ -116,9 +116,9 @@ export class ReadyItemsReminderManager {
           reminderMap.set(ordinazioneId, {
             id: `reminder-${ordinazioneId}`,
             ordinazioneId,
-            tavoloNumero: riga.ordinazione.tavolo?.numero || 'Asporto',
-            cameriereId: riga.ordinazione.cameriereId,
-            cameriereNome: riga.ordinazione.cameriere.nome,
+            tavoloNumero: riga.Ordinazione.Tavolo?.numero || 'Asporto',
+            cameriereId: riga.Ordinazione.cameriereId,
+            cameriereNome: riga.Ordinazione.User.nome,
             prodotti: [],
             totaleProdotti: 0,
             minutiMassimiAttesa: 0,
@@ -130,7 +130,7 @@ export class ReadyItemsReminderManager {
         const reminder = reminderMap.get(ordinazioneId)!;
         
         reminder.prodotti.push({
-          nome: riga.prodotto.nome,
+          nome: riga.Prodotto.nome,
           quantita: riga.quantita,
           postazione: riga.postazione,
           minutiPronti

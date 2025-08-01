@@ -11,7 +11,7 @@ export async function GET() {
         attivo: true,
       },
       include: {
-        sessioni: {
+        Session: {
           where: {
             expires: {
               gt: new Date() // Solo sessioni non scadute
@@ -32,10 +32,10 @@ export async function GET() {
     
     // Determina lo stato online basandosi sulle sessioni attive
     const usersWithStatus = users.map(user => {
-      const hasActiveSession = user.sessioni.length > 0;
-      const lastSession = user.sessioni[0];
+      const hasActiveSession = user.Session.length > 0;
+      const lastSession = user.Session[0];
       
-      console.log(`[API Supervisore Users] ${user.nome} - Sessioni attive: ${user.sessioni.length}, Online: ${hasActiveSession}`);
+      console.log(`[API Supervisore Users] ${user.nome} - Sessioni attive: ${user.Session.length}, Online: ${hasActiveSession}`);
       
       return {
         id: user.id,
@@ -49,7 +49,7 @@ export async function GET() {
     });
 
     return NextResponse.json(usersWithStatus);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Errore recupero utenti:", error);
     return NextResponse.json(
       { error: "Errore nel recupero degli utenti" },

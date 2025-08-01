@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fixBarDestinations } from "@/lib/actions/fix-bar-destinations";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 export async function GET(request: Request) {
   try {

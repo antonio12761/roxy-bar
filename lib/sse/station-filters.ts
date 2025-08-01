@@ -30,7 +30,9 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:paid',           // Conferma pagamento
       'order:update',         // Aggiornamenti generali
       'notification:new',     // Notifiche dirette
-      'system:announcement'   // Annunci sistema
+      'system:announcement',  // Annunci sistema
+      'system:heartbeat',     // Heartbeat per mantenere connessione
+      'connection:status'     // Stato connessione
     ]),
     customFilter: (eventName, data) => {
       // Solo ordini dei propri tavoli o ordini generali
@@ -47,15 +49,20 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:sent',           // Ordini inviati
       'order:item:update',    // Aggiornamenti singoli item
       'order:cancelled',      // Ordini annullati
-      'notification:reminder' // Promemoria
+      'notification:reminder', // Promemoria
+      'system:heartbeat',     // Heartbeat per mantenere connessione
+      'connection:status',    // Stato connessione
+      'order:update'          // Aggiornamenti ordini
     ]),
     customFilter: (eventName, data) => {
-      // Solo item postazione PREPARA
+      // Solo item postazione PREPARA o BANCO (both handled by PREPARA station)
       if (eventName === 'order:new' || eventName === 'order:sent') {
-        return data.items?.some((item: any) => item.destination === 'PREPARA');
+        return data.items?.some((item: any) => 
+          item.destination === 'PREPARA' || item.destination === 'BANCO'
+        );
       }
       if (eventName === 'order:item:update') {
-        return data.destination === 'PREPARA';
+        return data.destination === 'PREPARA' || data.destination === 'BANCO';
       }
       return true;
     }
@@ -67,7 +74,9 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:sent', 
       'order:item:update',
       'order:cancelled',
-      'notification:reminder'
+      'notification:reminder',
+      'system:heartbeat',
+      'connection:status'
     ]),
     customFilter: (eventName, data) => {
       // Solo item postazione CUCINA
@@ -87,7 +96,9 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:sent',           // Ordini inviati
       'order:item:update',    // Aggiornamenti singoli item
       'order:cancelled',      // Ordini annullati
-      'notification:reminder' // Promemoria
+      'notification:reminder', // Promemoria
+      'system:heartbeat',
+      'connection:status'
     ]),
     customFilter: (eventName, data) => {
       // Solo item postazione BANCO
@@ -107,7 +118,9 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:ready',          // Ordini completati
       'order:paid',           // Conferme pagamento
       'notification:new',     // Notifiche dirette
-      'system:announcement'   // Annunci sistema  
+      'system:announcement',  // Annunci sistema
+      'system:heartbeat',
+      'connection:status'
     ]),
     customFilter: (eventName, data) => {
       // Solo ordini che possono essere pagati
@@ -129,7 +142,9 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'notification:new',
       'system:announcement',
       'user:activity',
-      'station:status'
+      'station:status',
+      'system:heartbeat',
+      'connection:status'
     ]),
     // Supervisore riceve tutto ma con priorità
     customFilter: (eventName, data) => {

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { sseService } from "@/lib/sse/sse-service";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -27,11 +27,11 @@ export async function syncOrderNotifications() {
         }
       },
       include: {
-        tavolo: true,
-        cameriere: true,
-        righe: {
+        Tavolo: true,
+        User: true,
+        RigaOrdinazione: {
           include: {
-            prodotto: true
+            Prodotto: true
           }
         }
       }
@@ -48,23 +48,23 @@ export async function syncOrderNotifications() {
           // Notifica nuovo ordine
           notificationManager.notifyOrderCreated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
-            waiterName: ordinazione.cameriere?.nome,
-            items: ordinazione.righe.map(r => ({
-              nome: r.prodotto.nome,
+            waiterName: ordinazione.User?.nome,
+            items: ordinazione.RigaOrdinazione.map((r: any) => ({
+              nome: r.Prodotto.nome,
               quantita: r.quantita,
-              postazione: r.prodotto.postazione || "PREPARA"
+              postazione: r.Prodotto.postazione || "PREPARA"
             }))
           });
           
           sseService.emit('order:new', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             customerName: ordinazione.nomeCliente || undefined,
-            items: ordinazione.righe.map(r => ({
+            items: ordinazione.RigaOrdinazione.map((r: any) => ({
               id: r.id,
-              productName: r.prodotto.nome,
+              productName: r.Prodotto.nome,
               quantity: r.quantita,
               destination: r.postazione
             })),
@@ -79,7 +79,7 @@ export async function syncOrderNotifications() {
           // Notifica ordine inviato in cucina
           notificationManager.notifyOrderUpdated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
             status: "IN_PREPARAZIONE",
             changes: [{
@@ -93,7 +93,7 @@ export async function syncOrderNotifications() {
             orderId: ordinazione.id,
             oldStatus: 'ORDINATO',
             newStatus: 'IN_PREPARAZIONE',
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             timestamp: new Date().toISOString()
           });
           
@@ -104,7 +104,7 @@ export async function syncOrderNotifications() {
           // Notifica ordine in preparazione
           notificationManager.notifyOrderUpdated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
             status: "IN_PREPARAZIONE",
             changes: [{
@@ -118,7 +118,7 @@ export async function syncOrderNotifications() {
             orderId: ordinazione.id,
             oldStatus: 'IN_PREPARAZIONE',
             newStatus: 'IN_PREPARAZIONE',
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             timestamp: new Date().toISOString()
           });
           
@@ -129,19 +129,19 @@ export async function syncOrderNotifications() {
           // Notifica ordine pronto
           notificationManager.notifyOrderReady({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
-            items: ordinazione.righe.map(r => ({
-              nome: r.prodotto.nome,
+            items: ordinazione.RigaOrdinazione.map((r: any) => ({
+              nome: r.Prodotto.nome,
               quantita: r.quantita,
-              postazione: r.prodotto.postazione || "PREPARA"
+              postazione: r.Prodotto.postazione || "PREPARA"
             }))
           });
           
           sseService.emit('order:ready', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
-            readyItems: ordinazione.righe.filter(r => r.stato === 'PRONTO').map(r => r.id),
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            readyItems: ordinazione.RigaOrdinazione.filter((r: any) => r.stato === 'PRONTO').map((r: any) => r.id),
             timestamp: new Date().toISOString()
           });
           
@@ -152,15 +152,15 @@ export async function syncOrderNotifications() {
           // Notifica ordine consegnato
           notificationManager.notifyOrderDelivered({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
             amount: parseFloat(ordinazione.totale.toString())
           });
           
           sseService.emit('order:delivered', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
-            deliveredBy: ordinazione.cameriere?.nome,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            deliveredBy: ordinazione.User?.nome,
             timestamp: new Date().toISOString()
           });
           
@@ -171,7 +171,7 @@ export async function syncOrderNotifications() {
           // Notifica richiesta conto
           notificationManager.notifyPaymentRequested({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             orderType: ordinazione.tipo,
             amount: parseFloat(ordinazione.totale.toString()),
             customerName: ordinazione.nomeCliente || undefined
@@ -179,9 +179,9 @@ export async function syncOrderNotifications() {
           
           sseService.emit('notification:reminder', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             type: 'payment',
-            message: `Richiesta conto per ${ordinazione.tipo} ${ordinazione.tavolo ? `Tavolo ${ordinazione.tavolo.numero}` : ''} - €${ordinazione.totale}`
+            message: `Richiesta conto per ${ordinazione.tipo} ${ordinazione.Tavolo ? `Tavolo ${ordinazione.Tavolo.numero}` : ''} - €${ordinazione.totale}`
           });
           
           notificheSincronizzate++;
@@ -228,11 +228,11 @@ export async function checkOrderNotificationStatus(ordinazioneId: string) {
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: ordinazioneId },
       include: {
-        tavolo: true,
-        cameriere: true,
-        righe: {
+        Tavolo: true,
+        User: true,
+        RigaOrdinazione: {
           include: {
-            prodotto: true
+            Prodotto: true
           }
         }
       }
@@ -258,7 +258,7 @@ export async function checkOrderNotificationStatus(ordinazioneId: string) {
       ordinazione: {
         id: ordinazione.id,
         stato: ordinazione.stato,
-        tavolo: ordinazione.tavolo?.numero,
+        tavolo: ordinazione.Tavolo?.numero,
         tipo: ordinazione.tipo
       },
       expectedNotifications

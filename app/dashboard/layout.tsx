@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
+import DashboardLayoutClient from "./layout-client";
 
 export default async function DashboardLayout({
   children,
@@ -18,12 +18,5 @@ export default async function DashboardLayout({
     redirect("/");
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar />
-      <main className="flex-1">
-        {children}
-      </main>
-    </div>
-  );
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
 }

@@ -14,17 +14,17 @@ export async function GET() {
         }
       },
       include: {
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
         },
-        cameriere: {
+        User: {
           select: {
             nome: true
           }
         },
-        pagamenti: {
+        Pagamento: {
           select: {
             importo: true,
             modalita: true,
@@ -40,17 +40,17 @@ export async function GET() {
 
     // Simula richieste di scontrino basate sui pagamenti recenti
     const richiesteSimulate = ordinazioniConsegnate
-      .filter(ord => ord.pagamenti.length > 0) // Solo ordini pagati
+      .filter(ord => ord.Pagamento.length > 0) // Solo ordini pagati
       .map(ord => {
-        const ultimoPagamento = ord.pagamenti[ord.pagamenti.length - 1];
-        const importoTotale = ord.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
+        const ultimoPagamento = ord.Pagamento[ord.Pagamento.length - 1];
+        const importoTotale = ord.Pagamento.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0);
         
         return {
           id: `req-${ord.id}`,
           orderId: ord.id,
-          tavolo: ord.tavolo,
+          tavolo: ord.Tavolo,
           tipo: ord.tipo,
-          richiedente: ord.cameriere?.nome || "Sistema",
+          richiedente: ord.User?.nome || "Sistema",
           importo: importoTotale,
           dataRichiesta: ultimoPagamento.timestamp,
           stato: Math.random() > 0.7 ? "PENDING" : Math.random() > 0.5 ? "PROCESSING" : "COMPLETED"

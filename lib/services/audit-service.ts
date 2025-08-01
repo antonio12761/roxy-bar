@@ -24,6 +24,7 @@ export interface AuditLogEntry {
   relatedEntityType?: EntityType;
   relatedEntityId?: string;
   timestamp: Date;
+  tenantId: string;
 }
 
 export interface AuditSearchFilters {
@@ -65,6 +66,7 @@ export class AuditService {
       
       // Valida e prepara i dati
       const auditData = {
+        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         entityType: entry.entityType,
         entityId: entry.entityId,
         action: entry.action,
@@ -81,13 +83,20 @@ export class AuditService {
         errorMessage: entry.errorMessage || null,
         processingTime: entry.processingTime || (Date.now() - startTime),
         relatedEntityType: entry.relatedEntityType || null,
-        relatedEntityId: entry.relatedEntityId || null
+        relatedEntityId: entry.relatedEntityId || null,
+        tenantId: entry.tenantId,
+        fieldNames: [],
+        changes: undefined,
+        tableName: undefined,
+        checksum: undefined,
+        sensitive: false,
+        validated: false
       };
 
       const auditLog = await prisma.auditLog.create({
         data: auditData,
         include: {
-          user: {
+          User: {
             select: {
               nome: true,
               ruolo: true
@@ -176,7 +185,8 @@ export class AuditService {
         success: details.success,
         errorMessage: details.errorMessage,
         relatedEntityType: details.ordinazioneId ? 'ORDINAZIONE' : undefined,
-        relatedEntityId: details.ordinazioneId
+        relatedEntityId: details.ordinazioneId,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
     } catch (error) {
@@ -229,7 +239,8 @@ export class AuditService {
         success: details.success,
         errorMessage: details.errorMessage,
         relatedEntityType: details.tableId ? 'TAVOLO' : undefined,
-        relatedEntityId: details.tableId
+        relatedEntityId: details.tableId,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
     } catch (error) {
@@ -272,7 +283,8 @@ export class AuditService {
         severity,
         category: 'SECURITY',
         success: details.success,
-        errorMessage: details.errorMessage
+        errorMessage: details.errorMessage,
+        tenantId: '' // TODO: Get tenantId from context
       });
 
     } catch (error) {
@@ -313,7 +325,7 @@ export class AuditService {
         prisma.auditLog.findMany({
           where,
           include: {
-            user: {
+            User: {
               select: {
                 nome: true,
                 ruolo: true
@@ -596,7 +608,8 @@ export class AuditService {
         category: 'SYSTEM',
         success,
         processingTime,
-        errorMessage
+        errorMessage,
+        tenantId: '' // TODO: Get tenantId from context
       });
     } catch (error) {
       console.error('[Audit] Errore log richiesta:', error);

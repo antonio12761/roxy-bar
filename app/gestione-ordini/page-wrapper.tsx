@@ -9,10 +9,11 @@ import { toast } from '@/lib/toast'
 import type { Ordinazione, RigaOrdinazione, Prodotto, Tavolo } from '@prisma/client'
 
 type OrdinazioneCompleta = Ordinazione & {
-  righe: (RigaOrdinazione & {
-    prodotto: Prodotto
+  RigaOrdinazione: (RigaOrdinazione & {
+    Prodotto: Prodotto
   })[]
-  tavolo?: Tavolo | null
+  Tavolo?: Tavolo | null
+  User?: { nome: string }
 }
 
 interface PageWrapperProps {
@@ -119,7 +120,14 @@ export function PageWrapper({ initialOrdinazioni }: PageWrapperProps) {
         </div>
 
         <OrderZones 
-          ordinazioni={ordinazioni} 
+          ordinazioni={ordinazioni.map(ord => ({
+            ...ord,
+            righe: ord.RigaOrdinazione.map(riga => ({
+              ...riga,
+              prodotto: riga.Prodotto
+            })),
+            tavolo: ord.Tavolo
+          }))} 
           onStatusChange={handleStatusChange}
         />
       </div>

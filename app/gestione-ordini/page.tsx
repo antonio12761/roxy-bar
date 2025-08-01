@@ -12,5 +12,5 @@ export default async function GestioneOrdiniPage() {
 
   const ordinazioni = await getOrdinazioniPerStato()
 
-  return <PageWrapper initialOrdinazioni={ordinazioni} />
+  return <PageWrapper initialOrdinazioni={ordinazioni as any} />
 }

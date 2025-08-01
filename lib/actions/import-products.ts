@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 
 interface ImportProduct {
@@ -74,13 +74,13 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
     // Carica categorie esistenti
     const existingCategories = await prisma.category.findMany({
       include: {
-        subcategories: true
+        Subcategory: true
       }
     });
 
     existingCategories.forEach(cat => {
       categoryCache.set(cat.name.toLowerCase(), cat.id);
-      cat.subcategories.forEach(sub => {
+      cat.Subcategory.forEach((sub: any) => {
         subcategoryCache.set(`${cat.name.toLowerCase()}_${sub.name.toLowerCase()}`, {
           id: sub.id,
           categoryId: cat.id
@@ -171,7 +171,9 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
               const newCategory = await prisma.category.create({
                 data: {
                   name: productData.categoryName,
-                  order: categoryCache.size
+                  order: categoryCache.size,
+                  createdAt: new Date(),
+                  updatedAt: new Date()
                 }
               });
               catId = newCategory.id;
@@ -183,7 +185,9 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
               data: {
                 name: productData.subcategoryName,
                 categoryId: catId,
-                order: 0
+                order: 0,
+                createdAt: new Date(),
+                updatedAt: new Date()
               }
             });
 
@@ -199,7 +203,9 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
             const newCategory = await prisma.category.create({
               data: {
                 name: productData.categoryName,
-                order: categoryCache.size
+                order: categoryCache.size,
+                createdAt: new Date(),
+                updatedAt: new Date()
               }
             });
             catId = newCategory.id;
@@ -240,11 +246,13 @@ export async function importProductsFromCSV(csvData: string): Promise<ImportResu
             data: {
               name: productData.name,
               description: productData.description || null,
-              price: productData.price || null, // Può essere null per compilare dopo
+              price: productData.price || null,
               imageUrl: productData.imageUrl || null,
-              categoryId: categoryId || null, // Può essere null per assegnare dopo
+              categoryId: categoryId || null,
               subcategoryId: subcategoryId || null,
-              available: productData.available ?? true
+              available: productData.available ?? true,
+              createdAt: new Date(),
+              updatedAt: new Date()
             }
           });
           result.created++;

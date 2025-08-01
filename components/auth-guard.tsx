@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/actions/auth";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,6 +17,8 @@ export function AuthGuard({ children, allowedRoles, redirectTo = "/login" }: Aut
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const { currentTheme, themeMode } = useTheme();
+  const colors = currentTheme.colors[themeMode === 'system' ? 'dark' : themeMode];
 
   useEffect(() => {
     async function checkAuth() {
@@ -48,8 +51,19 @@ export function AuthGuard({ children, allowedRoles, redirectTo = "/login" }: Aut
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/70" />
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: colors.bg.main }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 
+            className="h-8 w-8 animate-spin" 
+            style={{ color: colors.text.primary }}
+          />
+          <p className="text-sm" style={{ color: colors.text.muted }}>
+            Caricamento...
+          </p>
+        </div>
       </div>
     );
   }

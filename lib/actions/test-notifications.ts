@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { sseService } from "@/lib/sse/sse-service";
 

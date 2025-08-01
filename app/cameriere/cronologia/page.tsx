@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Calendar, Coffee, Clock, Filter, Search, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
-import { getOrdinazioniAperte } from "@/lib/actions/ordinazioni";
+import { getOrdinazioniAperte, getStoricoOrdinazioni } from "@/lib/actions/ordinazioni";
 import Link from "next/link";
 
 interface OrderItem {
@@ -51,9 +51,36 @@ export default function CronologiaPage() {
   useEffect(() => {
     async function loadOrders() {
       try {
-        const data = await getOrdinazioniAperte();
-        // Include all orders for history, not just open ones
-        setOrders(data.sort((a, b) => 
+        // Get date range based on filter
+        const now = new Date();
+        let dataInizio: Date | undefined;
+        
+        switch (dateFilter) {
+          case "oggi":
+            dataInizio = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case "settimana":
+            dataInizio = new Date(now);
+            dataInizio.setDate(dataInizio.getDate() - 7);
+            break;
+          case "mese":
+            dataInizio = new Date(now);
+            dataInizio.setMonth(dataInizio.getMonth() - 1);
+            break;
+        }
+        
+        // Get historical (paid) orders
+        const historicalData = await getStoricoOrdinazioni({
+          dataInizio,
+          limit: 200
+        });
+        
+        // Get current open orders
+        const openData = await getOrdinazioniAperte();
+        
+        // Combine and sort all orders
+        const allOrders = [...historicalData, ...openData];
+        setOrders(allOrders.sort((a, b) => 
           new Date(b.dataApertura).getTime() - new Date(a.dataApertura).getTime()
         ));
       } catch (error) {
@@ -64,7 +91,7 @@ export default function CronologiaPage() {
     }
     
     loadOrders();
-  }, []);
+  }, [dateFilter]);
 
   const filterByDate = (order: Order) => {
     const orderDate = new Date(order.dataApertura);
@@ -106,14 +133,15 @@ export default function CronologiaPage() {
 
   const getStatoColor = (stato: string) => {
     switch (stato) {
-      case "CONSEGNATA":
-      case "PAGATA":
-        return "text-white/60";
-      case "ANNULLATA":
-        return "text-white/50";
+      case "CONSEGNATO":
+      case "PAGATO":
+        return "text-green-400";
+      case "ANNULLATO":
+        return "text-red-400";
       case "IN_PREPARAZIONE":
-      case "PRONTA":
-        return "text-white/60";
+        return "text-yellow-400";
+      case "PRONTO":
+        return "text-blue-400";
       default:
         return "text-gray-400";
     }
@@ -256,9 +284,9 @@ export default function CronologiaPage() {
                     </span>
                   )}
                   <span className={`text-sm font-medium ${getStatoColor(order.stato)}`}>
-                    {order.stato === "CONSEGNATA" || order.stato === "PAGATA" ? (
+                    {order.stato === "CONSEGNATO" || order.stato === "PAGATO" ? (
                       <CheckCircle className="h-3 w-3 inline mr-1" />
-                    ) : order.stato === "ANNULLATA" ? (
+                    ) : order.stato === "ANNULLATO" ? (
                       <XCircle className="h-3 w-3 inline mr-1" />
                     ) : null}
                     {order.stato}

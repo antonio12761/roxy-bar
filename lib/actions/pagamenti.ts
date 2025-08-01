@@ -1,12 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { creaScontrinoQueue, creaScontrinoBatch } from "@/lib/services/scontrino-queue";
 import crypto from "crypto";
+import { nanoid } from "nanoid";
 
 export async function getOrdinazioniDaPagare() {
   try {
@@ -20,15 +21,15 @@ export async function getOrdinazioniDaPagare() {
         }
       },
       include: {
-        tavolo: true,
-        cameriere: {
+        Tavolo: true,
+        User: {
           select: {
             nome: true
           }
         },
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: {
+            Prodotto: {
               select: {
                 nome: true,
                 prezzo: true
@@ -36,7 +37,7 @@ export async function getOrdinazioniDaPagare() {
             }
           }
         },
-        pagamenti: true
+        Pagamento: true
       },
       orderBy: {
         dataApertura: 'asc'
@@ -45,15 +46,15 @@ export async function getOrdinazioniDaPagare() {
 
     // Calcola totale rimanente per ogni ordinazione e serializza Decimal
     const ordinazioniConTotali = ordinazioni.map(ord => {
-      const totalePagato = ord.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
-      const totaleRighe = ord.righe.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+      const totalePagato = (ord as any).Pagamento?.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0) || 0;
+      const totaleRighe = (ord as any).RigaOrdinazione?.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0) || 0;
       const rimanente = totaleRighe - totalePagato;
 
       // Separa righe pagate e non pagate
-      const righePagate = ord.righe.filter(riga => riga.isPagato);
-      const righeNonPagate = ord.righe.filter(riga => !riga.isPagato);
-      const totaleRighePagate = righePagate.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
-      const totaleRigheNonPagate = righeNonPagate.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+      const righePagate = (ord as any).RigaOrdinazione?.filter((riga: any) => riga.isPagato) || [];
+      const righeNonPagate = (ord as any).RigaOrdinazione?.filter((riga: any) => !riga.isPagato) || [];
+      const totaleRighePagate = righePagate.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+      const totaleRigheNonPagate = righeNonPagate.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
 
       return {
         ...ord,
@@ -108,10 +109,10 @@ export async function creaPagamento(
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: ordinazioneId },
       include: {
-        righe: {
+        RigaOrdinazione: {
           where: { isPagato: false }
         },
-        pagamenti: true
+        Pagamento: true
       }
     });
 
@@ -119,9 +120,14 @@ export async function creaPagamento(
       return { success: false, error: "Ordinazione non trovata" };
     }
 
+    // Prevent payment if already paid
+    if (ordinazione.statoPagamento === "COMPLETAMENTE_PAGATO" || ordinazione.stato === "PAGATO") {
+      return { success: false, error: "Ordinazione già pagata completamente" };
+    }
+
     // Calcola totale rimanente
-    const totaleRighe = ordinazione.righe.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
-    const totalePagato = ordinazione.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
+    const totaleRighe = (ordinazione as any).RigaOrdinazione?.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0) || 0;
+    const totalePagato = (ordinazione as any).Pagamento?.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0) || 0;
     const rimanente = totaleRighe - totalePagato;
 
     // Temporaneamente commentiamo questo controllo finché non implementiamo
@@ -130,17 +136,25 @@ export async function creaPagamento(
     //   return { success: false, error: "Importo superiore al dovuto" };
     // }
     
-    console.log("Controllo importo:", { importo, rimanente, check: importo > rimanente });
+    console.log("Controllo importo:", { 
+      importo, 
+      totaleRighe,
+      totalePagato,
+      rimanente, 
+      numeroRighe: (ordinazione as any).RigaOrdinazione?.length || 0,
+      check: importo > rimanente 
+    });
 
     // Crea il pagamento
     const pagamento = await prisma.pagamento.create({
       data: {
+        id: nanoid(),
         ordinazioneId,
         importo,
         modalita,
         clienteNome,
         operatoreId: utente.id,
-        righeIds: ordinazione.righe.map(r => r.id) // Per ora assegna tutte le righe
+        righeIds: (ordinazione as any).RigaOrdinazione?.map((r: any) => r.id) || [] // Per ora assegna tutte le righe
       }
     });
 
@@ -213,6 +227,12 @@ export async function creaPagamento(
     );
 
     console.log(`Pagamento completato: righe pagate ${righePagate.length}, righe rimanenti ${righeAncoraAperte}, totale rimanente €${totaleRimanente}`);
+    console.log("Verifica pagamento completo:", {
+      righeAncoraAperte,
+      totaleRimanente,
+      importoPagato: importo,
+      willCloseTavolo: righeAncoraAperte === 0
+    });
 
     if (righeAncoraAperte === 0) {
       // Aggiorna stato ordinazione - completamente pagata
@@ -261,18 +281,18 @@ export async function creaPagamento(
       const ordinazioneCompleta = await prisma.ordinazione.findUnique({
         where: { id: ordinazioneId },
         include: {
-          righe: {
+          RigaOrdinazione: {
             where: { id: { in: righePagate } },
-            include: { prodotto: true }
+            include: { Prodotto: true }
           },
-          cameriere: true,
-          tavolo: true
+          User: true,
+          Tavolo: true
         }
       });
 
       if (ordinazioneCompleta) {
-        const righeScontrino = ordinazioneCompleta.righe.map(riga => ({
-          prodotto: riga.prodotto.nome,
+        const righeScontrino = ordinazioneCompleta.RigaOrdinazione.map((riga: any) => ({
+          prodotto: riga.Prodotto.nome,
           quantita: riga.quantita,
           prezzoUnitario: riga.prezzo.toNumber(),
           totaleRiga: riga.prezzo.toNumber() * riga.quantita,
@@ -283,9 +303,9 @@ export async function creaPagamento(
         const sessionePagamento = crypto.randomUUID();
         
         await creaScontrinoQueue("NON_FISCALE", {
-          tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+          tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
           clienteNome,
-          cameriereNome: ordinazioneCompleta.cameriere.nome,
+          cameriereNome: ordinazioneCompleta.User.nome,
           righe: righeScontrino,
           totale: importo,
           modalitaPagamento: modalita,
@@ -295,9 +315,9 @@ export async function creaPagamento(
         });
 
         await creaScontrinoQueue("FISCALE", {
-          tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+          tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
           clienteNome,
-          cameriereNome: ordinazioneCompleta.cameriere.nome,
+          cameriereNome: ordinazioneCompleta.User.nome,
           righe: [{
             prodotto: `Totale Ordine #${ordinazioneCompleta.numero}`,
             quantita: 1,
@@ -355,11 +375,11 @@ export async function richiediPagamento(ordinazioneId: string) {
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: ordinazioneId },
       include: {
-        tavolo: true,
-        righe: {
+        Tavolo: true,
+        RigaOrdinazione: {
           where: { isPagato: false }
         },
-        pagamenti: true
+        Pagamento: true
       }
     });
 
@@ -368,8 +388,8 @@ export async function richiediPagamento(ordinazioneId: string) {
     }
 
     // Calcola importo rimanente
-    const totaleRighe = ordinazione.righe.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
-    const totalePagato = ordinazione.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
+    const totaleRighe = ordinazione.RigaOrdinazione.reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+    const totalePagato = ordinazione.Pagamento.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
     const rimanente = totaleRighe - totalePagato;
 
     if (rimanente <= 0) {
@@ -379,7 +399,7 @@ export async function richiediPagamento(ordinazioneId: string) {
     // Notifica richiesta pagamento
     notificationManager.notifyPaymentRequested({
       orderId: ordinazioneId,
-      tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
       orderType: ordinazione.tipo,
       amount: rimanente,
       customerName: ordinazione.clienteId || ordinazione.nomeCliente || undefined
@@ -431,7 +451,7 @@ export async function richiediScontrino(
       const ordinazione = await prisma.ordinazione.findUnique({
         where: { id: orderId },
         include: {
-          tavolo: true
+          Tavolo: true
         }
       });
 
@@ -439,7 +459,7 @@ export async function richiediScontrino(
         // Invia notifica alla cassa per richiesta scontrino
         notificationManager.notifyReceiptRequested({
           orderId,
-          tableNumber: ordinazione.tavolo ? parseInt(ordinazione.tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
           orderType: ordinazione.tipo,
           amount,
           waiterName: utente.nome,
@@ -495,12 +515,12 @@ export async function creaPagamentoRigheSpecifiche(
           isPagato: false // Solo righe non ancora pagate
         },
         include: {
-          prodotto: {
+          Prodotto: {
             select: { nome: true }
           },
-          ordinazione: {
+          Ordinazione: {
             include: {
-              tavolo: true
+              Tavolo: true
             }
           }
         }
@@ -536,6 +556,7 @@ export async function creaPagamentoRigheSpecifiche(
         // Crea il pagamento
         const pagamento = await prisma.pagamento.create({
           data: {
+            id: nanoid(),
             ordinazioneId,
             importo: importoOrd,
             modalita,
@@ -590,7 +611,7 @@ export async function creaPagamentoRigheSpecifiche(
         righeInfo: righe.map(r => ({
           id: r.id,
           ordinazioneId: r.ordinazioneId,
-          tavolo: r.ordinazione.tavolo
+          tavolo: r.Ordinazione.Tavolo
         }))
       };
     });
@@ -632,20 +653,20 @@ export async function creaPagamentoRigheSpecifiche(
           const ordinazioneCompleta = await prisma.ordinazione.findUnique({
             where: { id: pagamento.ordinazioneId },
             include: {
-              righe: {
+              RigaOrdinazione: {
                 where: { 
                   id: { in: Array.isArray(pagamento.righeIds) ? pagamento.righeIds as string[] : [] }
                 },
-                include: { prodotto: true }
+                include: { Prodotto: true }
               },
-              cameriere: true,
-              tavolo: true
+              User: true,
+              Tavolo: true
             }
           });
 
           if (ordinazioneCompleta) {
-            const righeScontrino = ordinazioneCompleta.righe.map(riga => ({
-              prodotto: riga.prodotto.nome,
+            const righeScontrino = ordinazioneCompleta.RigaOrdinazione.map((riga: any) => ({
+              prodotto: riga.Prodotto.nome,
               quantita: riga.quantita,
               prezzoUnitario: riga.prezzo.toNumber(),
               totaleRiga: riga.prezzo.toNumber() * riga.quantita,
@@ -656,9 +677,9 @@ export async function creaPagamentoRigheSpecifiche(
             const sessionePagamento = crypto.randomUUID();
             
             await creaScontrinoQueue("NON_FISCALE", {
-              tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+              tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
               clienteNome: clienteNome || utente.nome,
-              cameriereNome: ordinazioneCompleta.cameriere.nome,
+              cameriereNome: ordinazioneCompleta.User.nome,
               righe: righeScontrino,
               totale: pagamento.importo.toNumber(),
               modalitaPagamento: modalita,
@@ -668,9 +689,9 @@ export async function creaPagamentoRigheSpecifiche(
             });
 
             await creaScontrinoQueue("FISCALE", {
-              tavoloNumero: ordinazioneCompleta.tavolo?.numero,
+              tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
               clienteNome: clienteNome || utente.nome,
-              cameriereNome: ordinazioneCompleta.cameriere.nome,
+              cameriereNome: ordinazioneCompleta.User.nome,
               righe: [{
                 prodotto: `Pagamento Parziale`,
                 quantita: 1,

@@ -85,14 +85,14 @@ export async function analyzePrioritiesForStation(station: 'PREPARA' | 'CUCINA')
         stato: { in: ['INSERITO', 'IN_LAVORAZIONE'] }
       },
       include: {
-        ordinazione: {
+        Ordinazione: {
           include: {
-            tavolo: {
+            Tavolo: {
               select: { numero: true }
             }
           }
         },
-        prodotto: {
+        Prodotto: {
           select: { nome: true }
         }
       },
@@ -208,9 +208,9 @@ export async function getHighPriorityOrders(): Promise<{
         stato: { in: ['INSERITO', 'IN_LAVORAZIONE'] }
       },
       include: {
-        ordinazione: {
+        Ordinazione: {
           include: {
-            tavolo: {
+            Tavolo: {
               select: { numero: true }
             }
           }
@@ -230,7 +230,7 @@ export async function getHighPriorityOrders(): Promise<{
       
       const orderInfo = {
         orderId: riga.ordinazioneId,
-        tableNumber: riga.ordinazione.tavolo?.numero || 'Asporto',
+        tableNumber: riga.Ordinazione.Tavolo?.numero || 'Asporto',
         ageMinutes,
         station: riga.postazione
       };

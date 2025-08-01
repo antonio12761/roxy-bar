@@ -254,9 +254,9 @@ export class PaymentValidationService {
     return await prisma.ordinazione.findUnique({
       where: { id: ordinazioneId },
       include: {
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: {
+            Prodotto: {
               select: {
                 prezzo: true,
                 nome: true
@@ -264,7 +264,7 @@ export class PaymentValidationService {
             }
           }
         },
-        pagamenti: true,
+        Pagamento: true,
         tavolo: {
           select: {
             numero: true

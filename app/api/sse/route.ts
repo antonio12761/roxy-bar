@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { sseManager, createSSEClient } from '@/lib/sse/sse-manager';
 import { sseService } from '@/lib/sse/sse-service';
 import { SSEChannels } from '@/lib/sse/sse-events';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth-multi-tenant';
 import { prisma } from '@/lib/db';
 
 // Rate limiting storage
@@ -29,28 +29,25 @@ function checkRateLimit(userId: string): boolean {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Disabilita i log se impostato
+const DISABLE_LOGS = process.env.DISABLE_SSE_LOGS === 'true';
+
 export async function GET(request: NextRequest) {
-  console.log('[SSE] New connection attempt');
-  
   // 1. Verifica autenticazione
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace('Bearer ', '') || 
                 request.nextUrl.searchParams.get('token');
   
   if (!token) {
-    console.log('[SSE] Connection attempt without token');
     return new Response('Unauthorized: No token provided', { status: 401 });
   }
   
-  console.log('[SSE] Token found, verifying...');
-  
   const tokenData = verifyToken(token);
   if (!tokenData) {
-    console.log('[SSE] Connection attempt with invalid token');
     return new Response('Unauthorized: Invalid token', { status: 401 });
   }
   
-  // Get user from database
+  // Get user from database with tenant info
   const user = await prisma.user.findUnique({
     where: { id: tokenData.userId },
     select: {
@@ -58,12 +55,24 @@ export async function GET(request: NextRequest) {
       nome: true,
       cognome: true,
       ruolo: true,
-      attivo: true
+      attivo: true,
+      tenantId: true,
+      Tenant: {
+        select: {
+          id: true,
+          isActive: true
+        }
+      }
     }
   });
   
-  if (!user || !user.attivo) {
+  if (!user || !user.attivo || !user.Tenant.isActive) {
     return new Response('Unauthorized: User not found or inactive', { status: 401 });
+  }
+  
+  // Verify tenant matches token
+  if (user.tenantId !== tokenData.tenantId) {
+    return new Response('Unauthorized: Tenant mismatch', { status: 401 });
   }
   
   // Check rate limit
@@ -76,17 +85,18 @@ export async function GET(request: NextRequest) {
   const clientId = request.nextUrl.searchParams.get('clientId') || 
                    `${user.ruolo}-${user.id}-${Date.now()}`;
   
-  console.log(`[SSE] User ${user.nome} (${user.ruolo}) connecting from station: ${stationType || 'unknown'}`);
+  // Silent connection
   
   // 2. Crea ReadableStream
   const stream = new ReadableStream({
     async start(controller) {
-      // 3. Registra client con SSE Manager con station type
-      const client = createSSEClient(user.id, undefined, controller);
+      // 3. Registra client con SSE Manager con station type e tenant
+      const client = createSSEClient(user.id, user.tenantId, controller);
       client.stationType = stationType || user.ruolo; // Use role as fallback
       client.metadata = {
         userName: `${user.nome} ${user.cognome}`,
         userRole: user.ruolo,
+        tenantId: user.tenantId,
         connectedAt: new Date().toISOString()
       };
       
@@ -96,6 +106,8 @@ export async function GET(request: NextRequest) {
         controller.close();
         return new Response('Service Unavailable: Too many connections', { status: 503 });
       }
+      
+      // Silent connection - Removed all console.log
       
       // Subscribe to relevant channels based on user role
       const channels: string[] = [];
@@ -127,7 +139,7 @@ export async function GET(request: NextRequest) {
       
       sseService.subscribeToChannels(client.id, channels as any);
       
-      // 4. Setup heartbeat (importante!)
+      // 4. Setup heartbeat (importante!) - Reduced to 2s for maximum reliability
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(new TextEncoder().encode(':heartbeat\n\n'));
@@ -135,14 +147,14 @@ export async function GET(request: NextRequest) {
           // Connection closed
           clearInterval(heartbeat);
         }
-      }, 30000);
+      }, 2000); // Every 2 seconds to prevent any timeout
       
       // 5. Cleanup su disconnect
       const cleanup = () => {
         clearInterval(heartbeat);
         sseManager.removeClient(client.id);
         sseService.unsubscribeFromChannels(client.id, channels as any);
-        console.log(`[SSE] Client disconnected: ${client.id}`);
+        // Silent disconnect
       };
       
       request.signal.addEventListener('abort', cleanup);
@@ -154,27 +166,33 @@ export async function GET(request: NextRequest) {
         latency: 0,
         reconnectAttempts: 0
       }, {
-        userId: user.id
+        userId: user.id,
+        tenantId: user.tenantId
       });
       
-      console.log(`[SSE] Client connected: ${client.id} (${user.nome} ${user.cognome}, ${user.ruolo})`);
+      // Silent connect
     },
     
     cancel() {
       // Additional cleanup if needed
-      console.log('[SSE] Stream cancelled');
     }
   });
   
   // 6. Headers SSE corretti
+  // Log solo se non disabilitato
+  if (!DISABLE_LOGS) {
+    console.log(`[SSE] New connection from ${user.ruolo}`);
+  }
+  
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
+      'Cache-Control': 'no-cache, no-transform, no-store, must-revalidate',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no', // Disabilita buffering nginx
       'Content-Encoding': 'none',
       'Transfer-Encoding': 'chunked',
+      'Keep-Alive': 'timeout=300', // Keep connection alive for 5 minutes
       // CORS headers if needed
       'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
       'Access-Control-Allow-Credentials': 'true',

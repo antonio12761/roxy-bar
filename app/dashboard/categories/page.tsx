@@ -52,10 +52,10 @@ const CATEGORY_ICONS = [
 ];
 
 type CategoryWithSubcategories = Category & {
-  subcategories: (Subcategory & { _count: { products: number } })[];
+  Subcategory: (Subcategory & { _count: { Product: number } })[];
   _count: {
-    products: number;
-    subcategories: number;
+    Product: number;
+    Subcategory: number;
   };
 };
 
@@ -87,7 +87,7 @@ export default function CategoriesPage() {
     try {
       setLoading(true);
       const data = await getCategories();
-      setCategories(data as CategoryWithSubcategories[]);
+      setCategories(data);
     } catch (error) {
       console.error("Errore caricamento categorie:", error);
     } finally {
@@ -140,13 +140,13 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteCategory = async (category: CategoryWithSubcategories) => {
-    if ((category._count?.products ?? 0) > 0) {
-      alert(`Impossibile eliminare: la categoria contiene ${category._count?.products ?? 0} prodotti`);
+    if ((category._count?.Product ?? 0) > 0) {
+      alert(`Impossibile eliminare: la categoria contiene ${category._count?.Product ?? 0} prodotti`);
       return;
     }
     
-    if ((category._count?.subcategories ?? 0) > 0) {
-      alert(`Impossibile eliminare: la categoria contiene ${category._count?.subcategories ?? 0} sottocategorie`);
+    if ((category._count?.Subcategory ?? 0) > 0) {
+      alert(`Impossibile eliminare: la categoria contiene ${category._count?.Subcategory ?? 0} sottocategorie`);
       return;
     }
     
@@ -197,9 +197,9 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDeleteSubcategory = async (subcategory: Subcategory & { _count?: { products: number } }) => {
-    if ((subcategory._count?.products ?? 0) > 0) {
-      alert(`Impossibile eliminare: la sottocategoria contiene ${subcategory._count?.products ?? 0} prodotti`);
+  const handleDeleteSubcategory = async (subcategory: Subcategory & { _count?: { Product: number } }) => {
+    if ((subcategory._count?.Product ?? 0) > 0) {
+      alert(`Impossibile eliminare: la sottocategoria contiene ${subcategory._count?.Product ?? 0} prodotti`);
       return;
     }
     
@@ -296,16 +296,16 @@ export default function CategoriesPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition-colors"
+            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg flex items-center gap-1.5 transition-colors"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             Nuova Categoria
           </button>
         </div>
       </div>
 
       {/* Categories List */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.length === 0 ? (
           <div className="text-center py-12">
             <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -313,106 +313,106 @@ export default function CategoriesPage() {
             <p className="text-gray-400 mb-6">Inizia creando la tua prima categoria</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg inline-flex items-center gap-2 transition-colors"
+              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg inline-flex items-center gap-1.5 transition-colors"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               Crea Categoria
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-slate-700">
+          <>
             {categories.map((category) => {
               const Icon = getIconComponent(category.icon);
               const isExpanded = expandedCategories.has(category.id);
               
               return (
-                <div key={category.id}>
+                <div key={category.id} className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
                   {/* Category Row */}
-                  <div className="flex items-center gap-4 p-4 hover:bg-slate-700/50 transition-colors">
+                  <div className="flex items-center gap-3 p-4 hover:bg-slate-700/30 transition-colors">
                     <button
                       onClick={() => toggleExpanded(category.id)}
-                      className="p-1 hover:bg-slate-600 rounded transition-colors"
-                      disabled={category.subcategories.length === 0}
+                      className="p-0.5 rounded transition-colors"
+                      disabled={category.Subcategory.length === 0}
                     >
-                      {category.subcategories.length > 0 ? (
+                      {category.Subcategory.length > 0 ? (
                         isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
                         )
                       ) : (
-                        <div className="w-4 h-4" />
+                        <div className="w-3.5 h-3.5" />
                       )}
                     </button>
                     
-                    <Icon className="h-5 w-5 text-white/70" />
+                    <Icon className="h-4 w-4 text-white/70" />
                     
                     <div className="flex-1">
                       <h3 className="text-white font-medium">{category.name}</h3>
                       <div className="flex gap-4 text-sm text-gray-400 mt-1">
-                        <span>{category._count?.products ?? 0} prodotti</span>
-                        <span>{category._count?.subcategories ?? 0} sottocategorie</span>
+                        <span>{category._count?.Product ?? 0} prodotti</span>
+                        <span>{category._count?.Subcategory ?? 0} sottocategorie</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => openCreateSubcategoryModal(category.id)}
-                        className="p-2 text-white/60 hover:bg-green-600/20 rounded-lg transition-colors"
+                        className="p-1 text-white/60 hover:text-green-400 rounded transition-colors"
                         title="Aggiungi sottocategoria"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => openEditCategoryModal(category)}
-                        className="p-2 text-white/60 hover:bg-blue-600/20 rounded-lg transition-colors"
+                        className="p-1 text-white/60 hover:text-blue-400 rounded transition-colors"
                         title="Modifica"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(category)}
-                        className="p-2 text-white/50 hover:bg-red-600/20 rounded-lg transition-colors"
+                        className="p-1 text-white/50 hover:text-red-400 rounded transition-colors"
                         title="Elimina"
-                        disabled={(category._count?.products ?? 0) > 0 || (category._count?.subcategories ?? 0) > 0}
+                        disabled={(category._count?.Product ?? 0) > 0 || (category._count?.Subcategory ?? 0) > 0}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
                   
                   {/* Subcategories */}
-                  {isExpanded && category.subcategories.length > 0 && (
-                    <div className="bg-muted/30">
-                      {category.subcategories.map((subcategory) => (
+                  {isExpanded && category.Subcategory.length > 0 && (
+                    <div className="bg-slate-900/30">
+                      {category.Subcategory.map((subcategory) => (
                         <div
                           key={subcategory.id}
-                          className="flex items-center gap-4 p-4 pl-16 hover:bg-muted/50 transition-colors border-t border-slate-700/50"
+                          className="flex items-center gap-3 p-3 pl-12 hover:bg-slate-700/30 transition-colors border-t border-slate-700/50"
                         >
-                          <FolderOpen className="h-4 w-4 text-gray-400" />
+                          <FolderOpen className="h-3.5 w-3.5 text-gray-400" />
                           
                           <div className="flex-1">
                             <h4 className="text-white">{subcategory.name}</h4>
                             <span className="text-sm text-gray-400">
-                              {subcategory._count?.products || 0} prodotti
+                              {subcategory._count?.Product || 0} prodotti
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <button
                               onClick={() => openEditSubcategoryModal(subcategory)}
-                              className="p-2 text-white/60 hover:bg-blue-600/20 rounded-lg transition-colors"
+                              className="p-1 text-white/60 hover:text-blue-400 rounded transition-colors"
                               title="Modifica"
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Edit2 className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteSubcategory(subcategory)}
-                              className="p-2 text-white/50 hover:bg-red-600/20 rounded-lg transition-colors"
+                              className="p-1 text-white/50 hover:text-red-400 rounded transition-colors"
                               title="Elimina"
-                              disabled={(subcategory._count?.products ?? 0) > 0}
+                              disabled={(subcategory._count?.Product ?? 0) > 0}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
@@ -422,7 +422,7 @@ export default function CategoriesPage() {
                 </div>
               );
             })}
-          </div>
+          </>
         )}
       </div>
 
@@ -477,14 +477,14 @@ export default function CategoriesPage() {
                       key={name}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, icon: name }))}
-                      className={`p-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+                      className={`p-2 rounded-lg flex flex-col items-center gap-0.5 transition-colors ${
                         formData.icon === name
                           ? 'bg-white/20 text-white'
                           : 'bg-slate-700 text-gray-400 hover:bg-slate-600'
                       }`}
                       title={label}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4" />
                       <span className="text-xs">{label}</span>
                     </button>
                   ))}
@@ -511,13 +511,13 @@ export default function CategoriesPage() {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
                 >
                   Crea Categoria
                 </button>
@@ -577,14 +577,14 @@ export default function CategoriesPage() {
                       key={name}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, icon: name }))}
-                      className={`p-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+                      className={`p-2 rounded-lg flex flex-col items-center gap-0.5 transition-colors ${
                         formData.icon === name
                           ? 'bg-white/20 text-white'
                           : 'bg-slate-700 text-gray-400 hover:bg-slate-600'
                       }`}
                       title={label}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4" />
                       <span className="text-xs">{label}</span>
                     </button>
                   ))}
@@ -610,13 +610,13 @@ export default function CategoriesPage() {
                     setEditingCategory(null);
                     resetForm();
                   }}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                 >
                   Salva Modifiche
                 </button>
@@ -696,13 +696,13 @@ export default function CategoriesPage() {
                     setShowSubcategoryModal(false);
                     resetSubcategoryForm();
                   }}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
                 >
                   Crea Sottocategoria
                 </button>
@@ -788,13 +788,13 @@ export default function CategoriesPage() {
                     setEditingSubcategory(null);
                     resetSubcategoryForm();
                   }}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                 >
                   Salva Modifiche
                 </button>

@@ -1,6 +1,7 @@
 "use server";
 
-import { loginUser, logoutUser, getCurrentUser, type AuthResult, type User } from "@/lib/auth";
+import { loginUser, logout as logoutUser, getCurrentUser } from "@/lib/auth-multi-tenant";
+import type { LoginResult as AuthResult, AuthUser as User } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 
 // Re-export getCurrentUser
@@ -30,10 +31,10 @@ function getRedirectPath(role: string): string {
   }
 }
 
-// Login action con solo password
-export async function login(password: string): Promise<AuthResult> {
+// Login action con username e password
+export async function login(username: string, password: string): Promise<AuthResult> {
   try {
-    const result = await loginUser(password);
+    const result = await loginUser(username, password);
 
     if (result.success && result.user) {
       // Redirect basato sul ruolo

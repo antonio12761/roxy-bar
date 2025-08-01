@@ -53,7 +53,7 @@ class OrdersSyncService {
     const startTime = Date.now();
     
     if (this.syncInProgress) {
-      console.log('[OrdersSync] Sync already in progress, skipping');
+      // Silently skip if sync is already in progress
       return {
         newOrders: 0,
         updatedOrders: 0,
@@ -70,7 +70,7 @@ class OrdersSyncService {
       if (!options.forceFullSync && !ordersCache.needsFullRefresh() && this.syncQueue.size === 0) {
         const cachedOrders = ordersCache.getActiveOrders();
         if (cachedOrders.length > 0) {
-          console.log(`[OrdersSync] Using cache (${cachedOrders.length} orders)`);
+          // Using cache silently
           return {
             newOrders: 0,
             updatedOrders: 0,
@@ -110,10 +110,10 @@ class OrdersSyncService {
       const order = await prisma.ordinazione.findUnique({
         where: { id: orderId },
         include: {
-          tavolo: true,
-          cameriere: { select: { nome: true } },
-          righe: {
-            include: { prodotto: true }
+          Tavolo: true,
+          User: { select: { nome: true } },
+          RigaOrdinazione: {
+            include: { Prodotto: true }
           }
         }
       });
@@ -179,7 +179,7 @@ class OrdersSyncService {
    * Forza full sync
    */
   async forceFullSync(): Promise<SyncResult> {
-    console.log('[OrdersSync] Performing forced full sync');
+    // Performing forced full sync
     return this.syncOrders({ forceFullSync: true });
   }
 
@@ -187,14 +187,42 @@ class OrdersSyncService {
    * Ottieni ordini con fallback cache
    */
   async getOrders(): Promise<any[]> {
-    const syncResult = await this.syncOrders();
+    // TEMPORARY: Bypass cache for debugging
+    console.log('[OrdersSync] Getting orders - bypassing cache for debugging');
     
-    if (syncResult.fromCache) {
-      return ordersCache.getActiveOrders();
+    try {
+      const orders = await prisma.ordinazione.findMany({
+        where: {
+          OR: [
+            {
+              stato: {
+                in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+              }
+            },
+            {
+              stato: "CONSEGNATO",
+              dataChiusura: {
+                gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
+              }
+            }
+          ]
+        },
+        include: {
+          Tavolo: true,
+          User: { select: { nome: true } },
+          RigaOrdinazione: {
+            include: { Prodotto: true }
+          }
+        },
+        orderBy: { dataApertura: 'asc' }
+      });
+      
+      console.log(`[OrdersSync] Found ${orders.length} orders directly from database`);
+      return serializeDecimalData(orders);
+    } catch (error) {
+      console.error('[OrdersSync] Error getting orders:', error);
+      return [];
     }
-
-    // Se sync ha aggiornato dati, ritorna dalla cache aggiornata
-    return ordersCache.getActiveOrders();
   }
 
   /**
@@ -210,19 +238,29 @@ class OrdersSyncService {
   }
 
   private async performFullSync(): Promise<Omit<SyncResult, 'fromCache' | 'executionTime'>> {
-    console.log('[OrdersSync] Performing full sync');
+    // Performing full sync
     
     const orders = await prisma.ordinazione.findMany({
       where: {
-        stato: {
-          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
-        }
+        OR: [
+          {
+            stato: {
+              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+            }
+          },
+          {
+            stato: "CONSEGNATO",
+            dataChiusura: {
+              gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
+            }
+          }
+        ]
       },
       include: {
-        tavolo: true,
-        cameriere: { select: { nome: true } },
-        righe: {
-          include: { prodotto: true }
+        Tavolo: true,
+        User: { select: { nome: true } },
+        RigaOrdinazione: {
+          include: { Prodotto: true }
         }
       },
       orderBy: { dataApertura: 'asc' }
@@ -249,7 +287,7 @@ class OrdersSyncService {
   }
 
   private async performIncrementalSync(): Promise<Omit<SyncResult, 'fromCache' | 'executionTime'>> {
-    console.log('[OrdersSync] Performing incremental sync');
+    // Performing incremental sync
     
     let newOrders = 0;
     let updatedOrders = 0;
@@ -271,18 +309,31 @@ class OrdersSyncService {
     // Cerca nuovi ordini dall'ultimo sync
     const newOrdersFromDb = await prisma.ordinazione.findMany({
       where: {
-        stato: {
-          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
-        },
-        createdAt: {
-          gt: this.lastSyncTimestamp
-        }
+        OR: [
+          {
+            stato: {
+              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+            },
+            createdAt: {
+              gt: this.lastSyncTimestamp
+            }
+          },
+          {
+            stato: "CONSEGNATO",
+            createdAt: {
+              gt: this.lastSyncTimestamp
+            },
+            dataChiusura: {
+              gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
+            }
+          }
+        ]
       },
       include: {
-        tavolo: true,
-        cameriere: { select: { nome: true } },
-        righe: {
-          include: { prodotto: true }
+        Tavolo: true,
+        User: { select: { nome: true } },
+        RigaOrdinazione: {
+          include: { Prodotto: true }
         }
       }
     });

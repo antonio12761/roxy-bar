@@ -1,65 +1,79 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Coffee, Loader2, Eye, EyeOff, User } from "lucide-react";
+import dynamic from "next/dynamic";
+import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
+import Link from "next/link";
 import { login } from "@/lib/actions/auth";
-import { Coffee, Loader2, Eye, EyeOff } from "lucide-react";
+
+// Dynamic import with fallback
+const ShaderBackground = dynamic(() => import("@/components/ShaderBackground"), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black" />
+});
+
+const AnimatedBackground = dynamic(() => import("@/components/AnimatedBackground"), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black" />
+});
 
 export default function LoginPage() {
-  console.log("🌙 LOGIN PAGE LOADED - Dark Mode Bar Roxy");
+  console.log("🌙 LOGIN PAGE LOADED - Multi-Tenant Dark Mode Siplit");
   const router = useRouter();
   
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
   const [message, setMessage] = useState("");
+  const [useShader, setUseShader] = useState(true);
+  
+  // Disabilita swipe back su login
+  useEffect(() => {
+    // Previeni swipe back gesture su iOS
+    const preventSwipe = (e: TouchEvent) => {
+      if (e.touches[0].clientX < 20) {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('touchstart', preventSwipe, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventSwipe);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("🔄 Accesso in corso...");
 
-    if (!password.trim()) {
-      setMessage("❌ Inserisci la password");
+    if (!formData.username.trim() || !formData.password.trim()) {
+      setMessage("❌ Inserisci username e password");
       return;
     }
 
     startTransition(async () => {
       try {
-        const result = await login(password.trim());
+        const result = await login(formData.username.trim(), formData.password.trim());
 
         if (result.success && result.user) {
           setMessage(`✅ Benvenuto, ${result.user.nome}!`);
           
-          // Salva i dati utente nel localStorage per il componente UserDisplay
-          console.log('💾 LOGIN: Saving user to localStorage:', result.user);
-          console.log('💾 LOGIN: localStorage before save:', localStorage.length, 'items');
-          
+          // Salva i dati utente nel localStorage
           localStorage.setItem('user', JSON.stringify(result.user));
           
-          // Verifica che sia stato salvato
-          const savedUser = localStorage.getItem('user');
-          console.log('✅ LOGIN: Verified saved user:', savedUser);
-          console.log('✅ LOGIN: localStorage after save:', localStorage.length, 'items');
-          console.log('✅ LOGIN: All localStorage keys:', Object.keys(localStorage));
-          
-          // Test immediato di parsing
-          try {
-            const testParse = JSON.parse(savedUser || '{}');
-            console.log('✅ LOGIN: Parse test successful:', testParse.nome, testParse.ruolo);
-          } catch (error) {
-            console.error('❌ LOGIN: Parse test failed:', error);
-          }
-          
           if (result.redirectPath) {
-            console.log(`🔀 LOGIN: Redirect ${result.user.ruolo} →`, result.redirectPath);
-            // Usa window.location per un redirect completo che ricarica la pagina
             setTimeout(() => {
-              console.log('🔀 LOGIN: Executing redirect...');
-              window.location.href = result.redirectPath!;
+              window.location.href = result.redirectPath || '/';
             }, 1500);
           }
         } else {
-          setMessage(`❌ ${result.error || "Password non valida"}`);
+          setMessage(`❌ ${result.error || "Credenziali non valide"}`);
         }
       } catch (error) {
         console.error("Errore login:", error);
@@ -69,40 +83,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-white/15/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/3 -right-32 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-white/10/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
+    <div className="min-h-screen bg-black flex items-center justify-center p-6 relative">
+      {/* Background with fallback */}
+      <Suspense fallback={<div className="fixed inset-0 bg-black" />}>
+        {useShader ? (
+          <div onError={() => setUseShader(false)}>
+            <ShaderBackground />
+          </div>
+        ) : (
+          <AnimatedBackground />
+        )}
+      </Suspense>
 
-      <div className="relative z-10 w-full max-w-md p-8 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl">
-        
+      <LiquidGlassCard className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <Coffee className="h-16 w-16 text-white/70" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-400 rounded-full animate-pulse"></div>
+              <Coffee className="h-16 w-16 text-white/80" />
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 rounded-full animate-pulse"></div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Bar Roxy
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Siplit
           </h1>
-          <p className="text-muted-foreground">
-            Sistema di Gestione Dark Mode 🌙
+          <p className="text-gray-400">
+            Gestionale Operativo Ristorazione
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Username Field */}
+          <div className="space-y-2">
+            <label 
+              htmlFor="username" 
+              className="block text-sm font-semibold text-white flex items-center gap-2"
+            >
+              <User className="h-4 w-4" />
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
+              placeholder="mario.rossi"
+              disabled={isPending}
+              autoFocus
+              required
+              className="v0-input"
+            />
+          </div>
+
+          {/* Password Field */}
           <div className="space-y-2">
             <label 
               htmlFor="password" 
-              className="block text-sm font-semibold text-foreground"
+              className="block text-sm font-semibold text-white"
             >
-              Password Personale
+              Password
             </label>
             
             <div className="relative">
@@ -110,20 +151,19 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Inserisci la tua password..."
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                placeholder="••••••••"
                 disabled={isPending}
-                autoFocus
                 required
-                className="w-full h-12 px-4 pr-12 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                className="v0-input"
               />
               
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isPending}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -132,7 +172,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isPending || !password.trim()}
+            disabled={isPending || !formData.username.trim() || !formData.password.trim()}
             className="w-full h-12 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
           >
             {isPending ? (
@@ -152,39 +192,35 @@ export default function LoginPage() {
         {message && (
           <div className={`mt-6 p-4 rounded-lg text-sm font-medium text-center transition-all ${
             message.includes('❌') 
-              ? 'bg-white/8/10 text-white/50 border border-white/10-500/20' 
+              ? 'bg-red-900/30 text-red-400 border border-red-800/50' 
               : message.includes('✅') 
-              ? 'bg-white/10/10 text-white/60 border border-white/15-500/20'
-              : 'bg-white/10/10 text-white/60 border border-white/15-500/20'
+              ? 'bg-green-900/30 text-green-400 border border-green-800/50'
+              : 'bg-gray-900/50 text-gray-300 border border-gray-700/50'
           }`}>
             {message}
           </div>
         )}
 
-        {/* Development Helper */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="mt-8 p-4 bg-card/50 rounded-lg border border-slate-700">
-            <div className="text-xs font-bold text-white/70 mb-3">🔐 Password Dev:</div>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
-              <div><span className="text-white/70">Admin:</span> Antonio</div>
-              <div><span className="text-white/60">Manager:</span> Filippo</div>
-              <div><span className="text-purple-400">Supervisore:</span> Giulio</div>
-              <div><span className="text-white/60">Cameriere:</span> Marco</div>
-              <div><span className="text-pink-400">Cassa:</span> Paola</div>
-              <div><span className="text-cyan-400">Cucina:</span> Chiara</div>
-              <div><span className="text-orange-400">Prepara:</span> Andrea</div>
-              <div><span className="text-lime-400">Banco:</span> Elena</div>
-            </div>
-          </div>
-        )}
+        {/* Register Link */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-400">
+            Prima volta? {" "}
+            <Link 
+              href="/register" 
+              className="text-amber-500 hover:text-amber-400 transition-colors font-semibold"
+            >
+              Registra la tua organizzazione
+            </Link>
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            © 2024 Bar Roxy - Clean Architecture 🚀
+          <p className="text-xs text-gray-500">
+            © 2025 Siplit
           </p>
         </div>
-      </div>
+      </LiquidGlassCard>
     </div>
   );
 }

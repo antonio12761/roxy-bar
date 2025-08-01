@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,23 +36,23 @@ export async function GET(request: NextRequest) {
     const payments = await prisma.pagamento.findMany({
       where: dateFilter,
       include: {
-        operatore: {
+        User: {
           select: {
             nome: true
           }
         },
-        ordinazione: {
+        Ordinazione: {
           select: {
             id: true,
             numero: true,
-            tavolo: {
+            Tavolo: {
               select: {
                 numero: true
               }
             },
-            righe: {
+            RigaOrdinazione: {
               include: {
-                prodotto: {
+                Prodotto: {
                   select: {
                     nome: true
                   }
@@ -74,16 +74,16 @@ export async function GET(request: NextRequest) {
       modalita: payment.modalita,
       clienteNome: payment.clienteNome,
       timestamp: payment.timestamp.toISOString(),
-      operatore: payment.operatore,
+      operatore: payment.User,
       ordinazione: {
-        id: payment.ordinazione.id,
-        numero: payment.ordinazione.numero,
-        tavolo: payment.ordinazione.tavolo,
-        righe: payment.ordinazione.righe.map(riga => ({
+        id: payment.Ordinazione.id,
+        numero: payment.Ordinazione.numero,
+        tavolo: payment.Ordinazione.Tavolo,
+        righe: payment.Ordinazione.RigaOrdinazione.map((riga: any) => ({
           id: riga.id,
           quantita: riga.quantita,
           prezzo: riga.prezzo.toNumber(),
-          prodotto: riga.prodotto
+          prodotto: riga.Prodotto
         }))
       }
     }));

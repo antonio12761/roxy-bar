@@ -30,18 +30,18 @@ export async function consolidateTableNotifications(tableNumber: string): Promis
     // Recupera tutti gli ordini attivi del tavolo
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
-        tavolo: { numero: tableNumber },
+        Tavolo: { numero: tableNumber },
         stato: { in: ['IN_PREPARAZIONE', 'PRONTO', 'CONSEGNATO'] }
       },
       include: {
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: {
+            Prodotto: {
               select: { nome: true }
             }
           }
         },
-        cameriere: {
+        User: {
           select: { nome: true }
         }
       }
@@ -56,18 +56,18 @@ export async function consolidateTableNotifications(tableNumber: string): Promis
     let cucinaStatus: 'idle' | 'working' | 'ready' = 'idle';
 
     for (const ord of ordinazioni) {
-      for (const riga of ord.righe) {
+      for (const riga of (ord as any).RigaOrdinazione || []) {
         if (riga.postazione === 'PREPARA') {
           if (riga.stato === 'IN_LAVORAZIONE') preparaStatus = 'working';
           if (riga.stato === 'PRONTO') {
             preparaStatus = 'ready';
-            preparaItems.push(riga.prodotto.nome);
+            preparaItems.push(riga.Prodotto.nome);
           }
         } else if (riga.postazione === 'CUCINA') {
           if (riga.stato === 'IN_LAVORAZIONE') cucinaStatus = 'working';
           if (riga.stato === 'PRONTO') {
             cucinaStatus = 'ready';
-            cucinaItems.push(riga.prodotto.nome);
+            cucinaItems.push(riga.Prodotto.nome);
           }
         }
       }
@@ -129,12 +129,12 @@ export async function consolidateStationNotifications(station: 'PREPARA' | 'CUCI
         stato: { in: ['INSERITO', 'IN_LAVORAZIONE'] }
       },
       include: {
-        prodotto: {
+        Prodotto: {
           select: { nome: true }
         },
-        ordinazione: {
+        Ordinazione: {
           include: {
-            tavolo: {
+            Tavolo: {
               select: { numero: true }
             }
           }
@@ -175,7 +175,7 @@ export async function consolidateStationNotifications(station: 'PREPARA' | 'CUCI
       }
 
       // Aggiungi dettagli tavoli
-      const tavoli = [...new Set(righeInAttesa.map(r => r.ordinazione.tavolo?.numero).filter(Boolean))];
+      const tavoli = [...new Set(righeInAttesa.map(r => r.Ordinazione.Tavolo?.numero).filter(Boolean))];
       if (tavoli.length > 0) {
         message += ` per tavoli: ${tavoli.join(', ')}`;
       }
@@ -214,24 +214,24 @@ export async function generateWaiterNotifications(waiterId: string): Promise<Con
       where: {
         cameriereId: waiterId,
         stato: { in: ['PRONTO', 'CONSEGNATO'] },
-        righe: {
+        RigaOrdinazione: {
           some: {
             stato: 'PRONTO'
           }
         }
       },
       include: {
-        righe: {
+        RigaOrdinazione: {
           where: {
             stato: 'PRONTO'
           },
           include: {
-            prodotto: {
+            Prodotto: {
               select: { nome: true }
             }
           }
         },
-        tavolo: {
+        Tavolo: {
           select: { numero: true }
         }
       }
@@ -241,7 +241,7 @@ export async function generateWaiterNotifications(waiterId: string): Promise<Con
     const tavoliConProdottiPronti = new Map();
     
     for (const ordine of ordiniPronti) {
-      const tavoloKey = ordine.tavolo?.numero || 'Asporto';
+      const tavoloKey = ordine.Tavolo?.numero || 'Asporto';
       
       if (!tavoliConProdottiPronti.has(tavoloKey)) {
         tavoliConProdottiPronti.set(tavoloKey, {
@@ -253,12 +253,12 @@ export async function generateWaiterNotifications(waiterId: string): Promise<Con
 
       const tavoloData = tavoliConProdottiPronti.get(tavoloKey);
       
-      for (const riga of ordine.righe) {
+      for (const riga of ordine.RigaOrdinazione) {
         tavoloData.totalItems++;
         if (riga.postazione === 'PREPARA') {
-          tavoloData.preparaItems.push(riga.prodotto.nome);
+          tavoloData.preparaItems.push(riga.Prodotto.nome);
         } else if (riga.postazione === 'CUCINA') {
-          tavoloData.cucinaItems.push(riga.prodotto.nome);
+          tavoloData.cucinaItems.push(riga.Prodotto.nome);
         }
       }
     }

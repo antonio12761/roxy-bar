@@ -125,12 +125,9 @@ export default function ProductsSpreadsheetPage() {
 
     try {
       const created = await createProduct({
-        nome: newRow.nome,
-        prezzo: newRow.prezzo,
-        categoria: newRow.categoria || "Bevande",
-        disponibile: newRow.disponibile ?? true,
-        unitaMisura: newRow.unitaMisura || "pz",
-        postazione: (newRow.postazione as any) || "BANCO"
+        name: newRow.nome,
+        price: newRow.prezzo,
+        available: newRow.disponibile ?? true
       });
       
       await loadProducts();

@@ -176,7 +176,9 @@ export async function creaCategoriaV2(
         colore: options?.colore,
         descrizione: options?.descrizione,
         prodottiCount: 0,
-        prodottiDirettiCount: 0
+        prodottiDirettiCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     });
 
@@ -269,7 +271,7 @@ export async function eliminaCategoriaV2(id: number) {
   try {
     const categoria = await prisma.categoriaGestione.findUnique({
       where: { id },
-      include: { children: true }
+      include: { other_CategoriaGestione: true }
     });
 
     if (!categoria) {
@@ -277,10 +279,10 @@ export async function eliminaCategoriaV2(id: number) {
     }
 
     // Controlla se ha sottocategorie
-    if (categoria.children.length > 0) {
+    if (categoria.other_CategoriaGestione.length > 0) {
       return {
         success: false,
-        error: `Impossibile eliminare: la categoria ha ${categoria.children.length} sottocategorie`
+        error: `Impossibile eliminare: la categoria ha ${categoria.other_CategoriaGestione.length} sottocategorie`
       };
     }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 export async function getSupervisoreStats() {
   try {
@@ -113,7 +113,7 @@ export async function getSupervisoreStats() {
     const utentiOnline = await prisma.user.count({
       where: {
         attivo: true,
-        sessioni: {
+        Session: {
           some: {
             expires: {
               gt: new Date()
@@ -162,7 +162,7 @@ export async function getSupervisoreUsers() {
         attivo: true
       },
       include: {
-        sessioni: {
+        Session: {
           where: {
             expires: {
               gt: new Date() // Solo sessioni non scadute
@@ -185,9 +185,9 @@ export async function getSupervisoreUsers() {
       id: user.id,
       nome: user.nome,
       ruolo: user.ruolo,
-      online: user.sessioni.length > 0,
+      online: user.Session.length > 0,
       bloccato: user.bloccato || false,
-      lastActivity: user.sessioni[0]?.createdAt || user.ultimoAccesso,
+      lastActivity: user.Session[0]?.createdAt || user.ultimoAccesso,
       currentTable: null // Questo potrebbe essere implementato in futuro
     }));
 
@@ -217,14 +217,14 @@ export async function getSupervisoreOrders() {
         }
       },
       include: {
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
         },
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: {
+            Prodotto: {
               select: {
                 nome: true,
                 prezzo: true
@@ -232,20 +232,20 @@ export async function getSupervisoreOrders() {
             }
           }
         },
-        cameriere: {
+        User: {
           select: {
             nome: true,
             cognome: true
           }
         },
-        cliente: {
+        Cliente: {
           select: {
             nome: true
           }
         },
-        pagamenti: {
+        Pagamento: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: {
                 nome: true
               }
@@ -265,33 +265,33 @@ export async function getSupervisoreOrders() {
 
     // Converti i dati per il frontend
     return ordinazioni.map(ord => {
-      const ultimoPagamento = ord.pagamenti[0]; // Il primo è il più recente per orderBy desc
+      const ultimoPagamento = ord.Pagamento[0]; // Il primo è il più recente per orderBy desc
       
       return {
         id: ord.id,
         tipo: ord.tipo,
         stato: ord.stato,
-        tavolo: ord.tavolo,
+        tavolo: ord.Tavolo,
         totale: ord.totale.toNumber(),
         dataApertura: ord.dataApertura,
         note: ord.note,
-        cameriere: ord.cameriere,
-        cliente: ord.cliente,
+        cameriere: ord.User,
+        cliente: ord.Cliente,
         nomeCliente: ord.nomeCliente,
         statoPagamento: ord.statoPagamento,
         // Dati di pagamento (se presente)
-        clientePagatore: ultimoPagamento?.clientePagatore?.nome || ultimoPagamento?.clienteNome,
+        clientePagatore: ultimoPagamento?.Cliente?.nome || ultimoPagamento?.clienteNome,
         modalitaPagamento: ultimoPagamento?.modalita,
         dataPagamento: ultimoPagamento?.timestamp,
-        righe: ord.righe.map(riga => ({
+        righe: ord.RigaOrdinazione.map((riga: any) => ({
           id: riga.id,
           quantita: riga.quantita,
           stato: riga.stato,
           postazione: riga.postazione,
-          prezzo: riga.prodotto.prezzo.toNumber(),
+          prezzo: riga.Prodotto.prezzo.toNumber(),
           prodotto: {
-            ...riga.prodotto,
-            prezzo: riga.prodotto.prezzo.toNumber()
+            ...riga.Prodotto,
+            prezzo: riga.Prodotto.prezzo.toNumber()
           }
         }))
       };
@@ -357,7 +357,7 @@ export async function syncOrphansOrders() {
     // 1. Trova tutti gli utenti con sessioni attive
     const activeUsers = await prisma.user.findMany({
       where: {
-        sessioni: {
+        Session: {
           some: {
             expires: {
               gt: new Date()
@@ -385,13 +385,13 @@ export async function syncOrphansOrders() {
         }
       },
       include: {
-        cameriere: {
+        User: {
           select: {
             nome: true,
             cognome: true
           }
         },
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
@@ -405,9 +405,9 @@ export async function syncOrphansOrders() {
     const issues = orphanedOrders.map(order => ({
       orderId: order.id,
       numeroOrdine: order.numero,
-      tavolo: order.tavolo?.numero,
+      tavolo: order.Tavolo?.numero,
       stato: order.stato,
-      cameriere: `${order.cameriere.nome} ${order.cameriere.cognome}`,
+      cameriere: `${order.User.nome} ${order.User.cognome}`,
       dataApertura: order.dataApertura
     }));
 

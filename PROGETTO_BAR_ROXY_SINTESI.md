@@ -1,8 +1,8 @@
-# Bar Roxy - Sintesi del Progetto
+# Siplit - Sintesi del Progetto
 
 ## Panoramica Generale
 
-Bar Roxy è un sistema di gestione completo per bar e ristoranti, sviluppato con tecnologie moderne per gestire ordinazioni, pagamenti, preparazione ordini e supervisione delle attività.
+Siplit è un sistema di gestione completo per bar e ristoranti, sviluppato con tecnologie moderne per gestire ordinazioni, pagamenti, preparazione ordini e supervisione delle attività.
 
 ## Stack Tecnologico
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { creaOrdinazione } from "@/lib/actions/ordinazioni";
 import { ContoScalareService } from "@/lib/services/contoScalare";
 import { ContributoService } from "@/lib/services/contributo";
@@ -50,8 +50,10 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
       if (!clienteOrdinante) {
         clienteOrdinante = await tx.cliente.create({
           data: {
+            id: `cliente_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             nome: data.clienteOrdinante,
-            telefono: "" // Vuoto per ora
+            telefono: "", // Vuoto per ora
+            updatedAt: new Date()
           }
         });
       }
@@ -76,8 +78,10 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
         if (!clienteDestinatario) {
           clienteDestinatario = await tx.cliente.create({
             data: {
+              id: `cliente_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               nome: data.clienteDestinatario,
-              telefono: ""
+              telefono: "",
+              updatedAt: new Date()
             }
           });
         }

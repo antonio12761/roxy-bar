@@ -8,8 +8,8 @@ async function syncProductToProdotto(productId: number) {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      category: true,
-      subcategory: true
+      Category: true,
+      Subcategory: true
     }
   });
 
@@ -17,10 +17,10 @@ async function syncProductToProdotto(productId: number) {
 
   // Costruisci la stringa categoria
   let categoriaString = '';
-  if (product.category) {
-    categoriaString = product.category.name;
-    if (product.subcategory) {
-      categoriaString += ` > ${product.subcategory.name}`;
+  if (product.Category) {
+    categoriaString = product.Category.name;
+    if (product.Subcategory) {
+      categoriaString += ` > ${product.Subcategory.name}`;
     }
   }
 
@@ -51,13 +51,15 @@ async function syncProductToProdotto(productId: number) {
     return await prisma.prodotto.create({
       data: {
         nome: product.name,
-        descrizione: product.description,
+        descrizione: product.description || null,
         prezzo: product.price || 0,
-        immagine: product.imageUrl,
+        immagine: product.imageUrl || null,
         disponibile: product.available,
         categoria: categoriaString || 'Senza categoria',
-        categoryId: product.categoryId,
-        subcategoryId: product.subcategoryId
+        glutenFree: false,
+        vegano: false,
+        vegetariano: false,
+        updatedAt: new Date()
       }
     });
   }
@@ -68,8 +70,8 @@ async function syncProdottoToProduct(prodottoId: number) {
   const prodotto = await prisma.prodotto.findUnique({
     where: { id: prodottoId },
     include: {
-      category: true,
-      subcategory: true
+      Category: true,
+      Subcategory: true
     }
   });
 
@@ -105,7 +107,9 @@ async function syncProdottoToProduct(prodottoId: number) {
         imageUrl: prodotto.immagine,
         available: prodotto.disponibile,
         categoryId: prodotto.categoryId,
-        subcategoryId: prodotto.subcategoryId
+        subcategoryId: prodotto.subcategoryId,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     });
   }
@@ -117,8 +121,8 @@ export async function getProdottiWithCategories() {
     const prodotti = await prisma.prodotto.findMany({
       where: { isDeleted: false },
       include: {
-        category: true,
-        subcategory: true
+        Category: true,
+        Subcategory: true
       },
       orderBy: { nome: 'asc' }
     });
@@ -154,10 +158,10 @@ export async function createProdottoSync(data: {
     if (data.subcategoryId) {
       const subcategory = await prisma.subcategory.findUnique({
         where: { id: data.subcategoryId },
-        include: { category: true }
+        include: { Category: true }
       });
       if (subcategory) {
-        categoriaString = `${subcategory.category.name} > ${subcategory.name}`;
+        categoriaString = `${subcategory.Category.name} > ${subcategory.name}`;
       }
     }
 
@@ -165,13 +169,15 @@ export async function createProdottoSync(data: {
     const prodotto = await prisma.prodotto.create({
       data: {
         nome: data.name,
-        descrizione: data.description,
+        descrizione: data.description || null,
         prezzo: data.price,
-        immagine: data.imageUrl,
+        immagine: data.imageUrl || null,
         disponibile: data.available ?? true,
         categoria: categoriaString,
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId
+        glutenFree: false,
+        vegano: false,
+        vegetariano: false,
+        updatedAt: new Date()
       }
     });
 
@@ -184,7 +190,9 @@ export async function createProdottoSync(data: {
         imageUrl: data.imageUrl,
         available: data.available ?? true,
         categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId
+        subcategoryId: data.subcategoryId,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     });
 
@@ -227,10 +235,10 @@ export async function updateProdottoSync(
       if (data.subcategoryId) {
         const subcategory = await prisma.subcategory.findUnique({
           where: { id: data.subcategoryId },
-          include: { category: true }
+          include: { Category: true }
         });
         if (subcategory) {
-          categoriaString = `${subcategory.category.name} > ${subcategory.name}`;
+          categoriaString = `${subcategory.Category.name} > ${subcategory.name}`;
         }
       } else if (data.categoryId) {
         const category = await prisma.category.findUnique({
@@ -336,8 +344,8 @@ export async function syncAllProducts() {
     // 1. Sincronizza da Product a Prodotto
     const products = await prisma.product.findMany({
       include: {
-        category: true,
-        subcategory: true
+        Category: true,
+        Subcategory: true
       }
     });
 
@@ -351,8 +359,8 @@ export async function syncAllProducts() {
     const prodotti = await prisma.prodotto.findMany({
       where: { isDeleted: false },
       include: {
-        category: true,
-        subcategory: true
+        Category: true,
+        Subcategory: true
       }
     });
 

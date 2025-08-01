@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { logoutUser } from '@/lib/auth';
+import { logout as logoutUser } from "@/lib/auth-multi-tenant";
 
 export async function POST() {
   try {

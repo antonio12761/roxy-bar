@@ -1,14 +1,52 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import '@/lib/setup/decimal-fix';
+import '@/lib/utils/log-filter';
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ThemeBodyWrapper from "@/components/ThemeBodyWrapper";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({ 
+  subsets: ["latin"],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: "Bar Roxy - Sistema di Gestione",
-  description: "Sistema di gestione per Bar Roxy",
+  title: "Siplit",
+  description: "Sistema di gestione per Siplit",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Siplit"
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#000000",
+  interactiveWidget: "resizes-visual"
 };
 
 export default function RootLayout({
@@ -17,10 +55,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className="dark">
-      <body className={`${inter.className} dark bg-background text-foreground`}>
-        {children}
-        <Toaster position="top-right" richColors />
+    <html lang="it">
+      <body className={poppins.className}>
+        <ThemeProvider>
+          <ThemeBodyWrapper>
+            {children}
+            <Toaster 
+              position="top-center" 
+              richColors 
+              toastOptions={{
+                style: {
+                  marginTop: 'env(safe-area-inset-top)',
+                  maxWidth: '90vw',
+                },
+                className: 'safe-top',
+              }}
+            />
+          </ThemeBodyWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

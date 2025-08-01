@@ -1,6 +1,6 @@
-# 🌙 Bar Roxy - Clean Architecture
+# 🌙 Siplit - Clean Architecture
 
-Sistema di gestione per Bar Roxy ricostruito da zero con architettura pulita.
+Sistema di gestione per Siplit ricostruito da zero con architettura pulita.
 
 ## 🚀 Quick Start
 

@@ -19,11 +19,14 @@ import {
 } from "lucide-react";
 import { getOrdinazioniConsegnate, generaScontrino } from "@/lib/actions/cassa";
 import { creaPagamento } from "@/lib/actions/pagamenti";
-import { useStationSSE } from "@/hooks/useStationSSE";
-import { StationType } from "@/lib/sse/station-filters";
+import { useSSE, useOrderUpdates, useNotifications } from "@/contexts/sse-context";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import PaymentHistory from "@/components/cassa/payment-history";
 import ScontrinoQueueManager from "@/components/cassa/scontrino-queue-manager";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ParticleEffect } from "@/components/ui/ParticleEffect";
+import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
+import { ThemeSelector } from "@/components/ui/ThemeSelector";
 
 interface OrderItem {
   id: string;
@@ -68,6 +71,9 @@ interface TableGroup {
 }
 
 export default function CassaPageOptimized() {
+  const { currentTheme, themeMode } = useTheme();
+  const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  
   const [tableGroups, setTableGroups] = useState<TableGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableGroup | null>(null);
@@ -79,113 +85,141 @@ export default function CassaPageOptimized() {
   const [showScontrinoQueue, setShowScontrinoQueue] = useState(false);
   const [paymentMode, setPaymentMode] = useState<"table" | "order" | "partial">("table");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [particleKey, setParticleKey] = useState(0);
+  const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
 
-  // Use optimized SSE hook
-  const {
-    connectionHealth,
-    eventQueue,
-    getCachedData,
-    applyOptimisticUpdate,
-    rollbackOptimisticUpdate,
-    clearEventQueue
-  } = useStationSSE({
-    stationType: StationType.CASSA,
-    userId: currentUser?.id || '',
-    enableCache: true,
-    enableOptimisticUpdates: true,
-    autoReconnect: true
-  });
+  // Use SSE context
+  const { connected, quality, latency } = useSSE();
 
-  // Process SSE events
-  useEffect(() => {
-    eventQueue.forEach(({ event, data }) => {
-      console.log(`[Cassa] Processing event: ${event}`, data);
-      
-      switch (event) {
-        case 'order:delivered':
-          handleOrderDelivered(data);
-          break;
-          
-        case 'order:ready':
-          // Notification for ready orders - reload to get updated table groups
-          loadOrders();
-          if (Notification.permission === "granted") {
-            new Notification("Ordine Pronto", {
-              body: `Tavolo ${data.tableNumber} completato`,
-              icon: '/icon-192.png'
-            });
-          }
-          break;
-          
-        case 'order:paid':
-          handleOrderPaid(data);
-          break;
-          
-        case 'notification:new':
-          // Handle direct notifications
-          break;
-      }
-    });
-    
-    clearEventQueue();
-  }, [eventQueue]);
-
-  // Load table groups with cache support
+  // Load table groups
   const loadOrders = useCallback(async () => {
     try {
-      // Check cache first
-      const cachedData = getCachedData<TableGroup[]>('tables:deliverable');
-      if (cachedData && cachedData.length > 0) {
-        console.log('[Cassa] Using cached table groups:', cachedData.length);
-        setTableGroups(cachedData);
-        setIsLoading(false);
-      }
-
       // Fetch fresh data
       const data = await getOrdinazioniConsegnate();
-      const serializedData = serializeDecimalData(data) as TableGroup[];
+      const serializedData = serializeDecimalData(data);
       
-      setTableGroups(serializedData);
+      // Group orders by table
+      const tableGroupsMap = new Map<string, TableGroup>();
+      
+      serializedData.forEach((order: any) => {
+        const tableNumber = order.tavolo?.numero || 'Asporto';
+        
+        if (!tableGroupsMap.has(tableNumber)) {
+          tableGroupsMap.set(tableNumber, {
+            tavoloNumero: tableNumber,
+            ordinazioni: [],
+            totaleComplessivo: 0,
+            totalePagatoComplessivo: 0,
+            rimanenteComplessivo: 0,
+            numeroClienti: 0,
+            clientiNomi: [],
+            primaDaApertura: order.dataApertura
+          });
+        }
+        
+        const group = tableGroupsMap.get(tableNumber)!;
+        
+        // Add order to group
+        group.ordinazioni.push({
+          id: order.id,
+          numero: order.numero,
+          tavolo: order.tavolo,
+          cameriere: order.cameriere,
+          righe: order.righe,
+          totale: order.totale,
+          totalePagato: order.totalePagamenti || 0,
+          rimanente: order.rimanente,
+          nomeCliente: order.nomeCliente,
+          note: order.note,
+          stato: order.stato,
+          statoPagamento: order.statoPagamento,
+          dataApertura: order.dataApertura
+        });
+        
+        // Update totals
+        group.totaleComplessivo += order.totale;
+        group.totalePagatoComplessivo += order.totalePagamenti || 0;
+        group.rimanenteComplessivo += order.rimanente;
+        
+        // Update client info
+        if (order.nomeCliente) {
+          group.clientiNomi.push(order.nomeCliente);
+          group.numeroClienti += 1;
+        } else {
+          group.numeroClienti += 1;
+        }
+        
+        // Update earliest opening time
+        if (new Date(order.dataApertura) < new Date(group.primaDaApertura)) {
+          group.primaDaApertura = order.dataApertura;
+        }
+      });
+      
+      // Convert map to array
+      const tableGroups = Array.from(tableGroupsMap.values());
+      
+      setTableGroups(tableGroups);
       setIsLoading(false);
       
     } catch (error) {
       console.error("Errore caricamento tavoli:", error);
       setIsLoading(false);
     }
-  }, [getCachedData]);
+  }, []);
 
   // Handle order delivered event
   const handleOrderDelivered = useCallback((data: any) => {
     console.log('[Cassa] Order delivered:', data);
     // Reload table groups to include the newly delivered order
     loadOrders();
-    
-    // If the delivered order belongs to currently selected table, refresh drawer
-    if (selectedTable && showTableDrawer) {
-      // The loadOrders will update the tableGroups, which will automatically update the selectedTable view
-    }
-  }, [loadOrders, selectedTable, showTableDrawer]);
+  }, [loadOrders]);
 
   // Handle order paid event
   const handleOrderPaid = useCallback((data: any) => {
     console.log('[Cassa] Order paid:', data);
     // Reload table groups to reflect payment changes
     loadOrders();
-    
-    // Clear selections if the paid order was selected
-    if (selectedOrder?.id === data.orderId) {
-      setSelectedOrder(null);
-    }
-    
-    // If all orders in the selected table are paid, close the drawer
-    if (selectedTable && showTableDrawer) {
-      const updatedTable = tableGroups.find((t: TableGroup) => t.tavoloNumero === selectedTable.tavoloNumero);
-      if (!updatedTable || updatedTable.ordinazioni.length === 0) {
-        setShowTableDrawer(false);
-        setSelectedTable(null);
+  }, [loadOrders]);
+
+  // Subscribe to order events
+  useOrderUpdates({
+    onOrderDelivered: handleOrderDelivered,
+    onOrderReady: (data) => {
+      console.log('[Cassa] Order ready:', data);
+      loadOrders();
+      if (Notification.permission === "granted") {
+        new Notification("Ordine Pronto", {
+          body: `Tavolo ${data.tableNumber} completato`,
+          icon: '/icon-192.png'
+        });
       }
     }
-  }, [selectedOrder, loadOrders, selectedTable, showTableDrawer, tableGroups]);
+  });
+  
+  // Subscribe to notifications
+  useNotifications((notification) => {
+    console.log('[Cassa] Notification:', notification);
+    // Handle direct notifications
+    if ((notification as any).type === 'order:paid') {
+      handleOrderPaid((notification as any).data);
+    }
+    // Handle payment/receipt request notifications
+    if ((notification as any).type === 'payment_request') {
+      console.log('[Cassa] Payment/Receipt request received:', notification);
+      // Reload orders to show the new payment request
+      loadOrders();
+      // Show notification to the cashier
+      if (Notification.permission === "granted") {
+        const data = (notification as any).data;
+        new Notification("Richiesta Scontrino", {
+          body: data.tableNumber 
+            ? `Tavolo ${data.tableNumber} - €${data.amount?.toFixed(2)} (${data.paymentMethod || 'N/A'})`
+            : `${data.orderType} - €${data.amount?.toFixed(2)} (${data.paymentMethod || 'N/A'})`,
+          icon: '/icon-192.png'
+        });
+      }
+    }
+  });
 
   // Handle table payment (pay all orders in the table)
   const handleTablePayment = async () => {
@@ -239,15 +273,16 @@ export default function CassaPageOptimized() {
   const handlePayment = async () => {
     if (!selectedOrder || isProcessingPayment) return;
     
+    // Prevent payment if order is already paid or has no remaining balance
+    if (selectedOrder.rimanente <= 0) {
+      alert("Questo ordine è già stato pagato completamente.");
+      return;
+    }
+    
     setIsProcessingPayment(true);
     
-    // Apply optimistic update
-    const updateId = applyOptimisticUpdate(
-      'order',
-      selectedOrder.id,
-      { statoPagamento: 'COMPLETAMENTE_PAGATO' },
-      { statoPagamento: selectedOrder.statoPagamento }
-    );
+    // Store backup for rollback
+    const originalStatus = selectedOrder.statoPagamento;
     
     // Apply optimistic update to table groups
     const tableGroupsBackup = [...tableGroups];
@@ -274,7 +309,6 @@ export default function CassaPageOptimized() {
       
       if (!result.success) {
         // Rollback on failure
-        if (updateId) rollbackOptimisticUpdate(updateId);
         setTableGroups(tableGroupsBackup);
         alert(`Errore: ${result.error}`);
       } else {
@@ -299,7 +333,6 @@ export default function CassaPageOptimized() {
       }
     } catch (error) {
       // Rollback on error
-      if (updateId) rollbackOptimisticUpdate(updateId);
       setTableGroups(tableGroupsBackup);
       console.error("Errore pagamento:", error);
       alert("Errore durante il pagamento");
@@ -327,66 +360,88 @@ export default function CassaPageOptimized() {
     return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
   };
 
+  const triggerParticles = (element: HTMLElement | null) => {
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    setParticlePos({ x: rect.right - 40, y: rect.top - 20 });
+    setParticleKey(prev => prev + 1);
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: colors.bg.dark }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors.text.primary }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-semibold">Postazione Cassa</h1>
-              <span className="text-sm text-gray-500">
-                {tableGroups.length} tavoli da pagare
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Connection Status */}
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  connectionHealth.status === 'connected' ? 'bg-green-500' :
-                  connectionHealth.status === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500'
-                }`} />
-                <span className="text-sm text-gray-500">
-                  {connectionHealth.status === 'connected' ? `${connectionHealth.latency}ms` : 'Offline'}
-                </span>
-              </div>
-              
-              {/* Actions */}
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Storico
-              </button>
-              
-              <button
-                onClick={() => setShowScontrinoQueue(!showScontrinoQueue)}
-                className="px-4 py-2 bg-blue-100 dark:bg-blue-700 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-600 transition-colors flex items-center gap-2"
-              >
-                <Receipt className="h-4 w-4" />
-                Queue Scontrini
-              </button>
-              
-              <button
-                onClick={loadOrders}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <RefreshCw className="h-5 w-5" />
-              </button>
-            </div>
+    <div className="min-h-screen pb-96" style={{ backgroundColor: colors.bg.dark }}>
+      {/* Header - Full Width Header Pattern from Style Guide */}
+      <div className="px-4 py-3 border-b" style={{ borderColor: colors.border.primary, backgroundColor: colors.bg.card }}>
+        <div className="flex items-center gap-4">
+          <CreditCard className="h-5 w-5" style={{ color: colors.text.secondary }} />
+          <h1 className="text-lg font-medium" style={{ color: colors.text.primary }}>Postazione Cassa</h1>
+          <span className="text-base" style={{ color: colors.text.secondary }}>
+            {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <div className="h-5 w-px" style={{ backgroundColor: colors.border.secondary }} />
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" style={{ color: colors.text.secondary }} />
+            <span className="text-base" style={{ color: colors.text.primary }}>
+              {tableGroups.length} tavoli
+            </span>
           </div>
+          <div className="flex-1" />
+            
+          {/* Connection Status */}
+          <SSEConnectionStatus 
+            compact={true}
+            showLatency={true}
+            showReconnectAttempts={false}
+          />
+
+          {/* Theme Selector */}
+          <ThemeSelector />
+              
+          {/* Actions */}
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+            style={{ 
+              backgroundColor: colors.bg.hover,
+              color: colors.text.primary
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.darker}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+          >
+            <Clock className="h-4 w-4" />
+            Storico
+          </button>
+              
+          <button
+            onClick={() => setShowScontrinoQueue(!showScontrinoQueue)}
+            className="px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+            style={{ 
+              backgroundColor: colors.button.primary,
+              color: colors.button.primaryText
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
+          >
+            <Receipt className="h-4 w-4" />
+            Queue Scontrini
+          </button>
+              
+          <button
+            onClick={loadOrders}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <RefreshCw className="h-5 w-5" style={{ color: colors.text.secondary }} />
+          </button>
         </div>
       </div>
 
@@ -403,87 +458,94 @@ export default function CassaPageOptimized() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tables List */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Tavoli da Pagare</h2>
+              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Tavoli da Pagare</h2>
               
               {tableGroups.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-                  <Package className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500">Nessun tavolo da pagare</p>
+                <div className="text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                  <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
+                  <p style={{ color: colors.text.secondary }}>Nessun tavolo da pagare</p>
                 </div>
               ) : (
-                tableGroups.map((table: TableGroup) => (
+                tableGroups.map((table: TableGroup) => {
+                  // Ensure table has required properties
+                  if (!table || !table.ordinazioni) {
+                    return null;
+                  }
+                  return (
                   <div
                     key={table.tavoloNumero}
                     onClick={() => {
                       setSelectedTable(table);
                       setShowTableDrawer(true);
                     }}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md"
+                    className="rounded-lg p-6 cursor-pointer transition-all duration-200 hover:scale-105"
+                    style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         {table.tavoloNumero === 'Asporto' ? (
                           <>
-                            <Package className="h-5 w-5 text-gray-500" />
-                            <span className="font-medium">Asporto</span>
+                            <Package className="h-5 w-5" style={{ color: colors.text.secondary }} />
+                            <span className="font-medium" style={{ color: colors.text.primary }}>Asporto</span>
                           </>
                         ) : (
                           <>
-                            <Users className="h-5 w-5 text-gray-500" />
-                            <span className="font-medium">Tavolo {table.tavoloNumero}</span>
+                            <Users className="h-5 w-5" style={{ color: colors.text.secondary }} />
+                            <span className="font-medium" style={{ color: colors.text.primary }}>Tavolo {table.tavoloNumero}</span>
                           </>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm" style={{ color: colors.text.secondary }}>
                           {getElapsedTime(table.primaDaApertura)}
                         </span>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4" style={{ color: colors.text.muted }} />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div className="text-sm">
-                        <span className="text-gray-500">Ordinazioni: </span>
-                        <span className="font-medium">{table.ordinazioni.length}</span>
+                        <span style={{ color: colors.text.secondary }}>Ordinazioni: </span>
+                        <span className="font-medium" style={{ color: colors.text.primary }}>{table.ordinazioni?.length || 0}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-gray-500">Clienti: </span>
-                        <span className="font-medium">{table.numeroClienti}</span>
+                        <span style={{ color: colors.text.secondary }}>Clienti: </span>
+                        <span className="font-medium" style={{ color: colors.text.primary }}>{table.numeroClienti}</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-500">
-                        {table.clientiNomi.length > 0 ? 
+                      <div className="text-sm" style={{ color: colors.text.secondary }}>
+                        {table.clientiNomi?.length > 0 ? 
                           table.clientiNomi.slice(0, 2).join(', ') + 
                           (table.clientiNomi.length > 2 ? ` +${table.clientiNomi.length - 2}` : '') 
                           : 'Nessun nome cliente'
                         }
                       </div>
-                      <div className="text-lg font-semibold">
-                        €{table.rimanenteComplessivo.toFixed(2)}
+                      <div className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                        €{(table.rimanenteComplessivo || 0).toFixed(2)}
                       </div>
                     </div>
                     
-                    {table.totalePagatoComplessivo > 0 && (
-                      <div className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                    {(table.totalePagatoComplessivo || 0) > 0 && (
+                      <div className="mt-2 text-sm" style={{ color: colors.text.success }}>
                         Pagato parzialmente: €{table.totalePagatoComplessivo.toFixed(2)}
                       </div>
                     )}
                   </div>
-                ))
+                );
+                })
               )}
             </div>
 
             {/* Quick Actions Panel */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Azioni Rapide</h2>
+              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Azioni Rapide</h2>
               
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
-                <AlertCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500 mb-4">Seleziona un tavolo per vedere le opzioni di pagamento</p>
-                <p className="text-sm text-gray-400">
+              <div className="rounded-lg p-6 text-center" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                <AlertCircle className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
+                <p className="mb-4" style={{ color: colors.text.secondary }}>Seleziona un tavolo per vedere le opzioni di pagamento</p>
+                <p className="text-sm" style={{ color: colors.text.muted }}>
                   Clicca su un tavolo a sinistra per aprire i dettagli e procedere con i pagamenti
                 </p>
               </div>
@@ -500,24 +562,24 @@ export default function CassaPageOptimized() {
 
       {/* Table Details Drawer */}
       {showTableDrawer && selectedTable && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
             {/* Drawer Header */}
-            <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: colors.border.primary }}>
               <div className="flex items-center gap-3">
                 {selectedTable.tavoloNumero === 'Asporto' ? (
                   <>
-                    <Package className="h-6 w-6 text-gray-500" />
-                    <h2 className="text-xl font-semibold">Ordini Asporto</h2>
+                    <Package className="h-6 w-6" style={{ color: colors.text.secondary }} />
+                    <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>Ordini Asporto</h2>
                   </>
                 ) : (
                   <>
-                    <Users className="h-6 w-6 text-gray-500" />
-                    <h2 className="text-xl font-semibold">Tavolo {selectedTable.tavoloNumero}</h2>
+                    <Users className="h-6 w-6" style={{ color: colors.text.secondary }} />
+                    <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>Tavolo {selectedTable.tavoloNumero}</h2>
                   </>
                 )}
-                <span className="text-sm text-gray-500">
-                  {selectedTable.ordinazioni.length} ordinazioni • {selectedTable.numeroClienti} clienti
+                <span className="text-sm" style={{ color: colors.text.secondary }}>
+                  {selectedTable.ordinazioni?.length || 0} ordinazioni • {selectedTable.numeroClienti || 0} clienti
                 </span>
               </div>
               <button
@@ -526,9 +588,12 @@ export default function CassaPageOptimized() {
                   setSelectedTable(null);
                   setSelectedOrder(null);
                 }}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
               </button>
             </div>
 
@@ -537,54 +602,60 @@ export default function CassaPageOptimized() {
                 {/* Orders List */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">Ordinazioni</h3>
+                    <h3 className="text-lg font-medium" style={{ color: colors.text.primary }}>Ordinazioni</h3>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setPaymentMode('table')}
-                        className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                          paymentMode === 'table' 
-                            ? 'bg-primary text-white' 
-                            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
+                        className="px-3 py-1 text-sm rounded-lg transition-colors duration-200"
+                        style={{ 
+                          backgroundColor: paymentMode === 'table' ? colors.button.primary : colors.bg.hover,
+                          color: paymentMode === 'table' ? colors.button.primaryText : colors.text.primary
+                        }}
                       >
                         Tutto il tavolo
                       </button>
                       <button
                         onClick={() => setPaymentMode('order')}
-                        className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                          paymentMode === 'order' 
-                            ? 'bg-primary text-white' 
-                            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
+                        className="px-3 py-1 text-sm rounded-lg transition-colors duration-200"
+                        style={{ 
+                          backgroundColor: paymentMode === 'order' ? colors.button.primary : colors.bg.hover,
+                          color: paymentMode === 'order' ? colors.button.primaryText : colors.text.primary
+                        }}
                       >
                         Singola ordinazione
                       </button>
                     </div>
                   </div>
                   
-                  {selectedTable.ordinazioni.map((order: Order) => (
+                  {(selectedTable.ordinazioni || []).map((order: Order) => (
                     <div
                       key={order.id}
                       onClick={() => paymentMode === 'order' ? setSelectedOrder(order) : null}
-                      className={`bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-all ${
+                      className={`rounded-lg p-4 transition-all duration-200 ${
                         paymentMode === 'order'
-                          ? `cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 ${
-                              selectedOrder?.id === order.id ? 'ring-2 ring-primary' : ''
+                          ? `cursor-pointer hover:scale-105 ${
+                              selectedOrder?.id === order.id ? 'ring-2' : ''
                             }`
                           : 'opacity-75'
                       }`}
+                      style={{ 
+                        backgroundColor: colors.bg.darker,
+                        borderColor: selectedOrder?.id === order.id ? colors.border.primary : colors.border.secondary,
+                        borderWidth: selectedOrder?.id === order.id ? '2px' : '1px',
+                        borderStyle: 'solid'
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium">
+                          <User className="h-4 w-4" style={{ color: colors.text.secondary }} />
+                          <span className="font-medium" style={{ color: colors.text.primary }}>
                             Ordine #{order.numero}
                           </span>
                           {order.nomeCliente && (
-                            <span className="text-sm text-gray-500">- {order.nomeCliente}</span>
+                            <span className="text-sm" style={{ color: colors.text.secondary }}>- {order.nomeCliente}</span>
                           )}
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm" style={{ color: colors.text.secondary }}>
                           {getElapsedTime(order.dataApertura)}
                         </span>
                       </div>
@@ -592,35 +663,35 @@ export default function CassaPageOptimized() {
                       <div className="space-y-1 mb-3">
                         {order.righe.slice(0, 3).map((item: OrderItem) => (
                           <div key={item.id} className="flex justify-between text-sm">
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2" style={{ color: colors.text.primary }}>
                               {item.quantita}x {item.prodotto.nome}
                               {item.isPagato && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                                <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: colors.button.success, color: colors.button.successText }}>
                                   Pagato
                                 </span>
                               )}
                             </span>
-                            <span>€{(item.prezzo * item.quantita).toFixed(2)}</span>
+                            <span style={{ color: colors.text.primary }}>€{(item.prezzo * item.quantita).toFixed(2)}</span>
                           </div>
                         ))}
                         {order.righe.length > 3 && (
-                          <div className="text-xs text-gray-500 text-center">
+                          <div className="text-xs text-center" style={{ color: colors.text.muted }}>
                             ... e altri {order.righe.length - 3} articoli
                           </div>
                         )}
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm" style={{ color: colors.text.secondary }}>
                           {order.righe.length} articoli • {order.cameriere.nome}
                         </div>
-                        <div className="text-lg font-semibold">
+                        <div className="text-lg font-semibold" style={{ color: colors.text.primary }}>
                           €{order.rimanente.toFixed(2)}
                         </div>
                       </div>
                       
                       {order.totalePagato > 0 && (
-                        <div className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                        <div className="mt-2 text-sm" style={{ color: colors.text.success }}>
                           Pagato parzialmente: €{order.totalePagato.toFixed(2)}
                         </div>
                       )}
@@ -630,47 +701,47 @@ export default function CassaPageOptimized() {
 
                 {/* Payment Panel */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Pagamento</h3>
+                  <h3 className="text-lg font-medium" style={{ color: colors.text.primary }}>Pagamento</h3>
                   
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4">
+                  <div className="rounded-lg p-4 space-y-4" style={{ backgroundColor: colors.bg.darker, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
                     {/* Payment Summary */}
                     <div className="space-y-2">
                       {paymentMode === 'table' ? (
                         <>
                           <div className="flex justify-between">
-                            <span>Totale tavolo</span>
-                            <span>€{selectedTable.totaleComplessivo.toFixed(2)}</span>
+                            <span style={{ color: colors.text.primary }}>Totale tavolo</span>
+                            <span style={{ color: colors.text.primary }}>€{(selectedTable.totaleComplessivo || 0).toFixed(2)}</span>
                           </div>
                           {selectedTable.totalePagatoComplessivo > 0 && (
-                            <div className="flex justify-between text-green-600">
+                            <div className="flex justify-between" style={{ color: colors.text.success }}>
                               <span>Già pagato</span>
-                              <span>-€{selectedTable.totalePagatoComplessivo.toFixed(2)}</span>
+                              <span>-€{(selectedTable.totalePagatoComplessivo || 0).toFixed(2)}</span>
                             </div>
                           )}
-                          <div className="flex justify-between text-lg font-semibold border-t pt-2">
-                            <span>Da pagare</span>
-                            <span>€{selectedTable.rimanenteComplessivo.toFixed(2)}</span>
+                          <div className="flex justify-between text-lg font-semibold border-t pt-2" style={{ borderColor: colors.border.secondary }}>
+                            <span style={{ color: colors.text.primary }}>Da pagare</span>
+                            <span style={{ color: colors.text.primary }}>€{(selectedTable.rimanenteComplessivo || 0).toFixed(2)}</span>
                           </div>
                         </>
                       ) : selectedOrder ? (
                         <>
                           <div className="flex justify-between">
-                            <span>Totale ordine #{selectedOrder.numero}</span>
-                            <span>€{selectedOrder.totale.toFixed(2)}</span>
+                            <span style={{ color: colors.text.primary }}>Totale ordine #{selectedOrder.numero}</span>
+                            <span style={{ color: colors.text.primary }}>€{selectedOrder.totale.toFixed(2)}</span>
                           </div>
                           {selectedOrder.totalePagato > 0 && (
-                            <div className="flex justify-between text-green-600">
+                            <div className="flex justify-between" style={{ color: colors.text.success }}>
                               <span>Già pagato</span>
                               <span>-€{selectedOrder.totalePagato.toFixed(2)}</span>
                             </div>
                           )}
-                          <div className="flex justify-between text-lg font-semibold border-t pt-2">
-                            <span>Da pagare</span>
-                            <span>€{selectedOrder.rimanente.toFixed(2)}</span>
+                          <div className="flex justify-between text-lg font-semibold border-t pt-2" style={{ borderColor: colors.border.secondary }}>
+                            <span style={{ color: colors.text.primary }}>Da pagare</span>
+                            <span style={{ color: colors.text.primary }}>€{selectedOrder.rimanente.toFixed(2)}</span>
                           </div>
                         </>
                       ) : (
-                        <div className="text-center text-gray-500 py-4">
+                        <div className="text-center py-4" style={{ color: colors.text.secondary }}>
                           Seleziona un'ordinazione per vedere i dettagli
                         </div>
                       )}
@@ -680,17 +751,20 @@ export default function CassaPageOptimized() {
                     {(paymentMode === 'table' || selectedOrder) && (
                       <>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Metodo di pagamento</label>
+                          <label className="text-sm font-medium" style={{ color: colors.text.primary }}>Metodo di pagamento</label>
                           <div className="grid grid-cols-3 gap-2">
                             {(['POS', 'CONTANTI', 'MISTO'] as const).map((method: 'POS' | 'CONTANTI' | 'MISTO') => (
                               <button
                                 key={method}
                                 onClick={() => setPaymentMethod(method)}
-                                className={`py-2 px-3 rounded-lg border transition-all ${
-                                  paymentMethod === method
-                                    ? 'border-primary bg-primary text-white'
-                                    : 'border-gray-300 hover:border-gray-400'
-                                }`}
+                                className="py-2 px-3 rounded-lg transition-all duration-200"
+                                style={{ 
+                                  backgroundColor: paymentMethod === method ? colors.button.primary : 'transparent',
+                                  color: paymentMethod === method ? colors.button.primaryText : colors.text.primary,
+                                  borderColor: paymentMethod === method ? colors.button.primary : colors.border.primary,
+                                  borderWidth: '1px',
+                                  borderStyle: 'solid'
+                                }}
                               >
                                 {method === 'POS' && <CreditCard className="h-4 w-4 mx-auto mb-1" />}
                                 {method === 'CONTANTI' && <Euro className="h-4 w-4 mx-auto mb-1" />}
@@ -704,9 +778,22 @@ export default function CassaPageOptimized() {
                         {/* Action Buttons */}
                         <div className="flex gap-3">
                           <button
-                            onClick={paymentMode === 'table' ? handleTablePayment : handlePayment}
+                            onClick={(e) => {
+                              if (paymentMode === 'table') {
+                                handleTablePayment();
+                              } else {
+                                handlePayment();
+                              }
+                              triggerParticles(e.currentTarget);
+                            }}
                             disabled={isProcessingPayment}
-                            className="flex-1 bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 py-3 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            style={{ 
+                              backgroundColor: colors.button.success,
+                              color: colors.button.successText
+                            }}
+                            onMouseEnter={(e) => !isProcessingPayment && (e.currentTarget.style.backgroundColor = colors.button.successHover)}
+                            onMouseLeave={(e) => !isProcessingPayment && (e.currentTarget.style.backgroundColor = colors.button.success)}
                           >
                             {isProcessingPayment ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
@@ -730,6 +817,16 @@ export default function CassaPageOptimized() {
           </div>
         </div>
       )}
+      
+      {/* Particle Effect */}
+      <ParticleEffect 
+        key={particleKey}
+        trigger={true} 
+        x={particlePos.x} 
+        y={particlePos.y}
+        particleCount={20}
+        duration={3000}
+      />
     </div>
   );
 }

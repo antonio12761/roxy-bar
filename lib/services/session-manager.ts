@@ -211,7 +211,7 @@ export class SessionManager {
         const dbSession = await prisma.userSession.findUnique({
           where: { id: sessionId },
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 nome: true,

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { StatoConto, TipoMovimentoScalare } from "@prisma/client";
+import { nanoid } from "nanoid";
 
 export interface ContoScalareData {
   id: string;
@@ -36,9 +37,9 @@ export class ContoScalareService {
         stato: StatoConto.APERTO
       },
       include: {
-        movimenti: {
+        MovimentoContoScalare: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: { nome: true }
             }
           },
@@ -50,16 +51,18 @@ export class ContoScalareService {
     if (!conto) {
       conto = await prisma.contoScalare.create({
         data: {
+          id: nanoid(),
           tavoloId,
           stato: StatoConto.APERTO,
           totaleOrdinato: 0,
           totalePagato: 0,
-          saldoRimanente: 0
+          saldoRimanente: 0,
+          updatedAt: new Date()
         },
         include: {
-          movimenti: {
+          MovimentoContoScalare: {
             include: {
-              clientePagatore: {
+              Cliente: {
                 select: { nome: true }
               }
             },
@@ -89,9 +92,9 @@ export class ContoScalareService {
         stato: StatoConto.APERTO
       },
       include: {
-        movimenti: {
+        MovimentoContoScalare: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: { nome: true }
             }
           },
@@ -103,17 +106,19 @@ export class ContoScalareService {
     if (!conto) {
       conto = await prisma.contoScalare.create({
         data: {
+          id: nanoid(),
           clienteId,
           nomeCliente,
           stato: StatoConto.APERTO,
           totaleOrdinato: 0,
           totalePagato: 0,
-          saldoRimanente: 0
+          saldoRimanente: 0,
+          updatedAt: new Date()
         },
         include: {
-          movimenti: {
+          MovimentoContoScalare: {
             include: {
-              clientePagatore: {
+              Cliente: {
                 select: { nome: true }
               }
             },
@@ -140,6 +145,7 @@ export class ContoScalareService {
       // Aggiunge movimento di tipo ORDINE
       await tx.movimentoContoScalare.create({
         data: {
+          id: nanoid(),
           contoScalareId: contoId,
           tipo: TipoMovimentoScalare.ORDINE,
           importo,
@@ -161,9 +167,9 @@ export class ContoScalareService {
           }
         },
         include: {
-          movimenti: {
+          MovimentoContoScalare: {
             include: {
-              clientePagatore: {
+              Cliente: {
                 select: { nome: true }
               }
             },
@@ -193,6 +199,7 @@ export class ContoScalareService {
       // Aggiunge movimento di tipo PAGAMENTO
       await tx.movimentoContoScalare.create({
         data: {
+          id: nanoid(),
           contoScalareId: contoId,
           tipo: TipoMovimentoScalare.PAGAMENTO,
           importo: -importo, // Negativo perché riduce il saldo
@@ -215,9 +222,9 @@ export class ContoScalareService {
           }
         },
         include: {
-          movimenti: {
+          MovimentoContoScalare: {
             include: {
-              clientePagatore: {
+              Cliente: {
                 select: { nome: true }
               }
             },
@@ -266,9 +273,9 @@ export class ContoScalareService {
         dataChiusura: new Date()
       },
       include: {
-        movimenti: {
+        MovimentoContoScalare: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: { nome: true }
             }
           },
@@ -290,9 +297,9 @@ export class ContoScalareService {
         stato: StatoConto.APERTO
       },
       include: {
-        movimenti: {
+        MovimentoContoScalare: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: { nome: true }
             }
           },
@@ -314,9 +321,9 @@ export class ContoScalareService {
         stato: StatoConto.APERTO
       },
       include: {
-        movimenti: {
+        MovimentoContoScalare: {
           include: {
-            clientePagatore: {
+            Cliente: {
               select: { nome: true }
             }
           },
@@ -344,14 +351,14 @@ export class ContoScalareService {
       stato: conto.stato,
       dataApertura: conto.dataApertura,
       dataChiusura: conto.dataChiusura,
-      movimenti: conto.movimenti?.map((mov: any) => ({
+      movimenti: conto.MovimentoContoScalare?.map((mov: any) => ({
         id: mov.id,
         tipo: mov.tipo,
         importo: mov.importo.toNumber(),
         descrizione: mov.descrizione,
         timestamp: mov.timestamp,
         clientePagatoreId: mov.clientePagatoreId,
-        nomeClientePagatore: mov.clientePagatore?.nome
+        nomeClientePagatore: mov.Cliente?.nome
       })) || []
     };
   }

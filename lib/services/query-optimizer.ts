@@ -18,20 +18,20 @@ export class QueryOptimizer {
           }
         },
         include: {
-          tavolo: {
+          Tavolo: {
             select: {
               numero: true,
               stato: true
             }
           },
-          righe: {
+          RigaOrdinazione: {
             where: {
               stato: {
                 not: 'ANNULLATO'
               }
             },
             include: {
-              prodotto: {
+              Prodotto: {
                 select: {
                   nome: true,
                   postazione: true
@@ -79,18 +79,18 @@ export class QueryOptimizer {
           }
         },
         include: {
-          prodotto: {
+          Prodotto: {
             select: {
               nome: true,
               tempoPreparazione: true
             }
           },
-          ordinazione: {
+          Ordinazione: {
             select: {
               numero: true,
               tipo: true,
               nomeCliente: true,
-              tavolo: {
+              Tavolo: {
                 select: {
                   numero: true
                 }
@@ -133,14 +133,14 @@ export class QueryOptimizer {
           }
         },
         include: {
-          ordinazioni: {
+          Ordinazione: {
             where: {
               stato: {
                 not: 'PAGATO'
               }
             },
             include: {
-              righe: {
+              RigaOrdinazione: {
                 where: {
                   isPagato: false
                 },
@@ -151,7 +151,7 @@ export class QueryOptimizer {
                   quantita: true
                 }
               },
-              cameriere: {
+              User: {
                 select: {
                   nome: true
                 }
@@ -198,17 +198,17 @@ export class QueryOptimizer {
       const orders = await prisma.ordinazione.findMany({
         where: whereClause,
         include: {
-          tavolo: {
+          Tavolo: {
             select: {
               numero: true
             }
           },
-          righe: {
+          RigaOrdinazione: {
             where: {
               stato: 'PRONTO'
             },
             include: {
-              prodotto: {
+              Prodotto: {
                 select: {
                   nome: true,
                   postazione: true
@@ -303,7 +303,7 @@ export class QueryOptimizer {
           attiva: true
         },
         include: {
-          prodotti: {
+          Prodotto: {
             where: {
               disponibile: true,
               isDeleted: false
@@ -358,20 +358,20 @@ export class QueryOptimizer {
           }
         },
         include: {
-          prodotto: {
+          Prodotto: {
             select: {
               nome: true
             }
           },
-          ordinazione: {
+          Ordinazione: {
             select: {
               numero: true,
-              tavolo: {
+              Tavolo: {
                 select: {
                   numero: true
                 }
               },
-              cameriere: {
+              User: {
                 select: {
                   nome: true
                 }

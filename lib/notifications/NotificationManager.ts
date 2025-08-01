@@ -237,7 +237,10 @@ export class NotificationManager {
         orderId: data.orderId,
         tableNumber: data.tableNumber,
         customerName: data.customerName,
-        items: data.items,
+        items: data.items?.map(item => ({
+          ...item,
+          nome: item.nome || 'Prodotto'
+        })) || [],
         totalAmount: data.amount,
         timestamp: new Date().toISOString()
       });
@@ -506,6 +509,66 @@ export class NotificationManager {
           customerName: data.customerName,
           waiterName: data.waiterName,
           paymentMethod: data.paymentMethod,
+          timestamp: new Date().toISOString(),
+          syncVersion: Date.now()
+        },
+        targetRoles: config.targetRoles
+      },
+      {
+        priority: config.priority,
+        acknowledgmentRequired: config.requiresAcknowledgment,
+        ttl: config.ttl
+      }
+    );
+
+    this.addToHistory({
+      id: eventId || `notification-${Date.now()}`,
+      type: config.type,
+      message,
+      timestamp: new Date().toISOString(),
+      priority: config.priority,
+      targetRoles: config.targetRoles,
+      data: data,
+      syncVersion: Date.now()
+    });
+
+    return eventId || `notification-${Date.now()}`;
+  }
+
+  /**
+   * Send a notification for cancellation request
+   */
+  public notifyCancellationRequest(data: {
+    orderId: string;
+    orderNumber: number;
+    tableNumber?: number;
+    requestedBy: string;
+    reason: string;
+    currentStatus: string;
+  }): string {
+    const config = {
+      type: NotificationTypes.ORDER_UPDATE,
+      priority: NotificationPriority.HIGH,
+      targetRoles: ["PREPARA", "SUPERVISORE", "CUCINA"],
+      requiresAcknowledgment: true,
+      ttl: 3600
+    };
+    
+    const message = data.tableNumber 
+      ? `⚠️ Richiesta annullamento Ordine Tavolo ${data.tableNumber} (${data.currentStatus})`
+      : `⚠️ Richiesta annullamento Ordine #${data.orderNumber} (${data.currentStatus})`;
+
+    const eventId = broadcastEnhanced(
+      {
+        type: config.type,
+        message,
+        data: {
+          orderId: data.orderId,
+          orderNumber: data.orderNumber,
+          tableNumber: data.tableNumber,
+          requestedBy: data.requestedBy,
+          reason: data.reason,
+          currentStatus: data.currentStatus,
           timestamp: new Date().toISOString(),
           syncVersion: Date.now()
         },

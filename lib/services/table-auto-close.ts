@@ -50,7 +50,7 @@ export class TableAutoCloseManager {
       const tavoli = await prisma.tavolo.findMany({
         where: {
           stato: 'OCCUPATO',
-          ordinazioni: {
+          Ordinazione: {
             some: {
               stato: {
                 not: 'PAGATO'
@@ -60,24 +60,24 @@ export class TableAutoCloseManager {
           }
         },
         include: {
-          ordinazioni: {
+          Ordinazione: {
             where: {
               statoPagamento: 'COMPLETAMENTE_PAGATO'
             },
             include: {
-              pagamenti: {
+              Pagamento: {
                 orderBy: {
                   timestamp: 'desc'
                 },
                 take: 1
               },
-              cameriere: {
+              User: {
                 select: {
                   id: true,
                   nome: true
                 }
               },
-              righe: {
+              RigaOrdinazione: {
                 where: {
                   isPagato: false
                 }
@@ -111,7 +111,7 @@ export class TableAutoCloseManager {
         // Trova l'ultimo pagamento
         const lastPayment = await prisma.pagamento.findFirst({
           where: {
-            ordinazione: {
+            Ordinazione: {
               tavoloId: tavolo.id
             }
           },
@@ -119,9 +119,9 @@ export class TableAutoCloseManager {
             timestamp: 'desc'
           },
           include: {
-            ordinazione: {
+            Ordinazione: {
               include: {
-                cameriere: {
+                User: {
                   select: {
                     id: true,
                     nome: true
@@ -138,8 +138,8 @@ export class TableAutoCloseManager {
           (Date.now() - lastPayment.timestamp.getTime()) / 60000
         );
 
-        const totalAmount = tavolo.ordinazioni.reduce((sum, ord) => {
-          return sum + ord.pagamenti.reduce((pSum, pag) => pSum + pag.importo.toNumber(), 0);
+        const totalAmount = tavolo.Ordinazione.reduce((sum: number, ord: any) => {
+          return sum + ord.Pagamento.reduce((pSum: number, pag: any) => pSum + pag.importo.toNumber(), 0);
         }, 0);
 
         let canAutoClose = true;
@@ -161,8 +161,8 @@ export class TableAutoCloseManager {
           numero: tavolo.numero,
           lastPaymentTime: lastPayment.timestamp,
           totalAmount,
-          cameriereId: lastPayment.ordinazione.cameriere.id,
-          cameriereNome: lastPayment.ordinazione.cameriere.nome,
+          cameriereId: lastPayment.Ordinazione.User.id,
+          cameriereNome: lastPayment.Ordinazione.User.nome,
           minutesSincePayment,
           canAutoClose,
           reason
@@ -199,19 +199,19 @@ export class TableAutoCloseManager {
       const tavolo = await prisma.tavolo.findUnique({
         where: { id: parseInt(tavoloId) },
         include: {
-          ordinazioni: {
+          Ordinazione: {
             where: {
               stato: {
                 not: 'PAGATO'
               }
             },
             include: {
-              righe: {
+              RigaOrdinazione: {
                 where: {
                   isPagato: false
                 }
               },
-              cameriere: {
+              User: {
                 select: {
                   id: true,
                   nome: true
@@ -230,8 +230,8 @@ export class TableAutoCloseManager {
       }
 
       // Verifica finale che tutto sia pagato
-      const unpaidRighe = tavolo.ordinazioni.reduce((sum, ord) => 
-        sum + ord.righe.length, 0
+      const unpaidRighe = tavolo.Ordinazione.reduce((sum: number, ord: any) => 
+        sum + ord.RigaOrdinazione.length, 0
       );
 
       if (unpaidRighe > 0 && !force) {
@@ -242,8 +242,8 @@ export class TableAutoCloseManager {
       }
 
       // Notifica cameriere se richiesto
-      if (this.config.notifyWaiter && tavolo.ordinazioni.length > 0) {
-        const cameriere = tavolo.ordinazioni[0].cameriere;
+      if (this.config.notifyWaiter && tavolo.Ordinazione.length > 0) {
+        const cameriere = tavolo.Ordinazione[0].User;
         
         // TODO: Implementare notifica chiusura automatica tavolo
         // notificationManager.notifyTableAutoClose({
@@ -408,7 +408,7 @@ export class TableAutoCloseManager {
           }
         },
         include: {
-          pagamenti: {
+          Pagamento: {
             orderBy: {
               timestamp: 'desc'
             },
@@ -421,8 +421,8 @@ export class TableAutoCloseManager {
       let validSamples = 0;
 
       for (const order of recentOrders) {
-        if (order.dataChiusura && order.pagamenti.length > 0) {
-          const waitTime = order.dataChiusura.getTime() - order.pagamenti[0].timestamp.getTime();
+        if (order.dataChiusura && order.Pagamento.length > 0) {
+          const waitTime = order.dataChiusura.getTime() - order.Pagamento[0].timestamp.getTime();
           if (waitTime > 0) {
             totalWaitTime += waitTime;
             validSamples++;

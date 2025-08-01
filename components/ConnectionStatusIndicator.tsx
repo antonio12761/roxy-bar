@@ -48,15 +48,15 @@ export function ConnectionStatusIndicator({
   const getStatusIcon = () => {
     switch (connectionHealth.status) {
       case "connected":
-        return <Wifi className="h-4 w-4" />;
+        return null; // No icon when connected, only show signal bars
       case "connecting":
-        return <RefreshCw className="h-4 w-4 animate-spin" />;
+        return null; // No icon during connecting, we'll show animated bars instead
       case "disconnected":
-        return <WifiOff className="h-4 w-4" />;
+        return null; // No icon when disconnected, we'll show static bars instead  
       case "error":
         return <AlertCircle className="h-4 w-4" />;
       default:
-        return <WifiOff className="h-4 w-4" />;
+        return null; // Default to no icon, show bars instead
     }
   };
 
@@ -76,24 +76,65 @@ export function ConnectionStatusIndicator({
   };
 
   const getQualityIndicator = () => {
-    if (connectionHealth.status !== "connected") return null;
+    // For connecting state, show animated searching bars
+    if (connectionHealth.status === "connecting") {
+      return (
+        <div className="flex gap-0.5 ml-1 scale-x-[-1] scale-y-[-1]">
+          {[0, 1, 2].map((index) => {
+            const heightClass = index === 0 ? "h-2" : index === 1 ? "h-3" : "h-4";
+            return (
+              <div
+                key={index}
+                className={`w-1 ${heightClass} bg-current opacity-30 rounded-sm animate-pulse`}
+                style={{
+                  animation: `signal-search 1.5s ease-in-out infinite`,
+                  animationDelay: `${index * 0.2}s`
+                }}
+              />
+            );
+          })}
+        </div>
+      );
+    }
     
+    // For disconnected state, show inactive bars
+    if (connectionHealth.status !== "connected") {
+      return (
+        <div className="flex gap-0.5 ml-1 scale-x-[-1] scale-y-[-1]">
+          {[0, 1, 2].map((index) => {
+            const heightClass = index === 0 ? "h-2" : index === 1 ? "h-3" : "h-4";
+            return (
+              <div
+                key={index}
+                className={`w-1 ${heightClass} bg-current opacity-20 rounded-sm`}
+              />
+            );
+          })}
+        </div>
+      );
+    }
+    
+    // For connected state, show quality-based bars
     const bars = [
-      connectionHealth.quality === "good" || connectionHealth.quality === "fair" || connectionHealth.quality === "poor",
-      connectionHealth.quality === "good" || connectionHealth.quality === "fair",
-      connectionHealth.quality === "good"
+      connectionHealth.quality === "excellent" || connectionHealth.quality === "good" || connectionHealth.quality === "fair" || connectionHealth.quality === "poor",
+      connectionHealth.quality === "excellent" || connectionHealth.quality === "good" || connectionHealth.quality === "fair",
+      connectionHealth.quality === "excellent" || connectionHealth.quality === "good"
     ];
 
     return (
-      <div className="flex gap-0.5 ml-1">
-        {bars.map((active, index) => (
-          <div
-            key={index}
-            className={`w-1 h-${index + 2} ${
-              active ? "bg-current" : "bg-current opacity-20"
-            } rounded-sm`}
-          />
-        ))}
+      <div className="flex gap-0.5 ml-1 scale-x-[-1] scale-y-[-1]">
+        {bars.map((active, index) => {
+          // Use explicit height classes to ensure Tailwind includes them
+          const heightClass = index === 0 ? "h-2" : index === 1 ? "h-3" : "h-4";
+          return (
+            <div
+              key={index}
+              className={`w-1 ${heightClass} ${
+                active ? "bg-current" : "bg-current opacity-20"
+              } rounded-sm`}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -113,7 +154,7 @@ export function ConnectionStatusIndicator({
         }`}
       >
         {getStatusIcon()}
-        {connectionHealth.status === "connected" && getQualityIndicator()}
+        {(connectionHealth.status === "connected" || connectionHealth.status === "connecting" || connectionHealth.status === "disconnected") && getQualityIndicator()}
       </div>
     );
   }
@@ -125,7 +166,7 @@ export function ConnectionStatusIndicator({
       <div className="flex items-center gap-2">
         {getStatusIcon()}
         <span className="text-sm font-medium">{getStatusText()}</span>
-        {connectionHealth.status === "connected" && getQualityIndicator()}
+        {(connectionHealth.status === "connected" || connectionHealth.status === "connecting" || connectionHealth.status === "disconnected") && getQualityIndicator()}
       </div>
       
       {connectionHealth.status === "connected" && showLatency && connectionHealth.latency > 0 && (

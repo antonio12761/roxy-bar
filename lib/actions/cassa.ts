@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 
 export async function getOrdinazioniConsegnate() {
   try {
+    console.log("🔍 Recupero ordinazioni consegnate...");
+    
     const ordinazioni = await prisma.ordinazione.findMany({
       where: {
         stato: {
@@ -14,32 +16,32 @@ export async function getOrdinazioniConsegnate() {
         }
       },
       include: {
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
         },
-        cameriere: {
+        User: {
           select: {
             nome: true
           }
         },
-        cliente: {
+        Cliente: {
           select: {
             nome: true,
             telefono: true
           }
         },
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: {
+            Prodotto: {
               select: {
                 nome: true
               }
             }
           }
         },
-        pagamenti: {
+        Pagamento: {
           select: {
             importo: true,
             modalita: true
@@ -47,84 +49,66 @@ export async function getOrdinazioniConsegnate() {
         }
       },
       orderBy: {
-        dataApertura: 'asc' // Ordine cronologico
-      },
-      take: 100 // Aumento limite per gestire raggruppamenti
+        dataApertura: 'desc' // Più recenti prima
+      }
     });
 
-    // Raggruppa ordinazioni per tavolo
-    const ordiniPerTavolo = new Map();
-    
+    console.log(`📊 Trovate ${ordinazioni.length} ordinazioni consegnate`);
     ordinazioni.forEach(ord => {
-      const totalePagamenti = ord.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
+      console.log(`  - Ordine ${ord.numero}: stato=${ord.stato}, statoPagamento=${ord.statoPagamento}, totale=${ord.totale}`);
+    });
+
+    // Restituisci le ordinazioni nel formato che il componente ContiPage si aspetta
+    return ordinazioni.map(ord => {
+      const totalePagamenti = ord.Pagamento.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
       const totaleOrdine = ord.totale.toNumber();
       
-      const ordineFormattato = {
+      // Calcola informazioni sui pagamenti parziali
+      const righePagate = ord.RigaOrdinazione.filter(riga => riga.isPagato).length;
+      const righeNonPagate = ord.RigaOrdinazione.filter(riga => !riga.isPagato).length;
+      const totaleRighePagate = ord.RigaOrdinazione
+        .filter(riga => riga.isPagato)
+        .reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+      const totaleRigheNonPagate = ord.RigaOrdinazione
+        .filter(riga => !riga.isPagato)
+        .reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
+      
+      return {
         id: ord.id,
         numero: ord.numero,
-        tavolo: ord.tavolo,
+        tavolo: ord.Tavolo,
         tipo: ord.tipo,
-        cameriere: ord.cameriere,
-        cliente: ord.cliente,
+        cameriere: ord.User,
+        cliente: ord.Cliente,
         nomeCliente: ord.nomeCliente,
         totale: totaleOrdine,
-        totalePagato: totalePagamenti,
+        totalePagamenti: totalePagamenti,
         rimanente: totaleOrdine - totalePagamenti,
         pagato: totalePagamenti >= totaleOrdine,
         statoPagamento: ord.statoPagamento,
         stato: ord.stato,
-        dataConsegna: ord.updatedAt,
+        dataConsegna: ord.updatedAt.toISOString(),
         dataApertura: ord.dataApertura,
-        righe: ord.righe.map(riga => ({
-          ...riga,
+        // Informazioni dettagliate per pagamenti parziali
+        righePagate,
+        righeNonPagate,
+        totaleRighePagate,
+        totaleRigheNonPagate,
+        hasPagamentoParziale: totalePagamenti > 0 && totalePagamenti < totaleOrdine,
+        righe: ord.RigaOrdinazione.map(riga => ({
+          id: riga.id,
           prezzo: riga.prezzo.toNumber(),
+          quantita: riga.quantita,
           isPagato: riga.isPagato,
-          pagatoDa: riga.pagatoDa,
-          prodotto: riga.prodotto
+          pagatoDa: riga.pagatoDa || undefined,
+          prodotto: riga.Prodotto
+        })),
+        pagamenti: ord.Pagamento.map(pag => ({
+          importo: pag.importo.toNumber(),
+          modalita: pag.modalita
         }))
       };
-
-      const tavoloKey = ord.tavolo?.numero || `asporto-${ord.id}`;
-      
-      if (!ordiniPerTavolo.has(tavoloKey)) {
-        ordiniPerTavolo.set(tavoloKey, {
-          tavoloNumero: ord.tavolo?.numero || 'Asporto',
-          ordinazioni: [],
-          totaleComplessivo: 0,
-          totalePagatoComplessivo: 0,
-          rimanenteComplessivo: 0,
-          numeroClienti: new Set(),
-          primaDaApertura: ord.dataApertura
-        });
-      }
-
-      const tavoloData = ordiniPerTavolo.get(tavoloKey);
-      tavoloData.ordinazioni.push(ordineFormattato);
-      tavoloData.totaleComplessivo += totaleOrdine;
-      tavoloData.totalePagatoComplessivo += totalePagamenti;
-      tavoloData.rimanenteComplessivo += (totaleOrdine - totalePagamenti);
-      
-      // Aggiungi cliente al set per contare persone diverse
-      if (ord.nomeCliente) {
-        tavoloData.numeroClienti.add(ord.nomeCliente);
-      }
-      
-      // Mantieni la data di apertura più vecchia
-      if (ord.dataApertura < tavoloData.primaDaApertura) {
-        tavoloData.primaDaApertura = ord.dataApertura;
-      }
     });
-
-    // Converti in array e ordina per data apertura più vecchia
-    const tavoliFormattati = Array.from(ordiniPerTavolo.values())
-      .map(tavolo => ({
-        ...tavolo,
-        numeroClienti: tavolo.numeroClienti.size,
-        clientiNomi: Array.from(tavolo.numeroClienti)
-      }))
-      .sort((a, b) => a.primaDaApertura.getTime() - b.primaDaApertura.getTime());
-
-    return tavoliFormattati;
   } catch (error) {
     console.error("Errore recupero ordinazioni consegnate:", error);
     return [];
@@ -146,17 +130,17 @@ export async function getRichiesteScontrino() {
         }
       },
       include: {
-        tavolo: {
+        Tavolo: {
           select: {
             numero: true
           }
         },
-        cameriere: {
+        User: {
           select: {
             nome: true
           }
         },
-        pagamenti: {
+        Pagamento: {
           select: {
             importo: true,
             modalita: true,
@@ -172,17 +156,17 @@ export async function getRichiesteScontrino() {
 
     // Simula richieste di scontrino basate sui pagamenti recenti
     const richiesteSimulate = ordinazioniConsegnate
-      .filter(ord => ord.pagamenti.length > 0) // Solo ordini pagati
+      .filter(ord => ord.Pagamento.length > 0) // Solo ordini pagati
       .map(ord => {
-        const ultimoPagamento = ord.pagamenti[ord.pagamenti.length - 1];
-        const importoTotale = ord.pagamenti.reduce((sum, pag) => sum + pag.importo.toNumber(), 0);
+        const ultimoPagamento = ord.Pagamento[ord.Pagamento.length - 1];
+        const importoTotale = ord.Pagamento.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0);
         
         return {
           id: `req-${ord.id}`,
           orderId: ord.id,
-          tavolo: ord.tavolo,
+          tavolo: ord.Tavolo,
           tipo: ord.tipo,
-          richiedente: ord.cameriere?.nome || "Sistema",
+          richiedente: ord.User?.nome || "Sistema",
           importo: importoTotale,
           dataRichiesta: ultimoPagamento.timestamp,
           stato: Math.random() > 0.7 ? "PENDING" : Math.random() > 0.5 ? "PROCESSING" : "COMPLETED"
@@ -207,18 +191,18 @@ export async function generaScontrino(orderId: string) {
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: orderId },
       include: {
-        tavolo: true,
-        cameriere: {
+        Tavolo: true,
+        User: {
           select: {
             nome: true
           }
         },
-        righe: {
+        RigaOrdinazione: {
           include: {
-            prodotto: true
+            Prodotto: true
           }
         },
-        pagamenti: true
+        Pagamento: true
       }
     });
 
@@ -230,16 +214,16 @@ export async function generaScontrino(orderId: string) {
     const scontrino = {
       numero: `SCO-${Date.now()}`,
       data: new Date().toISOString(),
-      tavolo: ordinazione.tavolo?.numero,
-      cameriere: ordinazione.cameriere?.nome,
-      righe: ordinazione.righe.map(riga => ({
-        prodotto: riga.prodotto.nome,
+      tavolo: ordinazione.Tavolo?.numero,
+      cameriere: ordinazione.User?.nome,
+      righe: ordinazione.RigaOrdinazione.map(riga => ({
+        prodotto: riga.Prodotto.nome,
         quantita: riga.quantita,
         prezzo: riga.prezzo.toNumber(),
         totale: riga.prezzo.toNumber() * riga.quantita
       })),
       totale: ordinazione.totale.toNumber(),
-      pagamenti: ordinazione.pagamenti.map(pag => ({
+      pagamenti: ordinazione.Pagamento.map(pag => ({
         metodo: pag.modalita,
         importo: pag.importo.toNumber()
       }))

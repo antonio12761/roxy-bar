@@ -274,7 +274,9 @@ export async function creaCategoria(nomeCategoria: string, categoriaPadre?: stri
         terminato: false,
         glutenFree: false,
         vegano: false,
-        vegetariano: false
+        vegetariano: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     });
 

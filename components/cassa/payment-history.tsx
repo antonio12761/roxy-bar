@@ -13,6 +13,7 @@ import {
   Loader2,
   FileText
 } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface PaymentHistoryItem {
   id: string;
@@ -46,6 +47,12 @@ interface PaymentHistoryProps {
 }
 
 export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps) {
+  const { currentTheme, themeMode } = useTheme();
+  const resolvedMode = themeMode === 'system' 
+    ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : themeMode;
+  const colors = currentTheme.colors[resolvedMode as 'light' | 'dark'];
+  
   const [payments, setPayments] = useState<PaymentHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedPayments, setExpandedPayments] = useState<Set<string>>(new Set());
@@ -87,27 +94,33 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
   const getPaymentMethodIcon = (method: string) => {
     switch (method) {
       case 'POS':
-        return <CreditCard className="h-4 w-4 text-white/60" />;
+        return <CreditCard className="h-4 w-4" style={{ color: colors.text.secondary }} />;
       case 'CONTANTI':
-        return <Euro className="h-4 w-4 text-white/60" />;
+        return <Euro className="h-4 w-4" style={{ color: colors.text.secondary }} />;
       case 'MISTO':
-        return <FileText className="h-4 w-4 text-purple-400" />;
+        return <FileText className="h-4 w-4" style={{ color: colors.text.secondary }} />;
       default:
-        return <Euro className="h-4 w-4" />;
+        return <Euro className="h-4 w-4" style={{ color: colors.text.secondary }} />;
     }
   };
 
-  const getPaymentMethodBadge = (method: string) => {
-    switch (method) {
-      case 'POS':
-        return 'bg-white/10/20 text-white/60 border-white/15-500/30';
-      case 'CONTANTI':
-        return 'bg-white/10/20 text-white/60 border-white/15-500/30';
-      case 'MISTO':
-        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  const getPaymentMethodStyle = (method: string) => {
+    const baseStyle = {
+      backgroundColor: colors.bg.hover,
+      color: colors.text.primary,
+      borderColor: colors.border.primary,
+      borderWidth: '1px',
+      borderStyle: 'solid' as const
+    };
+    
+    if (method === 'MISTO') {
+      return {
+        ...baseStyle,
+        color: colors.text.success
+      };
     }
+    
+    return baseStyle;
   };
 
   const getTotalsByMethod = () => {
@@ -131,48 +144,52 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card border border-border rounded-lg w-[90vw] h-[90vh] max-w-6xl flex flex-col">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+      <div className="rounded-lg w-[90vw] h-[90vh] max-w-6xl flex flex-col" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
         {/* Header */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b" style={{ borderColor: colors.border.primary }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Storico Pagamenti</h2>
+            <h2 className="text-xl font-bold" style={{ color: colors.text.primary }}>Storico Pagamenti</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
             </button>
           </div>
           
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4" style={{ color: colors.text.secondary }} />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
               />
             </div>
             
             <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/10/20 border border-white/15-500/30 rounded-lg">
-                <Euro className="h-4 w-4 text-white/60" />
-                <span className="text-white/60">Contanti: €{totals.CONTANTI.toFixed(2)}</span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.bg.hover, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                <Euro className="h-4 w-4" style={{ color: colors.text.secondary }} />
+                <span style={{ color: colors.text.primary }}>Contanti: €{totals.CONTANTI.toFixed(2)}</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/10/20 border border-white/15-500/30 rounded-lg">
-                <CreditCard className="h-4 w-4 text-white/60" />
-                <span className="text-white/60">POS: €{totals.POS.toFixed(2)}</span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.bg.hover, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                <CreditCard className="h-4 w-4" style={{ color: colors.text.secondary }} />
+                <span style={{ color: colors.text.primary }}>POS: €{totals.POS.toFixed(2)}</span>
               </div>
               {totals.MISTO > 0 && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-                  <FileText className="h-4 w-4 text-purple-400" />
-                  <span className="text-purple-400">Misto: €{totals.MISTO.toFixed(2)}</span>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.bg.hover, borderColor: colors.border.success, borderWidth: '1px', borderStyle: 'solid' }}>
+                  <FileText className="h-4 w-4" style={{ color: colors.text.success }} />
+                  <span style={{ color: colors.text.success }}>Misto: €{totals.MISTO.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/15/20 border border-white/20-500/30 rounded-lg">
-                <span className="text-white/70 font-bold">Totale: €{totals.total.toFixed(2)}</span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.button.primary, borderColor: colors.button.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                <span className="font-bold" style={{ color: colors.button.primaryText }}>Totale: €{totals.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -183,16 +200,16 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground">Caricamento storico pagamenti...</p>
+                <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" style={{ color: colors.text.secondary }} />
+                <p style={{ color: colors.text.secondary }}>Caricamento storico pagamenti...</p>
               </div>
             </div>
           ) : payments.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
-                <p className="text-lg text-muted-foreground">Nessun pagamento trovato</p>
-                <p className="text-sm text-muted-foreground">per la data selezionata</p>
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" style={{ color: colors.text.muted }} />
+                <p className="text-lg" style={{ color: colors.text.secondary }}>Nessun pagamento trovato</p>
+                <p className="text-sm" style={{ color: colors.text.muted }}>per la data selezionata</p>
               </div>
             </div>
           ) : (
@@ -203,34 +220,38 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
                 return (
                   <div
                     key={payment.id}
-                    className="bg-background border border-border rounded-lg overflow-hidden"
+                    className="rounded-lg overflow-hidden"
+                    style={{ backgroundColor: colors.bg.darker, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}
                   >
                     {/* Payment Header */}
                     <div
                       onClick={() => togglePaymentExpansion(payment.id)}
-                      className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="p-4 cursor-pointer transition-colors"
+                      style={{ backgroundColor: 'transparent' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                            <ChevronDown className="h-5 w-5" style={{ color: colors.text.secondary }} />
                           ) : (
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            <ChevronRight className="h-5 w-5" style={{ color: colors.text.secondary }} />
                           )}
                           
                           <div className="flex items-center gap-2">
                             {getPaymentMethodIcon(payment.modalita)}
-                            <span className={`px-2 py-1 text-xs rounded border ${getPaymentMethodBadge(payment.modalita)}`}>
+                            <span className="px-2 py-1 text-xs rounded" style={getPaymentMethodStyle(payment.modalita)}>
                               {payment.modalita}
                             </span>
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">
+                            <span className="font-medium" style={{ color: colors.text.primary }}>
                               Ordine #{payment.ordinazione.numero}
                             </span>
                             {payment.ordinazione.tavolo && (
-                              <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
+                              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: colors.bg.hover, color: colors.text.secondary }}>
                                 Tavolo {payment.ordinazione.tavolo.numero}
                               </span>
                             )}
@@ -238,21 +259,21 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
                           
                           {payment.clienteNome && (
                             <div className="flex items-center gap-1">
-                              <User className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">{payment.clienteNome}</span>
+                              <User className="h-3 w-3" style={{ color: colors.text.secondary }} />
+                              <span className="text-sm" style={{ color: colors.text.secondary }}>{payment.clienteNome}</span>
                             </div>
                           )}
                         </div>
                         
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs" style={{ color: colors.text.secondary }}>
                             <Clock className="h-3 w-3" />
                             {new Date(payment.timestamp).toLocaleTimeString('it-IT', {
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
                           </div>
-                          <span className="text-lg font-bold text-white/60">
+                          <span className="text-lg font-bold" style={{ color: colors.text.primary }}>
                             €{payment.importo.toFixed(2)}
                           </span>
                         </div>
@@ -261,30 +282,30 @@ export default function PaymentHistory({ isOpen, onClose }: PaymentHistoryProps)
                     
                     {/* Payment Details */}
                     {isExpanded && (
-                      <div className="border-t border-border p-4">
+                      <div className="border-t p-4" style={{ borderColor: colors.border.secondary }}>
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Operatore</label>
-                            <p className="text-sm">{payment.operatore.nome}</p>
+                            <label className="text-sm font-medium" style={{ color: colors.text.secondary }}>Operatore</label>
+                            <p className="text-sm" style={{ color: colors.text.primary }}>{payment.operatore.nome}</p>
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Data e Ora</label>
-                            <p className="text-sm">
+                            <label className="text-sm font-medium" style={{ color: colors.text.secondary }}>Data e Ora</label>
+                            <p className="text-sm" style={{ color: colors.text.primary }}>
                               {new Date(payment.timestamp).toLocaleString('it-IT')}
                             </p>
                           </div>
                         </div>
                         
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground mb-2 block">Prodotti Pagati</label>
+                          <label className="text-sm font-medium mb-2 block" style={{ color: colors.text.secondary }}>Prodotti Pagati</label>
                           <div className="space-y-1">
                             {payment.ordinazione.righe.map((riga) => (
-                              <div key={riga.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                              <div key={riga.id} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: colors.bg.input }}>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium w-8">{riga.quantita}x</span>
-                                  <span className="text-sm">{riga.prodotto.nome}</span>
+                                  <span className="text-sm font-medium w-8" style={{ color: colors.text.primary }}>{riga.quantita}x</span>
+                                  <span className="text-sm" style={{ color: colors.text.primary }}>{riga.prodotto.nome}</span>
                                 </div>
-                                <span className="text-sm font-medium">
+                                <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
                                   €{(riga.prezzo * riga.quantita).toFixed(2)}
                                 </span>
                               </div>

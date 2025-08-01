@@ -1,0 +1,28 @@
+Nome Prodotto,Prezzo,Descrizione,Categoria,Ingredienti,Procedure,Bicchieri,Postazione,Tempo Preparazione
+"Mojito",8.50,"Cocktail rinfrescante con rum, menta e lime","COCKTAIL","Rum bianco:50ml;Foglie di menta:10pz;Lime:1/2pz;Zucchero di canna:2 cucchiaini;Soda:100ml;Ghiaccio:quanto basta","1. Pestare delicatamente le foglie di menta con lo zucchero e il lime nel bicchiere|2. Aggiungere il ghiaccio tritato fino a riempire il bicchiere|3. Versare il rum bianco e mescolare bene|4. Completare con la soda e guarnire con menta fresca","Highball","BANCO",5
+"Spritz Aperol",7.00,"Aperitivo classico italiano","APERITIVI","Aperol:60ml;Prosecco:90ml;Soda:30ml;Arancia:1 fetta;Ghiaccio:quanto basta","1. Riempire il bicchiere con ghiaccio|2. Versare Aperol, prosecco e soda|3. Mescolare delicatamente|4. Guarnire con fetta d'arancia","Calice vino","BANCO",3
+"Panino Club",12.00,"Triplo strato con pollo, bacon e verdure","PANINI","Pane toast:3 fette;Pollo grigliato:100g;Bacon:3 fette;Lattuga:2 foglie;Pomodoro:2 fette;Maionese:30g;Formaggio:2 fette","1. Tostare il pane fino a doratura|2. Spalmare maionese su ogni fetta|3. Primo strato: lattuga, pomodoro e pollo|4. Secondo strato: formaggio e bacon|5. Tagliare in triangoli e servire con patatine","","CUCINA",10
+"Caffè Espresso",1.50,"Caffè espresso italiano","CAFFETTERIA","Caffè macinato:7g","1. Preriscaldare la tazzina|2. Dosare e pressare il caffè|3. Estrarre per 25-30 secondi|4. Servire immediatamente","Tazzina espresso","BANCO",1
+"Birra alla spina media",5.00,"Birra chiara alla spina 0.4L","BIRRE","Birra chiara:400ml","1. Inclinare il bicchiere a 45 gradi|2. Aprire il rubinetto completamente|3. Raddrizzare il bicchiere quando è pieno per 2/3|4. Creare la schiuma perfetta","Boccale 0.4L","BANCO",1
+"Coca Cola",3.50,"Bibita gassata classica","BIBITE","Coca Cola:330ml","1. Servire fredda nel bicchiere con ghiaccio|2. Aggiungere fetta di limone se richiesta","Tumbler","IMMEDIATO",1
+"Tiramisu",6.00,"Dolce classico italiano","GELATI","Mascarpone:100g;Savoiardi:4pz;Caffè:50ml;Cacao:quanto basta;Zucchero:30g;Uova:1pz","1. Preparare la crema al mascarpone|2. Inzuppare i savoiardi nel caffè|3. Alternare strati di crema e savoiardi|4. Spolverare con cacao prima di servire","","PREPARA",15
+"Negroni",9.00,"Cocktail classico italiano","COCKTAIL","Gin:30ml;Campari:30ml;Vermouth rosso:30ml;Arancia:1 fetta;Ghiaccio:quanto basta","1. Versare tutti gli ingredienti nel mixing glass con ghiaccio|2. Mescolare per 30 secondi|3. Filtrare in un bicchiere old fashioned con ghiaccio fresco|4. Guarnire con scorza d'arancia","Old Fashioned","BANCO",3
+"Hamburger Gourmet",14.00,"Hamburger di manzo con ingredienti premium","PANINI","Carne di manzo:200g;Pane burger:1pz;Cheddar:2 fette;Bacon:2 fette;Lattuga:2 foglie;Pomodoro:2 fette;Cipolla caramellata:50g;Salsa burger:40g","1. Cuocere l'hamburger alla griglia per 4 minuti per lato|2. Tostare il pane sulla griglia|3. Assemblare con formaggio sopra la carne calda|4. Aggiungere verdure e salse|5. Servire con patatine fritte","","CUCINA",12
+
+ISTRUZIONI PER COMPILARE IL CSV:
+- Nome Prodotto: Nome del prodotto come apparirà nel menu
+- Prezzo: Prezzo in euro (usare il punto per i decimali)
+- Descrizione: Breve descrizione del prodotto
+- Categoria: Una tra ALCOLICI, APERITIVI, BIBITE, BIRRE, CAFFETTERIA, COCKTAIL, GELATI, PANINI
+- Ingredienti: Lista degli ingredienti nel formato "Nome:quantità unità" separati da punto e virgola (;)
+- Procedure: Steps della preparazione separati da pipe (|). Ogni step deve essere numerato
+- Bicchieri: Tipo di bicchiere da usare (lasciare vuoto se non applicabile)
+- Postazione: Una tra PREPARA, CUCINA, BANCO, IMMEDIATO
+- Tempo Preparazione: Tempo in minuti (numero intero)
+
+NOTE IMPORTANTI:
+- Usare le virgolette per i campi che contengono virgole, punto e virgola o pipe
+- Gli ingredienti devono seguire il formato esatto: "Nome ingrediente:quantità unità"
+- Le procedure devono essere separate da pipe (|) e numerate
+- Per prodotti semplici senza ingredienti complessi, lasciare vuoto il campo ingredienti
+- Per prodotti senza procedura (es. bibite in bottiglia), lasciare vuoto il campo procedure
