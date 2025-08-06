@@ -18,6 +18,30 @@ export class PrinterService {
   private printer: NetumPrinter;
   private status: PrinterStatus = { connected: false };
   private listeners: Array<(status: PrinterStatus) => void> = [];
+  private debugListeners: Array<(log: string) => void> = [];
+  
+  /**
+   * Log debug message
+   */
+  private logDebug(message: string): void {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(logMessage);
+    this.debugListeners.forEach(callback => callback(logMessage));
+  }
+  
+  /**
+   * Subscribe to debug logs
+   */
+  onDebugLog(callback: (log: string) => void): () => void {
+    this.debugListeners.push(callback);
+    return () => {
+      const index = this.debugListeners.indexOf(callback);
+      if (index > -1) {
+        this.debugListeners.splice(index, 1);
+      }
+    };
+  }
 
   constructor() {
     this.printer = netumPrinter;
@@ -53,13 +77,39 @@ export class PrinterService {
   }
 
   /**
-   * Connetti alla stampante
+   * Connetti alla stampante con logging dettagliato
    */
   async connectPrinter(): Promise<boolean> {
     try {
+      this.logDebug('Inizio connessione stampante...');
       this.updateStatus({ error: undefined });
       
+      // Intercetta i log dalla stampante
+      const originalLog = console.log;
+      const originalWarn = console.warn;
+      const originalError = console.error;
+      
+      console.log = (...args) => {
+        originalLog(...args);
+        this.logDebug(args.join(' '));
+      };
+      
+      console.warn = (...args) => {
+        originalWarn(...args);
+        this.logDebug('⚠️ ' + args.join(' '));
+      };
+      
+      console.error = (...args) => {
+        originalError(...args);
+        this.logDebug('❌ ' + args.join(' '));
+      };
+      
       const connected = await this.printer.connect();
+      
+      // Ripristina console originale
+      console.log = originalLog;
+      console.warn = originalWarn;
+      console.error = originalError;
       
       if (connected) {
         const deviceInfo = this.printer.getDeviceInfo();
@@ -69,13 +119,14 @@ export class PrinterService {
           error: undefined
         });
         
-        console.log('✅ Stampante connessa:', deviceInfo.name);
+        this.logDebug(`✅ Stampante connessa: ${deviceInfo.name}`);
         return true;
       } else {
         this.updateStatus({
           connected: false,
           error: 'Connessione fallita'
         });
+        this.logDebug('❌ Connessione fallita');
         return false;
       }
     } catch (error) {
@@ -84,7 +135,10 @@ export class PrinterService {
         connected: false,
         error: errorMessage
       });
-      console.error('❌ Errore connessione stampante:', error);
+      this.logDebug(`❌ Errore connessione: ${errorMessage}`);
+      if (error instanceof Error && error.stack) {
+        this.logDebug(`Stack: ${error.stack}`);
+      }
       return false;
     }
   }

@@ -30,6 +30,7 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,11 +41,20 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
     // Sottoscrivi agli aggiornamenti
     const unsubscribe = printerService.onStatusChange(setStatus);
     
-    return unsubscribe;
+    // Sottoscrivi ai log di debug
+    const unsubscribeDebug = printerService.onDebugLog((log) => {
+      setDebugLogs(prev => [...prev.slice(-20), log]); // Mantieni ultimi 20 log
+    });
+    
+    return () => {
+      unsubscribe();
+      unsubscribeDebug();
+    };
   }, [isOpen]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
+    setDebugLogs([]); // Pulisci log precedenti
     try {
       const success = await printerService.connectPrinter();
       if (success) {
@@ -334,6 +344,41 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
               )}
             </div>
           </div>
+
+          {/* Debug Logs */}
+          {debugLogs.length > 0 && (
+            <div 
+              className="p-4 rounded-lg text-xs space-y-1"
+              style={{ 
+                backgroundColor: colors.bg.hover,
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium" style={{ color: colors.text.secondary }}>
+                  Log di Debug
+                </span>
+                <button
+                  onClick={() => setDebugLogs([])}
+                  className="text-xs px-2 py-1 rounded"
+                  style={{ 
+                    backgroundColor: colors.button.secondary,
+                    color: colors.button.secondaryText
+                  }}
+                >
+                  Pulisci
+                </button>
+              </div>
+              <div className="font-mono space-y-1">
+                {debugLogs.map((log, i) => (
+                  <div key={i} style={{ color: colors.text.muted }}>
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Info dispositivo */}
           <div 
