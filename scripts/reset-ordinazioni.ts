@@ -8,6 +8,10 @@ async function resetOrdinazioni() {
     const deletedRighe = await prisma.rigaOrdinazione.deleteMany({});
     console.log(`✅ Deleted ${deletedRighe.count} righe ordinazione`);
     
+    // Elimina tutti gli ordini esauriti
+    const deletedOrdiniEsauriti = await prisma.ordineEsaurito.deleteMany({});
+    console.log(`✅ Deleted ${deletedOrdiniEsauriti.count} ordini esauriti`);
+    
     // Poi elimina tutte le ordinazioni
     const deletedOrdinazioni = await prisma.ordinazione.deleteMany({});
     console.log(`✅ Deleted ${deletedOrdinazioni.count} ordinazioni`);

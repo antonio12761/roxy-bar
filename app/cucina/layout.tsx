@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cucina - Siplit',
+  title: 'Cucina - Roxy Bar',
   description: 'Postazione cucina per preparazione ordini',
 }
 

@@ -588,7 +588,7 @@ export default function SupervisorePageOptimized() {
               <h1 className="text-xl font-bold text-foreground">Pannello Supervisore</h1>
             </div>
             <div className="text-xs text-muted-foreground">
-              Gestione e monitoraggio del sistema Siplit
+              Gestione e monitoraggio del sistema Roxy Bar
             </div>
           </div>
           <div className="flex items-center gap-4">

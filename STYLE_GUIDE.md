@@ -1,7 +1,7 @@
-# Style Guide - Siplit App
+# Style Guide - Roxy Bar App
 
 ## Overview
-This document outlines the design system and style guidelines for the Siplit application. All pages and components should follow these guidelines to maintain consistency across the app.
+This document outlines the design system and style guidelines for the Roxy Bar application. All pages and components should follow these guidelines to maintain consistency across the app.
 
 ## Theme System
 The app uses a dynamic theme system accessed via `useTheme()` hook from `@/contexts/ThemeContext`:

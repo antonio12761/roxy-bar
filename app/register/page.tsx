@@ -126,7 +126,7 @@ export default function RegisterPage() {
               type="text"
               value={formData.tenantName}
               onChange={(e) => setFormData({...formData, tenantName: e.target.value})}
-              placeholder="Siplit"
+              placeholder="Roxy Bar"
               disabled={isPending}
               className="v0-input h-10 text-sm"
               autoFocus

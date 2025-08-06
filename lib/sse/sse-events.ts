@@ -18,7 +18,7 @@ export interface SSEEventMap {
   
   'order:update': {
     orderId: string;
-    status: 'APERTO' | 'IN_PREPARAZIONE' | 'PRONTO' | 'RITIRATO' | 'PAGATO';
+    status: 'APERTO' | 'IN_PREPARAZIONE' | 'PRONTO' | 'RITIRATO' | 'PAGATO' | 'CONSEGNATO';
     previousStatus?: string;
     updatedBy?: string;
     timestamp: string;
@@ -43,6 +43,7 @@ export interface SSEEventMap {
   
   'order:ready': {
     orderId: string;
+    orderNumber?: number;
     tableNumber?: number;
     readyItems: string[];
     timestamp: string;
@@ -56,10 +57,48 @@ export interface SSEEventMap {
   };
   
   'order:paid': {
-    orderId: string;
-    amount: number;
-    paymentMethod: string;
+    orderId?: string;
+    ordinazioneId?: string;
+    numero?: number;
+    tavolo?: string | number;
+    totale?: number;
+    amount?: number;
+    paymentMethod?: string;
     cashierId?: string;
+    timestamp: string;
+  };
+  
+  'payment:update': {
+    ordinazioneId: string;
+    statoPagamento: string;
+    totaleRimanente: number;
+    pagamenti: Array<{
+      id: string;
+      importo: number;
+      clienteNome: string | null;
+      modalita: string;
+    }>;
+    timestamp: string;
+  };
+  
+  'payment:cancelled': {
+    ordinazioneId: string;
+    numero: number;
+    tavolo: string;
+    operatore: string;
+    motivo: string;
+    timestamp: string;
+  };
+  
+  'payment:partial-cancelled': {
+    ordinazioneId: string;
+    pagamentoId: string;
+    numero: number;
+    tavolo: string;
+    importoAnnullato: number;
+    clienteNome: string | null;
+    operatore: string;
+    motivo: string;
     timestamp: string;
   };
   
@@ -79,10 +118,12 @@ export interface SSEEventMap {
   
   'order:cancelled': {
     orderId: string;
+    orderNumber?: number;
     tableNumber?: number;
     orderType?: string;
     reason?: string;
     approvedBy?: string;
+    cancelledBy?: string;
     timestamp: string;
   };
   
@@ -101,6 +142,58 @@ export interface SSEEventMap {
     tableNumber?: number;
     rejectedBy: string;
     reason?: string;
+    timestamp: string;
+  };
+  
+  'order:esaurito:alert': {
+    orderId: string;
+    orderNumber: number;
+    tableNumber: number | string;
+    products?: Array<{
+      name: string;
+      quantity: number;
+    }>;
+    outOfStockItems?: Array<{
+      id: string;
+      productName: string;
+      quantity: number;
+    }>;
+    timestamp: string;
+    needsAttention?: boolean;
+    takenBy?: string | null;
+  };
+  
+  'order:esaurito:taken': {
+    orderId: string;
+    orderNumber: number;
+    tableNumber: string;
+    takenBy: string;
+    takenById?: string;
+    timestamp: string;
+  };
+  
+  'order:esaurito:released': {
+    orderId: string;
+    orderNumber: number;
+    tableNumber: string;
+    timestamp: string;
+  };
+  
+  'order:esaurito:resolved': {
+    originalOrderId: string;
+    originalOrderNumber: number;
+    newOrderId: string;
+    newOrderNumber: number;
+    tableNumber: string;
+    resolvedBy: string;
+    timestamp: string;
+  };
+  
+  'order:esaurito:cancelled': {
+    orderId: string;
+    orderNumber: number;
+    tableNumber: string;
+    cancelledBy: string;
     timestamp: string;
   };
   
@@ -204,6 +297,62 @@ export interface SSEEventMap {
     timestamp: string;
   };
   
+  'order:out-of-stock': {
+    originalOrderId: string;
+    originalOrderNumber: number;
+    newOrderId: string;
+    newOrderNumber: number;
+    tableNumber?: string;
+    waiterId: string;
+    waiterName?: string;
+    outOfStockProduct: string;
+    outOfStockItems: Array<{
+      id: string;
+      productName: string;
+      quantity: number;
+    }>;
+    timestamp: string;
+  };
+  
+  'out-of-stock:notification': {
+    id: string;
+    orderId: string;
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    table: string;
+    customerName: string;
+    timestamp: Date;
+    claimedBy?: string;
+    claimedAt?: Date;
+  };
+  
+  'out-of-stock:claimed': {
+    notificationId: string;
+    claimedBy: string;
+    claimedAt: Date;
+  };
+  
+  'out-of-stock:dismissed': {
+    notificationId: string;
+  };
+  
+  'product:out-of-stock': {
+    productId: number;
+    productName: string;
+    markedBy: string;
+    affectedOrdersCount: number;
+    timestamp: string;
+  };
+
+  'product:temporarily-unavailable': {
+    productId: number;
+    productName: string;
+    affectedOrders: number[];
+    updatedBy: string;
+    timestamp: string;
+  };
+  
   // Notification events
   'notification:new': {
     id: string;
@@ -288,6 +437,66 @@ export interface SSEEventMap {
     priority?: 'normal' | 'urgent';
   };
   
+  // Additional order events
+  'order:substituted': {
+    originalOrderId: string;
+    originalOrderNumber: number;
+    newOrderId: string;
+    newOrderNumber: number;
+    tableNumber?: string;
+    waiterId: string;
+    waiterName?: string;
+    outOfStockProduct: string;
+    outOfStockItems: Array<{
+      id: string;
+      productName: string;
+      quantity: number;
+    }>;
+    timestamp: string;
+  };
+  
+  'products:all-available': {
+    timestamp: string;
+  };
+  
+  'inventory:updated': {
+    productId: number;
+    productName: string;
+    availableQuantity: number;
+    updatedBy: string;
+    timestamp: string;
+  };
+  
+  'inventory:reset': {
+    productId: number;
+    productName: string;
+    resetBy: string;
+    timestamp: string;
+  };
+  
+  'debt:created': {
+    debtId: string;
+    userId: string;
+    amount: number;
+    description?: string;
+    timestamp: string;
+  };
+  
+  'debt-created': {
+    debitoId: string;
+    clienteId: string;
+    clienteName: string;
+    amount: number;
+    timestamp: string;
+  };
+  
+  'debt:paid': {
+    debtId: string;
+    userId: string;
+    amount: number;
+    timestamp: string;
+  };
+  
   // Connection events
   'connection:status': {
     status: 'connected' | 'disconnected' | 'error';
@@ -301,6 +510,11 @@ export interface SSEEventMap {
     message: string;
     retryable: boolean;
     retryAfter?: number;
+  };
+  
+  // Queue management events
+  'queue:check': {
+    tenantId: string;
   };
 }
 
@@ -358,13 +572,21 @@ export const SSEEventChannels: Partial<Record<SSEEventName, SSEChannel[]>> = {
   'order:in-preparation': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
   'order:ready': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
   'order:delivered': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
-  'order:paid': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
+  'order:paid': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE],
+  'payment:update': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
+  'payment:cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER, SSEChannels.STATION_WAITER],
+  'payment:partial-cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
   'order:cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
   'order:merged': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
   'merge:request': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE],
   'product:availability': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE],
   'product:unavailable-in-order': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE],
   'product:unavailable-urgent': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.STATION_PREPARE, SSEChannels.NOTIFICATIONS],
+  'order:out-of-stock': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER, SSEChannels.NOTIFICATIONS],
+  'out-of-stock:notification': [SSEChannels.NOTIFICATIONS, SSEChannels.STATION_WAITER],
+  'out-of-stock:claimed': [SSEChannels.NOTIFICATIONS, SSEChannels.STATION_WAITER],
+  'out-of-stock:dismissed': [SSEChannels.NOTIFICATIONS, SSEChannels.STATION_WAITER],
+  'product:out-of-stock': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.NOTIFICATIONS],
   'notification:new': [SSEChannels.NOTIFICATIONS],
   'system:announcement': [SSEChannels.SYSTEM],
   'station:request': [SSEChannels.NOTIFICATIONS],

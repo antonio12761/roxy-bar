@@ -307,3 +307,117 @@ export async function getRichiesteAnnullamentoPendenti() {
     return { success: false, error: "Errore nel recupero delle richieste" };
   }
 }
+
+// Annulla direttamente un ordine (per utenti PREPARA e SUPERVISORE)
+export async function annullaOrdineDiretto(ordinazioneId: string, motivo: string) {
+  try {
+    const utente = await getCurrentUser();
+    if (!utente) {
+      return { success: false, error: "Utente non autenticato" };
+    }
+
+    // Solo PREPARA, SUPERVISORE o ADMIN possono annullare direttamente
+    if (!["PREPARA", "SUPERVISORE", "ADMIN"].includes(utente.ruolo)) {
+      return { success: false, error: "Permessi insufficienti per annullare direttamente" };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Recupera l'ordinazione
+      const ordinazione = await tx.ordinazione.findUnique({
+        where: { id: ordinazioneId }
+      });
+
+      if (!ordinazione) {
+        return { success: false, error: "Ordinazione non trovata" };
+      }
+
+      // Verifica che l'ordine non sia già annullato o pagato
+      if (ordinazione.stato === 'ANNULLATO') {
+        return { success: false, error: "L'ordine è già stato annullato" };
+      }
+
+      if (ordinazione.stato === 'PAGATO') {
+        return { success: false, error: "Non puoi annullare un ordine già pagato" };
+      }
+
+      // Annulla l'ordinazione
+      const ordinazioneAnnullata = await tx.ordinazione.update({
+        where: { id: ordinazioneId },
+        data: { 
+          stato: 'ANNULLATO',
+          note: ordinazione.note 
+            ? `${ordinazione.note} | ANNULLATO da ${utente.nome || utente.id}: ${motivo}`
+            : `ANNULLATO da ${utente.nome || utente.id}: ${motivo}`
+        }
+      });
+
+      // Se c'è un tavolo, liberalo se non ci sono altri ordini attivi
+      if (ordinazione.tavoloId) {
+        const altriOrdiniAttivi = await tx.ordinazione.count({
+          where: {
+            tavoloId: ordinazione.tavoloId,
+            id: { not: ordinazioneId },
+            stato: {
+              in: ['ORDINATO', 'IN_PREPARAZIONE', 'PRONTO', 'CONSEGNATO']
+            }
+          }
+        });
+
+        if (altriOrdiniAttivi === 0) {
+          await tx.tavolo.update({
+            where: { id: ordinazione.tavoloId },
+            data: { stato: 'LIBERO' }
+          });
+        }
+      }
+
+      return { success: true, ordinazione: ordinazioneAnnullata };
+    });
+
+    if (result.success && 'ordinazione' in result && result.ordinazione) {
+      // Recupera il tavolo per il numero
+      let tableNumber: number | undefined;
+      if (result.ordinazione.tavoloId) {
+        const tavolo = await prisma.tavolo.findUnique({
+          where: { id: result.ordinazione.tavoloId }
+        });
+        if (tavolo) {
+          tableNumber = parseInt(tavolo.numero);
+        }
+      }
+
+      // Notifica l'annullamento
+      notificationManager.notifyOrderCancelled({
+        orderId: result.ordinazione.id,
+        tableNumber,
+        orderType: result.ordinazione.tipo,
+        reason: `${motivo} (da ${utente.nome || utente.id})`
+      });
+
+      // Emetti evento SSE per notificare i camerieri
+      sseService.emit('order:cancelled', {
+        orderId: result.ordinazione.id,
+        orderNumber: result.ordinazione.numero,
+        tableNumber,
+        cancelledBy: utente.nome || utente.id,
+        reason: motivo,
+        timestamp: new Date().toISOString()
+      });
+
+      revalidatePath("/prepara");
+      revalidatePath("/cameriere");
+      revalidatePath("/supervisore");
+      revalidatePath("/cassa");
+
+      return { 
+        success: true, 
+        message: `Ordine #${result.ordinazione.numero} annullato con successo`
+      };
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error("Errore annullamento diretto:", error);
+    return { success: false, error: "Errore durante l'annullamento dell'ordine" };
+  }
+}

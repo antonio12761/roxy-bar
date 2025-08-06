@@ -1,0 +1,18 @@
+# Notification Sound File
+
+This is a placeholder for the notification sound file.
+
+Please add an actual notification sound file named `notification-sound.mp3` to the public directory.
+
+The sound should be:
+- Short (1-2 seconds)
+- Clear and attention-grabbing
+- Not too loud or jarring
+- Suitable for a restaurant environment
+
+You can use free sound resources like:
+- https://freesound.org/
+- https://www.zapsplat.com/
+- https://mixkit.co/free-sound-effects/
+
+Or generate a simple tone using audio software.

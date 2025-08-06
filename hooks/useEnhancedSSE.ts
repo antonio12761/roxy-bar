@@ -247,33 +247,25 @@ export function useEnhancedSSE({
   const connectRef = useRef<(() => void) | null>(null);
   
   const connect = useCallback(() => {
-    // CRITICAL: Don't connect without a token
-    if (!tokenRef.current) {
-      console.log("🔒 Cannot connect without authentication token");
-      setConnectionHealth(prev => ({ 
-        ...prev, 
-        status: "disconnected",
-        reconnectAttempts: 0 
-      }));
-      return;
-    }
-    
+    // Connect with or without token (httpOnly cookie will be sent automatically)
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
 
     setConnectionHealth(prev => ({ ...prev, status: "connecting" }));
 
-    console.log("🔗 Connecting with token:", tokenRef.current ? "present" : "missing");
+    console.log("🔗 Connecting to SSE (auth via httpOnly cookie)...");
     
     const params = new URLSearchParams({
       clientId: clientIdRef.current,
       userRole: userRoleRef.current || "",
-      token: tokenRef.current,
+      // NO token - httpOnly cookie will be sent automatically by the browser
       ...(lastEventIdRef.current && enableEventReplayRef.current ? { lastEventId: lastEventIdRef.current } : {})
     });
 
     console.log("📡 SSE URL:", `/api/sse?${params}`);
+    // EventSource automatically includes cookies for same-origin requests
+    // The httpOnly session cookie will be sent automatically
     const eventSource = new EventSource(`/api/sse?${params}`);
     eventSourceRef.current = eventSource;
 
@@ -545,25 +537,12 @@ export function useEnhancedSSE({
       reconnectTimeoutRef.current = null;
     }
     
-    // Don't connect without a token
+    // Connect regardless of token (httpOnly cookie will be sent automatically)
     if (!token) {
-      console.log("⏳ No authentication token available");
-      // Ensure we're disconnected
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      reconnectAttemptsRef.current = 0;
-      setConnectionHealth(prev => ({ 
-        ...prev, 
-        status: "disconnected",
-        reconnectAttempts: 0
-      }));
-      return;
+      console.log("🍪 Connecting without explicit token (using httpOnly cookie)...");
+    } else {
+      console.log("✅ Token available, connecting...");
     }
-    
-    // We have a token, connect
-    console.log("✅ Token available, connecting...");
     connect();
 
     // Handle page visibility changes
@@ -571,12 +550,10 @@ export function useEnhancedSSE({
       if (document.hidden && queueOfflineEvents) {
         // Page is hidden, prepare for offline mode
         console.log("Page hidden, preparing for offline mode");
-      } else if (!document.hidden && eventSourceRef.current === null && token) {
-        // Page is visible again, reconnect if needed and we have a token
-        console.log("Page visible, checking token before reconnecting...");
-        if (tokenRef.current) {
-          connect();
-        }
+      } else if (!document.hidden && eventSourceRef.current === null) {
+        // Page is visible again, reconnect if needed
+        console.log("Page visible, reconnecting...");
+        connect();
       }
     };
 

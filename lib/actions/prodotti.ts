@@ -30,7 +30,7 @@ export async function toggleProductAvailability(productId: number, available: bo
         where: {
           prodottoId: productId,
           stato: {
-            in: ['INSERITO', 'IN_LAVORAZIONE']
+            in: ['INSERITO', 'IN_LAVORAZIONE', 'PRONTO']
           }
         },
         include: {
@@ -44,11 +44,53 @@ export async function toggleProductAvailability(productId: number, available: bo
         }
       });
 
-      // Group by order status for different notifications
-      const orderedItems = activeOrdersWithProduct.filter(item => item.stato === 'INSERITO');
-      const inPreparationItems = activeOrdersWithProduct.filter(item => item.stato === 'IN_LAVORAZIONE');
+      console.log(`[toggleProductAvailability] Found ${activeOrdersWithProduct.length} active orders with product ${productId} (${updatedProduct.nome})`);
 
-      // Emit specific events for affected orders
+      // Group by order status for different notifications
+      const orderedItems = activeOrdersWithProduct.filter(item => 
+        item.stato === 'INSERITO'
+      );
+      const inPreparationItems = activeOrdersWithProduct.filter(item => 
+        item.stato === 'IN_LAVORAZIONE' || item.stato === 'PRONTO'
+      );
+
+      // Emit order:esaurito:alert for each affected order - THIS IS THE KEY EVENT
+      const uniqueOrders = new Map();
+      activeOrdersWithProduct.forEach(item => {
+        if (!uniqueOrders.has(item.ordinazioneId)) {
+          uniqueOrders.set(item.ordinazioneId, {
+            order: item.Ordinazione,
+            items: []
+          });
+        }
+        uniqueOrders.get(item.ordinazioneId).items.push(item);
+      });
+
+      // Emit alert for each unique order
+      for (const [orderId, data] of uniqueOrders) {
+        const { order, items } = data;
+        
+        console.log(`[toggleProductAvailability] Emitting order:esaurito:alert for order ${order.numero}`);
+        
+        sseService.emit('order:esaurito:alert', {
+          orderId: order.id,
+          orderNumber: order.numero,
+          tableNumber: order.Tavolo?.numero || 0,
+          outOfStockItems: items.map((item: any) => ({
+            id: item.id,
+            productName: item.Prodotto.nome,
+            quantity: item.quantita
+          })),
+          timestamp: new Date().toISOString()
+        }, {
+          broadcast: true,
+          skipRateLimit: true,
+          tenantId: user.tenantId,
+          targetStations: ['CAMERIERE', 'PREPARA']
+        });
+      }
+
+      // Emit specific events for affected orders (keeping backward compatibility)
       if (orderedItems.length > 0) {
         sseService.emit('product:unavailable-in-order', {
           productId: updatedProduct.id,
@@ -101,8 +143,6 @@ export async function toggleProductAvailability(productId: number, available: bo
       timestamp: new Date().toISOString()
     };
     
-    console.log('[Prodotti] Emitting SSE event product:availability:', eventData);
-    
     // Emit immediately with broadcast to all clients
     sseService.emit('product:availability', eventData, { 
       broadcast: true, 
@@ -111,23 +151,26 @@ export async function toggleProductAvailability(productId: number, available: bo
       queueIfOffline: true
     });
     
-    // Also emit with multiple delays to catch reconnecting clients
+    // Emit multiple times with delays to catch reconnecting clients
+    // This is the same pattern used for orders that works
     const delays = [100, 250, 500, 1000, 2000];
     delays.forEach(delay => {
       setTimeout(() => {
         sseService.emit('product:availability', eventData, { 
           broadcast: true, 
           skipRateLimit: true,
-          tenantId: user.tenantId
+          tenantId: user.tenantId,
+          queueIfOffline: true
         });
       }, delay);
     });
 
-    // Revalidate all pages that might show products
-    revalidatePath('/cameriere');
-    revalidatePath('/cameriere/nuova-ordinazione');
-    revalidatePath('/cameriere/tavolo/[id]', 'page');
-    revalidatePath('/prepara');
+    // Don't revalidate - let SSE handle the updates
+    // This prevents SSE disconnections
+    // revalidatePath('/cameriere');
+    // revalidatePath('/cameriere/nuova-ordinazione');
+    // revalidatePath('/cameriere/tavolo/[id]', 'page');
+    // revalidatePath('/prepara');
     
     return { 
       success: true, 
@@ -136,6 +179,46 @@ export async function toggleProductAvailability(productId: number, available: bo
     };
   } catch (error) {
     console.error("Errore aggiornamento disponibilità prodotto:", error);
+    return { success: false, error: "Errore nell'aggiornamento della disponibilità" };
+  }
+}
+
+export async function makeAllProductsAvailable() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "Non autenticato" };
+    }
+
+    // Aggiorna tutti i prodotti non disponibili a disponibili
+    const result = await prisma.prodotto.updateMany({
+      where: { 
+        disponibile: false
+      },
+      data: { disponibile: true }
+    });
+
+    // Emetti evento SSE per aggiornamento globale
+    sseService.emit('products:all-available', {
+      timestamp: new Date().toISOString()
+    }, {
+      broadcast: true,
+      skipRateLimit: true,
+      tenantId: user.tenantId,
+      targetStations: ['CAMERIERE', 'PREPARA', 'CUCINA', 'BAR']
+    });
+
+    // Revalida i percorsi necessari
+    revalidatePath('/prepara');
+    revalidatePath('/cameriere');
+    
+    return { 
+      success: true, 
+      count: result.count,
+      message: `${result.count} prodotti resi disponibili`
+    };
+  } catch (error) {
+    console.error("Errore nel rendere disponibili tutti i prodotti:", error);
     return { success: false, error: "Errore nell'aggiornamento della disponibilità" };
   }
 }

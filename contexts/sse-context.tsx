@@ -13,6 +13,7 @@ interface SSEState {
 }
 
 interface SSEContextValue extends SSEState {
+  isConnected: boolean;  // Explicitly expose connection state
   subscribe: <T extends SSEEventName>(
     eventName: T,
     handler: (data: SSEEventData<T>) => void
@@ -85,6 +86,13 @@ export function SSEProvider({
       const data = JSON.parse(event.data);
       const eventName = event.type || data.event;
       
+      // Debug log for esaurito events
+      if (eventName === 'order:esaurito:alert') {
+        console.log('[SSE Context] Received order:esaurito:alert event:', data);
+      }
+      
+      // Process event immediately without logging
+      
       // Handle connection status events
       if (eventName === 'connection:status') {
         setState(prev => ({
@@ -97,13 +105,22 @@ export function SSEProvider({
       // Call registered handlers
       const handlers = handlersRef.current.get(eventName);
       if (handlers) {
+        // Debug log for esaurito events
+        if (eventName === 'order:esaurito:alert') {
+          console.log(`[SSE Context] Found ${handlers.size} handlers for order:esaurito:alert`);
+        }
         handlers.forEach(handler => {
           try {
             handler(data);
           } catch (error) {
-            // Handler error, silently continue
+            // Silently handle errors in production
+            if (process.env.NODE_ENV === 'development') {
+              console.error(`[SSEContext] Handler error for ${eventName}:`, error);
+            }
           }
         });
+      } else if (eventName === 'order:esaurito:alert') {
+        console.log('[SSE Context] No handlers registered for order:esaurito:alert');
       }
     } catch (error) {
       // Not a JSON message, could be a heartbeat or comment
@@ -118,15 +135,7 @@ export function SSEProvider({
       return;
     }
     
-    // Don't connect without token
-    if (!tokenRef.current) {
-      setState(prev => ({ 
-        ...prev, 
-        error: new Error('Authentication required') 
-      }));
-      return;
-    }
-    
+    // Token is optional - httpOnly cookie will be used for auth
     connectingRef.current = true;
     setState(prev => ({ 
       ...prev, 
@@ -134,15 +143,24 @@ export function SSEProvider({
       error: null 
     }));
     
-    let url = `/api/sse?token=${encodeURIComponent(tokenRef.current)}`;
+    // Build URL without token (httpOnly cookie will be sent automatically)
+    const params = new URLSearchParams();
     if (stationRef.current) {
-      url += `&station=${encodeURIComponent(stationRef.current)}`;
+      params.append('station', stationRef.current);
     }
+    // Add token only if available (for backward compatibility)
+    if (tokenRef.current) {
+      params.append('token', tokenRef.current);
+    }
+    
+    const url = `/api/sse${params.toString() ? '?' + params.toString() : ''}`;
+    // Connect to SSE endpoint
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
     
     eventSource.onopen = () => {
       // Successfully connected
+      // Connection successful
       connectingRef.current = false;
       setState({
         connected: true,
@@ -200,15 +218,27 @@ export function SSEProvider({
       'order:status-change',
       'order:ready',
       'order:delivered',
+      'order:esaurito:alert',    // CRITICAL - for out of stock alerts
+      'order:esaurito:taken',    // When someone takes charge
+      'order:esaurito:released', // When released
+      'order:out-of-stock',      // General out of stock
       'notification:new',
       'notification:reminder',
       'connection:status',
       'connection:error',
-      'user:presence'
+      'user:presence',
+      'product:availability',
+      'product:unavailable-in-order',
+      'product:unavailable-urgent',
+      'product:out-of-stock',
+      'system:heartbeat'
     ];
     
     events.forEach(eventName => {
-      eventSource.addEventListener(eventName, processMessage as any);
+      eventSource.addEventListener(eventName, (event) => {
+        // Event triggered
+        processMessage(event as MessageEvent);
+      });
     });
     
     eventSource.onerror = (error) => {
@@ -218,6 +248,7 @@ export function SSEProvider({
       }
       
       // Connection error occurred
+      // Connection error
       
       // Only close if not already closed
       if (eventSource.readyState !== EventSource.CLOSED) {
@@ -233,10 +264,8 @@ export function SSEProvider({
         error: new Error('Connection lost')
       }));
       
-      // Don't reconnect if no token
-      if (!tokenRef.current) {
-        return;
-      }
+      // Token is optional - httpOnly cookie will be used for auth
+      // Continue reconnecting even without token
       
       // Don't reconnect if we hit error 503 (service disabled)
       if ((error as any)?.status === 503) {
@@ -264,12 +293,12 @@ export function SSEProvider({
       
       reconnectTimeoutRef.current = setTimeout(() => {
         reconnectTimeoutRef.current = null;
-        if (tokenRef.current && !eventSourceRef.current) {
+        if (!eventSourceRef.current) {
           connect();
         }
       }, delay);
     };
-  }, [state.connecting, state.reconnectAttempts, processMessage]);
+  }, []); // Remove dependencies to prevent infinite loop
   
   // Disconnect from SSE
   const disconnect = useCallback(() => {
@@ -328,31 +357,28 @@ export function SSEProvider({
     return handlers ? handlers.size > 0 : false;
   }, []);
   
-  // Auto-connect when token is available
+  // Auto-connect immediately on mount
   useEffect(() => {
-    if (token && !state.connected && !state.connecting) {
-      connect();
-    }
+    // Auto-connect on mount
+    connect();
     
     return () => {
-      // Only disconnect if component is unmounting (not on token/state changes)
-      if (!token) {
-        disconnect();
-      }
+      // Keep connection alive - don't disconnect on unmount
+      // This ensures continuity when navigating between pages
     };
-  }, [token]); // Only depend on token to avoid loops
+  }, []); // Connect once on mount
   
   // Separate effect to handle reconnection based on state
   useEffect(() => {
     // Use a small delay to avoid rapid reconnection attempts
     const timeoutId = setTimeout(() => {
-      if (token && !eventSourceRef.current && !connectingRef.current) {
+      if (!eventSourceRef.current && !connectingRef.current) {
         connect();
       }
     }, 500); // Increased delay to avoid rapid attempts
     
     return () => clearTimeout(timeoutId);
-  }, [token, connect]); // Simplified dependencies
+  }, []); // Remove connect from dependencies to avoid infinite loop
   
   // Handle page visibility - Keep connection alive even when tab is not active
   useEffect(() => {
@@ -360,8 +386,8 @@ export function SSEProvider({
       if (document.hidden) {
         // Page hidden - DO NOT disconnect, keep receiving events
       } else {
-        // Page visible, reconnect if we have a token and not connected
-        if (!state.connected && !state.connecting && tokenRef.current) {
+        // Page visible, reconnect if not connected
+        if (!eventSourceRef.current && !connectingRef.current) {
           connect();
         }
       }
@@ -372,10 +398,11 @@ export function SSEProvider({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [state.connected, state.connecting, connect, disconnect]);
+  }, []); // Remove all dependencies to avoid re-subscription
   
   const value: SSEContextValue = {
     ...state,
+    isConnected: state.connected,  // Explicitly add isConnected for clarity
     subscribe,
     connect,
     disconnect,

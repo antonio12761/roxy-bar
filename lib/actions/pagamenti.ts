@@ -6,8 +6,11 @@ import { revalidatePath } from "next/cache";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { creaScontrinoQueue, creaScontrinoBatch } from "@/lib/services/scontrino-queue";
+import { sseService } from "@/lib/sse/sse-service";
+import { SSEEventMap } from "@/lib/sse/sse-events";
 import crypto from "crypto";
 import { nanoid } from "nanoid";
+// import { rateLimiters } from "@/lib/middleware/rate-limiter"; // Removed - file deleted
 
 export async function getOrdinazioniDaPagare() {
   try {
@@ -99,6 +102,18 @@ export async function creaPagamento(
     if (!utente) {
       return { success: false, error: "Utente non autenticato" };
     }
+    
+    // RATE LIMITING: Disabled - rate limiter removed
+    // const rateLimitResult = await rateLimiters.payment.check(utente.id, 10);
+    // if (!rateLimitResult.success) {
+    //   const resetIn = Math.ceil((rateLimitResult.reset.getTime() - Date.now()) / 1000);
+    //   return { 
+    //     success: false, 
+    //     error: `Troppe richieste di pagamento. Riprova tra ${resetIn} secondi.`,
+    //     rateLimited: true,
+    //     resetIn
+    //   };
+    // }
 
     // Verifica permessi (CASSA o superiore)
     if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
@@ -130,11 +145,24 @@ export async function creaPagamento(
     const totalePagato = (ordinazione as any).Pagamento?.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0) || 0;
     const rimanente = totaleRighe - totalePagato;
 
-    // Temporaneamente commentiamo questo controllo finché non implementiamo
-    // il supporto per pagamenti parziali di prodotti specifici
-    // if (importo > rimanente) {
-    //   return { success: false, error: "Importo superiore al dovuto" };
-    // }
+    // Validazione importo - permetti overpayment solo se esplicitamente richiesto
+    if (importo > rimanente) {
+      // Permetti overpayment fino al 10% per gestire arrotondamenti e mance
+      const maxOverpayment = rimanente * 1.1;
+      if (importo > maxOverpayment) {
+        return { 
+          success: false, 
+          error: `Importo €${importo.toFixed(2)} troppo elevato. Massimo consentito: €${maxOverpayment.toFixed(2)} (include 10% mancia)` 
+        };
+      }
+      // Log overpayment per audit
+      console.log(`Overpayment rilevato: €${(importo - rimanente).toFixed(2)} su ordine ${ordinazioneId}`);
+    }
+    
+    // Validazione importo minimo
+    if (importo <= 0) {
+      return { success: false, error: "L'importo deve essere maggiore di zero" };
+    }
     
     console.log("Controllo importo:", { 
       importo, 
@@ -145,136 +173,248 @@ export async function creaPagamento(
       check: importo > rimanente 
     });
 
-    // Crea il pagamento
-    const pagamento = await prisma.pagamento.create({
-      data: {
-        id: nanoid(),
-        ordinazioneId,
-        importo,
-        modalita,
-        clienteNome,
-        operatoreId: utente.id,
-        righeIds: (ordinazione as any).RigaOrdinazione?.map((r: any) => r.id) || [] // Per ora assegna tutte le righe
-      }
-    });
-
-    // Gestisci pagamento parziale o completo
-    let importoResidue = importo;
-    const righeNonPagate = await prisma.rigaOrdinazione.findMany({
-      where: {
-        ordinazioneId,
-        isPagato: false
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
-
-    console.log(`Gestione pagamento: importo €${importo}, righe non pagate: ${righeNonPagate.length}`);
-
-    // Lista delle righe effettivamente pagate in questo pagamento
-    const righePagate = [];
-
-    // Marca le righe come pagate in base all'importo
-    for (const riga of righeNonPagate) {
-      const costoRiga = riga.prezzo.toNumber() * riga.quantita;
-      
-      if (importoResidue >= costoRiga) {
-        // Paga completamente questa riga
-        await prisma.rigaOrdinazione.update({
-          where: { id: riga.id },
-          data: {
-            isPagato: true,
-            pagatoDa: clienteNome
-          }
-        });
-        importoResidue -= costoRiga;
-        righePagate.push(riga.id);
-        console.log(`Riga pagata: ${riga.id} - €${costoRiga}, residuo: €${importoResidue}`);
-      } else {
-        // Pagamento parziale - per ora lo saltiamo
-        console.log(`Importo insufficiente per riga ${riga.id} (costa €${costoRiga}, residuo €${importoResidue})`);
-        break;
-      }
-    }
-
-    // Aggiorna il record pagamento con le righe effettivamente pagate
-    await prisma.pagamento.update({
-      where: { id: pagamento.id },
-      data: {
-        righeIds: righePagate
-      }
-    });
-
-    // Verifica se tutte le righe sono state pagate
-    const righeAncoraAperte = await prisma.rigaOrdinazione.count({
-      where: {
-        ordinazioneId,
-        isPagato: false
-      }
-    });
-
-    // Calcola il nuovo totale rimanente
-    const righeRimanenti = await prisma.rigaOrdinazione.findMany({
-      where: {
-        ordinazioneId,
-        isPagato: false
-      }
-    });
+    // TRANSAZIONE ATOMICA per garantire consistenza con LOCK PESSIMISTICO
+    let pagamento: any;
+    let righePagate: string[] = [];
+    let righeAncoraAperte = 0;
+    let totaleRimanente = 0;
     
-    const totaleRimanente = righeRimanenti.reduce((sum, riga) => 
-      sum + (riga.prezzo.toNumber() * riga.quantita), 0
-    );
-
-    console.log(`Pagamento completato: righe pagate ${righePagate.length}, righe rimanenti ${righeAncoraAperte}, totale rimanente €${totaleRimanente}`);
-    console.log("Verifica pagamento completo:", {
-      righeAncoraAperte,
-      totaleRimanente,
-      importoPagato: importo,
-      willCloseTavolo: righeAncoraAperte === 0
-    });
-
-    if (righeAncoraAperte === 0) {
-      // Aggiorna stato ordinazione - completamente pagata
-      await prisma.ordinazione.update({
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock pessimistico con NOWAIT per prevenire deadlock
+      const ordinazioneLocked = await tx.$queryRaw`
+        SELECT id FROM "Ordinazione" 
+        WHERE id = ${ordinazioneId}
+        FOR UPDATE NOWAIT
+      `.catch((err: any) => {
+        if (err.code === 'P2034' || err.message?.includes('could not obtain lock')) {
+          throw new Error('Ordine in elaborazione da un altro operatore. Riprova tra qualche secondo.');
+        }
+        throw err;
+      });
+      
+      if (!ordinazioneLocked || (ordinazioneLocked as any[]).length === 0) {
+        throw new Error("Impossibile acquisire lock sull'ordinazione");
+      }
+      // Verifica ancora che l'ordine non sia già completamente pagato
+      const ordinazioneAttuale = await tx.ordinazione.findUnique({
         where: { id: ordinazioneId },
+        select: { statoPagamento: true, stato: true }
+      });
+      
+      if (ordinazioneAttuale?.statoPagamento === "COMPLETAMENTE_PAGATO" || 
+          ordinazioneAttuale?.stato === "PAGATO") {
+        throw new Error("Ordinazione già pagata completamente");
+      }
+      
+      // Crea il pagamento
+      const pagamentoId = nanoid();
+      pagamento = await tx.pagamento.create({
         data: {
-          stato: "PAGATO",
-          statoPagamento: "COMPLETAMENTE_PAGATO",
-          dataChiusura: new Date()
+          id: pagamentoId,
+          ordinazioneId,
+          importo,
+          modalita,
+          clienteNome,
+          operatoreId: utente.id,
+          righeIds: [] // Verrà aggiornato dopo
         }
       });
 
-      // Libera il tavolo se era occupato
-      if (ordinazione.tavoloId) {
-        await prisma.tavolo.update({
-          where: { id: ordinazione.tavoloId },
-          data: { stato: "LIBERO" }
-        });
+      // Crea record audit trail
+      await tx.paymentHistory.create({
+        data: {
+          id: nanoid(),
+          pagamentoId: pagamentoId,
+          ordinazioneId: ordinazioneId,
+          action: 'CREATE',
+          importo: importo,
+          modalita: modalita,
+          operatoreId: utente.id,
+          operatoreNome: utente.nome,
+          previousState: { statoPagamento: ordinazioneAttuale?.statoPagamento || 'NON_PAGATO' },
+          newState: { statoPagamento: righeAncoraAperte === 0 ? 'COMPLETAMENTE_PAGATO' : 'PARZIALMENTE_PAGATO' },
+          metadata: {
+            clienteNome,
+            righeProcessate: righePagate.length,
+            importoOriginale: importo,
+            timestamp: new Date().toISOString()
+          }
+        }
+      });
+
+      // Gestisci pagamento parziale o completo
+      let importoResidue = importo;
+      const righeNonPagate = await tx.rigaOrdinazione.findMany({
+        where: {
+          ordinazioneId,
+          isPagato: false
+        },
+        orderBy: {
+          createdAt: 'asc'
+        }
+      });
+
+      console.log(`Gestione pagamento: importo €${importo}, righe non pagate: ${righeNonPagate.length}`);
+
+      // Lista delle righe effettivamente pagate in questo pagamento
+      righePagate = [];
+
+      // Marca le righe come pagate in base all'importo
+      for (const riga of righeNonPagate) {
+        const costoRiga = riga.prezzo.toNumber() * riga.quantita;
+        
+        if (importoResidue >= costoRiga) {
+          // Paga completamente questa riga
+          await tx.rigaOrdinazione.update({
+            where: { id: riga.id },
+            data: {
+              isPagato: true,
+              pagatoDa: clienteNome
+            }
+          });
+          importoResidue -= costoRiga;
+          righePagate.push(riga.id);
+          console.log(`Riga pagata: ${riga.id} - €${costoRiga}, residuo: €${importoResidue}`);
+        } else {
+          // Pagamento parziale - per ora lo saltiamo
+          console.log(`Importo insufficiente per riga ${riga.id} (costa €${costoRiga}, residuo €${importoResidue})`);
+          break;
+        }
       }
+
+      // Aggiorna il record pagamento con le righe effettivamente pagate
+      await tx.pagamento.update({
+        where: { id: pagamento.id },
+        data: {
+          righeIds: righePagate
+        }
+      });
+
+      // Verifica se tutte le righe sono state pagate
+      righeAncoraAperte = await tx.rigaOrdinazione.count({
+        where: {
+          ordinazioneId,
+          isPagato: false
+        }
+      });
+
+      // Calcola il nuovo totale rimanente
+      const righeRimanenti = await tx.rigaOrdinazione.findMany({
+        where: {
+          ordinazioneId,
+          isPagato: false
+        }
+      });
+      
+      totaleRimanente = righeRimanenti.reduce((sum, riga) => 
+        sum + (riga.prezzo.toNumber() * riga.quantita), 0
+      );
+
+      console.log(`Pagamento completato: righe pagate ${righePagate.length}, righe rimanenti ${righeAncoraAperte}, totale rimanente €${totaleRimanente}`);
+      console.log("Verifica pagamento completo:", {
+        righeAncoraAperte,
+        totaleRimanente,
+        importoPagato: importo,
+        willCloseTavolo: righeAncoraAperte === 0
+      });
+
+      let tavoloLiberato = false;
+      if (righeAncoraAperte === 0) {
+        // Aggiorna stato ordinazione - SEMPRE sincronizzati stato e statoPagamento
+        await tx.ordinazione.update({
+          where: { id: ordinazioneId },
+          data: {
+            stato: "PAGATO",
+            statoPagamento: "COMPLETAMENTE_PAGATO",
+            dataChiusura: new Date()
+          }
+        });
+
+        // Verifica altri ordini attivi prima di liberare il tavolo
+        if (ordinazione.tavoloId) {
+          const altriOrdiniAttivi = await tx.ordinazione.count({
+            where: {
+              tavoloId: ordinazione.tavoloId,
+              id: { not: ordinazioneId },
+              stato: {
+                notIn: ["PAGATO", "ANNULLATO"]
+              }
+            }
+          });
+          
+          // Libera il tavolo SOLO se non ci sono altri ordini attivi
+          if (altriOrdiniAttivi === 0) {
+            await tx.tavolo.update({
+              where: { id: ordinazione.tavoloId },
+              data: { stato: "LIBERO" }
+            });
+            tavoloLiberato = true;
+          }
+        }
       
       // Notifica pagamento completato
+      const tableNumber = ordinazione.tavoloId ? await prisma.tavolo.findUnique({
+        where: { id: ordinazione.tavoloId },
+        select: { numero: true }
+      }).then(t => t ? parseInt(t.numero) : undefined) : undefined;
+      
       notificationManager.notifyOrderPaid({
         orderId: ordinazioneId,
-        tableNumber: ordinazione.tavoloId ? await prisma.tavolo.findUnique({
-          where: { id: ordinazione.tavoloId },
-          select: { numero: true }
-        }).then(t => t ? parseInt(t.numero) : undefined) : undefined,
+        tableNumber,
         orderType: ordinazione.tipo,
         amount: importo,
         customerName: clienteNome || undefined
       });
-    } else {
-      // Pagamento parziale - aggiorna solo lo stato
-      await prisma.ordinazione.update({
-        where: { id: ordinazioneId },
-        data: {
-          statoPagamento: "PARZIALMENTE_PAGATO"
-        }
+      
+      // Emetti evento SSE direttamente (come fa creaOrdinazione)
+      const eventData: SSEEventMap['order:paid'] = {
+        orderId: ordinazioneId,
+        amount: importo,
+        paymentMethod: modalita,
+        cashierId: utente.id,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Emit immediately with broadcast
+      sseService.emit('order:paid', eventData, { 
+        broadcast: true, 
+        skipRateLimit: true,
+        tenantId: utente.tenantId,
+        queueIfOffline: true
       });
       
-      console.log(`Ordinazione ${ordinazioneId} aggiornata a PARZIALMENTE_PAGATO`);
-    }
+      // Also emit with delays to catch reconnecting clients
+      const delays = [100, 250, 500, 1000, 2000];
+      delays.forEach(delay => {
+        setTimeout(() => {
+          sseService.emit('order:paid', eventData, { 
+            broadcast: true, 
+            skipRateLimit: true,
+            tenantId: utente.tenantId
+          });
+        }, delay);
+      });
+      } else {
+        // Pagamento parziale - mantieni stati sincronizzati
+        await tx.ordinazione.update({
+          where: { id: ordinazioneId },
+          data: {
+            statoPagamento: "PARZIALMENTE_PAGATO",
+            // NON cambiare lo stato principale se parzialmente pagato
+            // stato rimane CONSEGNATO/RICHIESTA_CONTO/etc
+          }
+        });
+        
+        console.log(`Ordinazione ${ordinazioneId} aggiornata a PARZIALMENTE_PAGATO`);
+      }
+    
+      // Return transaction results
+      return { pagamento, righePagate, righeAncoraAperte, totaleRimanente };
+    }, {
+      maxWait: 5000,  // Max 5 secondi di attesa per acquisire la transazione
+      timeout: 10000, // Timeout 10 secondi per completare la transazione
+      isolationLevel: 'Serializable' // Massimo isolamento per prevenire anomalie
+    });
 
     // Crea scontrino nella queue
     try {
@@ -349,6 +489,7 @@ export async function creaPagamento(
         statoFinale: righeAncoraAperte === 0 ? "COMPLETAMENTE_PAGATO" : "PARZIALMENTE_PAGATO"
       }
     };
+    
   } catch (error) {
     console.error("Errore creazione pagamento:", error);
     console.error("Stack trace:", error instanceof Error ? error.stack : "No stack");
@@ -506,7 +647,7 @@ export async function creaPagamentoRigheSpecifiche(
       return { success: false, error: "Permessi insufficienti" };
     }
 
-    // Usa transazione per garantire atomicità
+    // Usa transazione con timeout e isolation level per garantire atomicità
     const result = await prisma.$transaction(async (prisma) => {
       // Recupera le righe selezionate con i loro ordini
       const righe = await prisma.rigaOrdinazione.findMany({
@@ -554,15 +695,46 @@ export async function creaPagamentoRigheSpecifiche(
         );
 
         // Crea il pagamento
+        const pagamentoId = nanoid();
         const pagamento = await prisma.pagamento.create({
           data: {
-            id: nanoid(),
+            id: pagamentoId,
             ordinazioneId,
             importo: importoOrd,
             modalita,
             clienteNome,
             righeIds: righeOrd.map(r => r.id),
             operatoreId: utente.id
+          }
+        });
+
+        // Conta righe rimanenti prima di creare audit trail
+        const righeRimanentiCount = await prisma.rigaOrdinazione.count({
+          where: {
+            ordinazioneId,
+            isPagato: false
+          }
+        });
+
+        // Crea record audit trail per ogni pagamento
+        await prisma.paymentHistory.create({
+          data: {
+            id: nanoid(),
+            pagamentoId: pagamentoId,
+            ordinazioneId: ordinazioneId,
+            action: 'CREATE',
+            importo: importoOrd,
+            modalita: modalita,
+            operatoreId: utente.id,
+            operatoreNome: utente.nome,
+            previousState: { statoPagamento: 'NON_PAGATO' }, // Assumiamo stato iniziale
+            newState: { statoPagamento: righeRimanentiCount === righeOrd.length ? 'COMPLETAMENTE_PAGATO' : 'PARZIALMENTE_PAGATO' },
+            metadata: {
+              clienteNome,
+              righeProcessate: righeOrd.map(r => r.id),
+              importoOriginale: importoOrd,
+              timestamp: new Date().toISOString()
+            }
           }
         });
 

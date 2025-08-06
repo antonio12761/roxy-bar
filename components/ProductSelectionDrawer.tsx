@@ -387,7 +387,7 @@ export default function ProductSelectionDrawer({
               <div className="text-sm font-medium mb-2">Anteprima Scontrino:</div>
               <div className="text-xs font-mono bg-white p-2 rounded border">
                 <div className="text-center border-b pb-1 mb-2">
-                  <div className="font-bold">Siplit</div>
+                  <div className="font-bold">Roxy Bar</div>
                   <div className="text-xs">{new Date().toLocaleString()}</div>
                 </div>
                 {products

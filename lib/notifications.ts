@@ -222,6 +222,42 @@ export function notifyOrderSync(orderId: string, syncData: any) {
   });
 }
 
+// Notify order out of stock
+export function notifyOrderOutOfStock(data: {
+  originalOrderId: string;
+  originalOrderNumber: number;
+  newOrderId: string;
+  newOrderNumber: number;
+  tableNumber?: string;
+  waiterId: string;
+  waiterName?: string;
+  outOfStockProduct: string;
+  outOfStockItems: Array<{
+    id: string;
+    productName: string;
+    quantity: number;
+  }>;
+}) {
+  return broadcastEnhanced(
+    {
+      type: NotificationTypes.ORDER_OUT_OF_STOCK,
+      message: `ATTENZIONE: Ordine #${data.originalOrderNumber} non completato - ${data.outOfStockProduct} esaurito`,
+      data: {
+        ...data,
+        eventType: 'order:out-of-stock',
+        timestamp: new Date().toISOString(),
+        syncVersion: Date.now()
+      },
+      targetRoles: ["CAMERIERE"]
+    },
+    {
+      priority: NotificationPriority.URGENT,
+      acknowledgmentRequired: true,
+      ttl: 3600 // 1 hour
+    }
+  );
+}
+
 // Bulk update support
 export function notifyBulkUpdate(
   entityType: EntityType,

@@ -3,13 +3,14 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Users, Euro, Calendar, Search, ChevronDown, ChevronRight, MapPin, Clock, User, CreditCard, CheckCircle, Plus, Minus, X, FileText, History, Filter } from "lucide-react";
+import { ArrowLeft, Users, Euro, Calendar, Search, ChevronDown, ChevronRight, MapPin, Clock, User, CreditCard, CheckCircle, Plus, Minus, X, FileText, History, Filter, Coins } from "lucide-react";
 import Link from "next/link";
 import { useEnhancedSSE } from "@/hooks/useEnhancedSSE";
 import { ConnectionStatusIndicator } from "@/components/ConnectionStatusIndicator";
 import { getOrdinazioniConsegnate } from "@/lib/actions/cassa";
 import { creaPagamentoRigheSpecifiche } from "@/lib/actions/pagamenti";
 import { richiediPagamento, richiediScontrino } from "@/lib/actions/pagamenti";
+import { creaPagamentiParziali } from "@/lib/actions/pagamenti-parziali";
 import { getTuttiContiScalari, saldaContoParziale } from "@/lib/actions/ordinaPerAltri";
 import { toast } from "@/lib/toast";
 import PaymentHistory from "@/components/cassa/payment-history";
@@ -142,7 +143,7 @@ export default function GestioneContiPage() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CONTANTI' | 'POS' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'CONTANTI' | 'POS' | 'MISTO' | null>(null);
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [customerNameForPayment, setCustomerNameForPayment] = useState("");
@@ -484,33 +485,45 @@ export default function GestioneContiPage() {
 
     setProcessingPayment(true);
     try {
-      const totalAmount = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
-      
-      toast.success(`Pagamento ${paymentMethod} di €${totalAmount.toFixed(2)} ricevuto da ${customerNameForPayment}`);
-      
-      const itemsForReceipt = selectedItems.map(item => ({
-        orderId: item.orderId,
-        totalPrice: item.totalPrice
-      }));
-      
-      const result = await richiediScontrino(
-        itemsForReceipt,
-        totalAmount,
-        paymentMethod,
-        customerNameForPayment
-      );
-      
-      if (result.success) {
-        toast.info('Richiesta scontrino inviata alla cassa');
+      // Raggruppa gli articoli per ordine
+      const orderGroups = selectedItems.reduce((acc, item) => {
+        if (!acc[item.orderId]) {
+          acc[item.orderId] = [];
+        }
+        acc[item.orderId].push(item);
+        return acc;
+      }, {} as Record<string, SelectedItem[]>);
+
+      // Processa pagamenti per ogni ordine
+      for (const [orderId, items] of Object.entries(orderGroups)) {
+        const righeSelezionate = items.map(item => item.rigaId);
+        const importoTotale = items.reduce((sum, item) => sum + item.totalPrice, 0);
         
-        const newRequestedItems = new Set(requestedPaymentItems);
-        selectedItems.forEach(item => {
-          newRequestedItems.add(`${item.orderId}-${item.rigaId}`);
-        });
-        setRequestedPaymentItems(newRequestedItems);
-      } else {
-        toast.error(result.error || 'Errore invio richiesta scontrino');
+        const result = await creaPagamentiParziali(
+          orderId,
+          [{
+            clienteNome: customerNameForPayment,
+            importo: importoTotale,
+            modalita: paymentMethod as 'POS' | 'CONTANTI' | 'MISTO',
+            righeSelezionate
+          }]
+        );
+        
+        if (!result.success) {
+          toast.error(`Errore pagamento ordine: ${'error' in result ? result.error : 'Errore sconosciuto'}`);
+          continue;
+        }
       }
+      
+      const totalAmount = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      toast.success(`Pagamento ${paymentMethod} di €${totalAmount.toFixed(2)} completato per ${customerNameForPayment}`);
+      
+      // Marca come richiesti
+      const newRequestedItems = new Set(requestedPaymentItems);
+      selectedItems.forEach(item => {
+        newRequestedItems.add(`${item.orderId}-${item.rigaId}`);
+      });
+      setRequestedPaymentItems(newRequestedItems);
       
       setSelectedItems([]);
       setShowPaymentModal(false);
@@ -909,12 +922,14 @@ export default function GestioneContiPage() {
                                 const unpaidQuantity = product.items.filter(item => !item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`)).reduce((sum, item) => sum + item.quantity, 0);
                                 const requestedQuantity = product.items.filter(item => requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`)).reduce((sum, item) => sum + item.quantity, 0);
                                 const isFullyPaid = unpaidQuantity === 0;
+                                // Controlla se il prodotto ha quantità > 1 o più item
+                                const isExpandable = product.totalQuantity > 1 || product.items.length > 1;
                                 
                                 return (
                                   <div key={index} className="space-y-1">
                                     <div 
                                       className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
-                                        product.items.length > 1 && hasUnpaidItems ? 'cursor-pointer' : ''
+                                        isExpandable && hasUnpaidItems ? 'cursor-pointer' : ''
                                       }`}
                                       style={{
                                         backgroundColor: isFullyPaid ? colors.bg.darker + '60' :
@@ -935,7 +950,7 @@ export default function GestioneContiPage() {
                                         }
                                       }}
                                       onClick={() => {
-                                        if (product.items.length > 1) {
+                                        if (isExpandable && hasUnpaidItems) {
                                           setExpandedProducts(prev => {
                                             const newSet = new Set(prev);
                                             if (newSet.has(productKey)) {
@@ -951,12 +966,11 @@ export default function GestioneContiPage() {
                                       <div className="flex items-center gap-3">
                                         {hasUnpaidItems && (
                                           <Checkbox
-                                            checked={selectedQuantity === product.items.filter(item => !item.isPagato).reduce((sum, item) => sum + item.quantity, 0)}
+                                            checked={selectedQuantity === unpaidQuantity}
                                             onCheckedChange={(checked) => {
-                                              const unpaidItems = product.items.filter(item => !item.isPagato);
-                                              const totalUnpaidQty = unpaidItems.reduce((sum, item) => sum + item.quantity, 0);
+                                              const unpaidItems = product.items.filter(item => !item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`));
                                               
-                                              if (selectedQuantity === totalUnpaidQty) {
+                                              if (selectedQuantity === unpaidQuantity) {
                                                 unpaidItems.forEach(item => {
                                                   const order = group.orders.find((o: any) => o.id === item.orderId);
                                                   const riga = order?.righe.find((r: any) => r.id === item.rigaId);
@@ -978,7 +992,7 @@ export default function GestioneContiPage() {
                                             title="Seleziona tutti i prodotti del gruppo"
                                           />
                                         )}
-                                        {product.items.length > 1 && (
+                                        {isExpandable && hasUnpaidItems && (
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -1032,9 +1046,79 @@ export default function GestioneContiPage() {
                                       </div>
                                     </div>
                                     
-                                    {isProductExpanded && product.items.length > 1 && (
+                                    {isProductExpanded && isExpandable && (
                                       <div className="ml-8 space-y-1 border-l-2 border-gray-200 pl-4">
-                                        {product.items.map((item, itemIndex) => {
+                                        {/* Se c'è un solo item con quantità > 1, mostra le singole unità */}
+                                        {product.items.length === 1 && product.totalQuantity > 1 ? (
+                                          [...Array(product.totalQuantity)].map((_, unitIndex) => {
+                                            const item = product.items[0];
+                                            const order = group.orders.find((o: any) => o.id === item.orderId);
+                                            const riga = order?.righe.find((r: any) => r.id === item.rigaId);
+                                            const unitKey = `${item.orderId}-${item.rigaId}-${unitIndex}`;
+                                            
+                                            // Conta quante unità sono già selezionate
+                                            const selected = selectedItems.find(sel => 
+                                              sel.orderId === item.orderId && sel.rigaId === item.rigaId
+                                            );
+                                            const isUnitSelected = selected && unitIndex < selected.selectedQuantity;
+                                            
+                                            return (
+                                              <div
+                                                key={unitKey}
+                                                className={`flex items-center justify-between py-1 px-2 rounded text-sm ${
+                                                  item.isPagato ? 'bg-muted/10 opacity-60' : 'hover:bg-muted/20'
+                                                }`}
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  {!item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`) && (
+                                                    <Checkbox
+                                                      checked={isUnitSelected || false}
+                                                      onCheckedChange={() => {
+                                                        if (order && riga) {
+                                                          const currentSelected = selected?.selectedQuantity || 0;
+                                                          let newQuantity;
+                                                          
+                                                          if (isUnitSelected) {
+                                                            // Se questa unità è selezionata, deseleziona tutte le unità dopo questa
+                                                            newQuantity = unitIndex;
+                                                          } else {
+                                                            // Se non è selezionata, seleziona fino a questa unità
+                                                            newQuantity = unitIndex + 1;
+                                                          }
+                                                          
+                                                          toggleProductSelection(order, riga, newQuantity);
+                                                        }
+                                                      }}
+                                                      className="h-3 w-3"
+                                                    />
+                                                  )}
+                                                  <span className={`text-xs ${item.isPagato ? 'line-through' : ''} text-muted-foreground`}>
+                                                    Unità {unitIndex + 1} - {item.customerName}
+                                                  </span>
+                                                  {item.isPagato && item.pagatoDa && (
+                                                    <span className="text-xs bg-green-600/20 text-green-400 px-1 rounded" title={`Pagato da: ${item.pagatoDa}`}>
+                                                      ✓ {item.pagatoDa}
+                                                    </span>
+                                                  )}
+                                                  {!item.isPagato && requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`) && (
+                                                    <span className="text-xs px-1 rounded ml-1"
+                                                      style={{ 
+                                                        backgroundColor: colors.status?.warning ? colors.status.warning + '20' : '#FFA50020',
+                                                        color: colors.status?.warning || '#FFA500'
+                                                      }}>
+                                                      ⏳ In pagamento
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <span className="text-xs font-medium">
+                                                  €{product.unitPrice.toFixed(2)}
+                                                </span>
+                                              </div>
+                                            );
+                                          })
+                                        ) : (
+                                          /* Altrimenti mostra gli item come prima */
+                                          product.items.map((item, itemIndex) => {
                                           const order = group.orders.find((o: any) => o.id === item.orderId);
                                           const riga = order?.righe.find((r: any) => r.id === item.rigaId);
                                           const selected = selectedItems.find(sel => 
@@ -1084,7 +1168,8 @@ export default function GestioneContiPage() {
                                               </span>
                                             </div>
                                           );
-                                        })}
+                                        })
+                                        )}
                                       </div>
                                     )}
                                   </div>
@@ -1315,7 +1400,7 @@ export default function GestioneContiPage() {
                 className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-lg flex items-center justify-center gap-2"
               >
                 <Euro className="h-5 w-5" />
-                <span className="font-medium">Paga in Contanti</span>
+                <span className="font-medium">Incassa in Contanti</span>
               </button>
               <button
                 onClick={() => {
@@ -1326,7 +1411,18 @@ export default function GestioneContiPage() {
                 className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg flex items-center justify-center gap-2"
               >
                 <CreditCard className="h-5 w-5" />
-                <span className="font-medium">Paga con POS</span>
+                <span className="font-medium">Incassa con POS</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPaymentMethod('MISTO');
+                  setShowPaymentModal(true);
+                }}
+                disabled={processingPayment}
+                className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white rounded-lg flex items-center justify-center gap-2"
+              >
+                <Coins className="h-5 w-5" />
+                <span className="font-medium">Pagamento Misto</span>
               </button>
               <button
                 onClick={() => {
@@ -1364,7 +1460,7 @@ export default function GestioneContiPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text.primary }}>
-              Conferma Pagamento {paymentMethod === 'CONTANTI' ? 'in Contanti' : 'con POS'}
+              Conferma Incasso {paymentMethod === 'CONTANTI' ? 'in Contanti' : paymentMethod === 'POS' ? 'con POS' : 'Misto'}
             </h3>
             
             <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: colors.bg.darker }}>
@@ -1398,7 +1494,7 @@ export default function GestioneContiPage() {
             {paymentMethod === 'CONTANTI' && (
               <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                 <p className="text-sm text-amber-400">
-                  Ricevi i contanti dal cliente e conferma il pagamento
+                  Ricevi i contanti dal cliente e conferma l'incasso
                 </p>
               </div>
             )}
@@ -1407,6 +1503,14 @@ export default function GestioneContiPage() {
               <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                 <p className="text-sm text-blue-400">
                   Procedi con il pagamento POS e conferma quando completato
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === 'MISTO' && (
+              <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                <p className="text-sm text-purple-400">
+                  Ricevi il pagamento misto (contanti + POS) e conferma l'incasso
                 </p>
               </div>
             )}
@@ -1425,7 +1529,7 @@ export default function GestioneContiPage() {
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4" />
-                    Conferma Pagamento
+                    Conferma Incasso
                   </>
                 )}
               </button>

@@ -147,6 +147,8 @@ export const NotificationTypes = {
   ORDER_CONFLICT: "order_conflict",
   DUPLICATE_ORDER: "duplicate_order",
   ORDER_SYNC: "order_sync",
+  ORDER_OUT_OF_STOCK: "order_out_of_stock",
+  ORDER_FAILED: "order_failed",
   
   // Order item related
   ITEM_STATUS_CHANGE: "item_status_change",

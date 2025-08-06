@@ -28,11 +28,11 @@ export default function CameriereTabLayout({ children }: CameriereTabLayoutProps
       isActive: pathname === "/cameriere/nuova-ordinazione"
     },
     {
-      id: "conti",
-      title: "Conti Clienti", 
-      icon: Users,
-      href: "/cameriere/conti",
-      isActive: pathname === "/cameriere/conti"
+      id: "gestione-conti",
+      title: "Gestione Conti", 
+      icon: CreditCard,
+      href: "/cameriere/gestione-conti",
+      isActive: pathname === "/cameriere/gestione-conti"
     },
     {
       id: "ordini-in-corso",
@@ -42,18 +42,11 @@ export default function CameriereTabLayout({ children }: CameriereTabLayoutProps
       isActive: pathname === "/cameriere/ordini-in-corso"
     },
     {
-      id: "conti-scalari",
-      title: "Conti Scalari",
-      icon: CreditCard,
-      href: "/cameriere/conti-scalari",
-      isActive: pathname === "/cameriere/conti-scalari"
-    },
-    {
-      id: "cronologia",
-      title: "Cronologia",
+      id: "riepilogo-turno",
+      title: "Riepilogo Turno",
       icon: Coffee,
-      href: "/cameriere/cronologia", 
-      isActive: pathname === "/cameriere/cronologia"
+      href: "/cameriere/riepilogo-turno", 
+      isActive: pathname === "/cameriere/riepilogo-turno"
     }
   ];
 

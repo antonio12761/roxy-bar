@@ -7,6 +7,8 @@ import { useState } from "react";
 import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
 import { ProductsAvailabilityModal } from "@/components/prepara/ProductsAvailabilityModal";
 import { ThemeSelector } from "@/components/ui/ThemeSelector";
+import NotificationCenter from "@/components/NotificationCenter";
+// import SSEDebugger from "@/components/SSEDebugger";
 
 export default function PreparaLayoutClient({
   children,
@@ -28,7 +30,7 @@ export default function PreparaLayoutClient({
         <div className="px-4 sm:px-6 py-4 md:py-6">
           <div className="flex items-center justify-between">
             {/* App Name */}
-            <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>Siplit</h1>
+            <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>Roxy Bar</h1>
 
             <div className="flex items-center gap-2">
               {/* Connection Status */}
@@ -54,23 +56,11 @@ export default function PreparaLayoutClient({
                 <Package className="h-5 w-5" style={{ color: colors.text.accent }} />
               </button>
 
-              {/* Notification Bell */}
-              <button
-                className="p-2 rounded-lg transition-colors"
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.hover;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-                title="Notifiche"
-              >
-                <Bell className="h-5 w-5" style={{ color: colors.text.secondary }} />
-              </button>
-
               {/* Theme Selector */}
               <ThemeSelector />
+
+              {/* Notification Center */}
+              <NotificationCenter userRole="PREPARA" />
 
               {/* User Display */}
               <UserDisplay />
@@ -89,6 +79,9 @@ export default function PreparaLayoutClient({
         isOpen={showProductsAvailabilityModal}
         onClose={() => setShowProductsAvailabilityModal(false)}
       />
+      
+      {/* SSE Debugger (only in development) */}
+      {/* {process.env.NODE_ENV === 'development' && <SSEDebugger />} */}
     </div>
   );
 }

@@ -51,14 +51,20 @@ export function TabBookmarks({ tabs, className }: TabBookmarksProps) {
                 backgroundColor: isActive 
                   ? colors.bg.card 
                   : colors.bg.dark, // Tab non selezionate più scure
-                borderColor: isActive 
+                // Use individual border properties instead of shorthand to avoid conflicts
+                borderTopColor: isActive 
                   ? colors.border.primary 
                   : colors.border.secondary,
+                borderRightColor: isActive 
+                  ? colors.border.primary 
+                  : colors.border.secondary,
+                borderLeftColor: isActive 
+                  ? colors.border.primary 
+                  : colors.border.secondary,
+                borderBottomColor: isActive ? 'transparent' : colors.border.secondary, // Elimina bordo inferiore per fusione
                 color: isActive 
                   ? colors.text.primary 
                   : colors.text.secondary,
-                // Active tab connects seamlessly with content
-                borderBottomColor: isActive ? 'transparent' : colors.border.secondary, // Elimina bordo inferiore per fusione
                 marginBottom: isActive ? '-2px' : '0px', // Tab attiva si sovrappone leggermente per fusione
                 transform: 'translateY(0px)'
               }}

@@ -1,8 +1,8 @@
-# 🚀 Siplit - Strategia di Performance e Notifiche Real-Time
+# 🚀 Roxy Bar - Strategia di Performance e Notifiche Real-Time
 
 ## 📋 Panoramica
 
-Questo documento definisce la strategia di ottimizzazione per il sistema di notifiche e aggiornamenti real-time di Siplit. L'obiettivo è ridurre drasticamente il carico di rete, migliorare la reattività dell'interfaccia e garantire scalabilità.
+Questo documento definisce la strategia di ottimizzazione per il sistema di notifiche e aggiornamenti real-time di Roxy Bar. L'obiettivo è ridurre drasticamente il carico di rete, migliorare la reattività dell'interfaccia e garantire scalabilità.
 
 ## 🎯 Principi Fondamentali
 

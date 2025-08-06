@@ -11,8 +11,17 @@ import CameriereSidebar from "@/components/cameriere/CameriereSidebar";
 import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { ThemeSelector } from "@/components/ui/ThemeSelector";
+import NotificationCenter from "@/components/NotificationCenter";
+import { SSEInitializer } from "@/components/cameriere/SSEInitializer";
+// import SSEDebugger from "@/components/SSEDebugger";
+import type { AuthUser } from "@/lib/auth-multi-tenant";
 
-function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
+interface CameriereLayoutContentProps {
+  children: React.ReactNode;
+  user: AuthUser | null;
+}
+
+function CameriereLayoutContent({ children, user }: CameriereLayoutContentProps) {
   const { isConnected, notificationCount, resetNotificationCount } = useCameriere();
   const router = useRouter();
   const pathname = usePathname();
@@ -64,7 +73,7 @@ function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
                 >
                   <Menu className="h-6 w-6" style={{ color: colors.text.primary }} />
                 </button>
-                <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>Siplit</h1>
+                <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>Roxy Bar</h1>
               </div>
 
             <div className="flex items-center gap-2">
@@ -78,30 +87,8 @@ function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
               {/* Theme Selector */}
               <ThemeSelector />
 
-              {/* Notification Bell */}
-              <button
-                onClick={handleNotificationClick}
-                className="relative p-2 rounded-lg transition-colors"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.hover;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <Bell className="h-6 w-6" style={{ color: colors.text.secondary }} />
-                {notificationCount > 0 && (
-                  <span 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBadgeClick();
-                    }}
-                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors"
-                  >
-                    {notificationCount}
-                  </span>
-                )}
-              </button>
+              {/* Notification Center with Bell */}
+              <NotificationCenter userRole="CAMERIERE" />
 
               {/* User Display */}
               <UserDisplay />
@@ -114,18 +101,24 @@ function CameriereLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="px-3 sm:px-4 md:px-6 py-4">
         {children}
       </div>
+      
+      {/* SSE Debugger (only in development) */}
+      {/* {process.env.NODE_ENV === 'development' && <SSEDebugger />} */}
     </div>
   );
 }
 
 export default function CameriereLayoutClient({
   children,
+  user,
 }: {
   children: React.ReactNode;
+  user: AuthUser | null;
 }) {
   return (
     <CameriereProvider>
-      <CameriereLayoutContent>{children}</CameriereLayoutContent>
+      <SSEInitializer />
+      <CameriereLayoutContent user={user}>{children}</CameriereLayoutContent>
     </CameriereProvider>
   );
 }

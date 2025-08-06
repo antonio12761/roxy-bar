@@ -173,13 +173,17 @@ export async function loginUser(
 
     // Set cookie
     const cookieStore = await cookies();
+    const isProduction = process.env.NODE_ENV === "production";
+    
     cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60, // 7 giorni
       path: "/"
     });
+    
+    console.log(`[AUTH] Cookie set: ${COOKIE_NAME}, secure: ${isProduction}, path: /`);
 
     // Emit SSE event
     sseService.emit('user:presence', {

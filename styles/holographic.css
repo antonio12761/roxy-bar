@@ -1,0 +1,339 @@
+@keyframes holoSparkle {
+  0%, 100% {
+    opacity: .75;
+    background-position: 50% 50%;
+    filter: brightness(1.2) contrast(1.25);
+  }
+  5%, 8% {
+    opacity: 1;
+    background-position: 40% 40%;
+    filter: brightness(.8) contrast(1.2);
+  }
+  13%, 16% {
+    opacity: .5;
+    background-position: 50% 50%;
+    filter: brightness(1.2) contrast(.8);
+  }
+  35%, 38% {
+    opacity: 1;
+    background-position: 60% 60%;
+    filter: brightness(1) contrast(1);
+  }
+  55% {
+    opacity: .33;
+    background-position: 45% 45%;
+    filter: brightness(1.2) contrast(1.25);
+  }
+}
+
+@keyframes holoGradient {
+  0%, 100% {
+    opacity: 0.5;
+    background-position: 50% 50%;
+    filter: brightness(.5) contrast(1);
+  }
+  5%, 9% {
+    background-position: 100% 100%;
+    opacity: 1;
+    filter: brightness(.75) contrast(1.25);
+  }
+  13%, 17% {
+    background-position: 0% 0%;
+    opacity: .88;
+  }
+  35%, 39% {
+    background-position: 100% 100%;
+    opacity: 1;
+    filter: brightness(.5) contrast(1);
+  }
+  55% {
+    background-position: 0% 0%;
+    opacity: 1;
+    filter: brightness(.75) contrast(1.25);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% -200%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
+}
+
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Golden text effect for special customers */
+.golden-text {
+  background: linear-gradient(
+    90deg,
+    #FFD700 0%,
+    #FFED4E 10%,
+    #FFF8DC 20%,
+    #FFD700 30%,
+    #DAA520 50%,
+    #FFD700 70%,
+    #FFF8DC 80%,
+    #FFED4E 90%,
+    #FFD700 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: goldShimmer 3s linear infinite;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.golden-number {
+  background: linear-gradient(
+    45deg,
+    #B8860B 0%,
+    #DAA520 25%,
+    #CD853F 50%,
+    #B8860B 75%,
+    #8B7355 100%
+  );
+  background-size: 200% 200%;
+  animation: goldShimmer 6s linear infinite;
+  color: #DAA520;
+  box-shadow: 
+    0 0 8px rgba(218, 165, 32, 0.3),
+    inset 0 0 5px rgba(218, 165, 32, 0.2);
+  opacity: 0.9;
+}
+
+/* Matrix/Hacker effect for price */
+@keyframes matrixGlitch {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1) contrast(1);
+  }
+  10% {
+    opacity: 0.8;
+    filter: brightness(1.2) contrast(1.1) hue-rotate(10deg);
+  }
+  20% {
+    opacity: 1;
+    filter: brightness(0.9) contrast(1.2);
+  }
+  30% {
+    opacity: 0.9;
+    filter: brightness(1.1) contrast(0.9) hue-rotate(-10deg);
+  }
+  40% {
+    opacity: 1;
+    filter: brightness(1) contrast(1);
+  }
+  50% {
+    opacity: 0.95;
+    filter: brightness(1.15) contrast(1.05);
+  }
+}
+
+.matrix-text {
+  position: relative;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  text-shadow: 
+    0 0 5px #00ff00,
+    0 0 10px #00ff00,
+    0 0 15px #00ff00;
+  animation: matrixGlitch 2s infinite;
+  letter-spacing: 2px;
+}
+
+.matrix-text::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 2px;
+  text-shadow: -2px 0 #ff00ff;
+  top: 0;
+  color: #ff00ff;
+  background: transparent;
+  overflow: hidden;
+  animation: matrixGlitch 3s infinite reverse;
+  opacity: 0.5;
+}
+
+.matrix-text::after {
+  content: attr(data-text);
+  position: absolute;
+  left: -2px;
+  text-shadow: -2px 0 #00ffff;
+  top: 0;
+  color: #00ffff;
+  background: transparent;
+  overflow: hidden;
+  animation: matrixGlitch 2.5s infinite;
+  opacity: 0.5;
+}
+
+.holographic-card {
+  --color1: #ff6b9d;
+  --color2: #ffd93d;
+  --color3: #6bcf7f;
+  --color4: #4ecdc4;
+  --color5: #c471ed;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transform-origin: center;
+  transition: box-shadow 0.2s ease;
+  will-change: filter;
+  /* Add a subtle background to ensure visibility */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.holographic-card:before,
+.holographic-card:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  background-repeat: no-repeat;
+  opacity: .5;
+  mix-blend-mode: screen; /* Changed from color-dodge for better visibility on dark backgrounds */
+  transition: all .33s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Gradient layer */
+.holographic-card:before {
+  background-position: 50% 50%;
+  background-size: 300% 300%;
+  background-image: linear-gradient(
+    115deg,
+    transparent 0%,
+    var(--color1) 25%,
+    transparent 47%,
+    transparent 53%,
+    var(--color2) 75%,
+    transparent 100%
+  );
+  opacity: .5;
+  filter: brightness(.5) contrast(1);
+  z-index: 1;
+  animation: holoGradient 12s ease 0s infinite;
+}
+
+/* Holographic texture and sparkles */
+.holographic-card:after {
+  opacity: 0.9; /* Increased opacity for better visibility */
+  background-image: 
+    /* Sparkle effect with brighter colors */
+    radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.9) 0%, transparent 2%),
+    radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.9) 0%, transparent 2%),
+    radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.8) 0%, transparent 1.5%),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.8) 0%, transparent 1.5%),
+    radial-gradient(circle at 10% 70%, rgba(255, 255, 255, 0.9) 0%, transparent 2%),
+    /* Holographic texture pattern - more visible */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.2) 2px,
+      rgba(255, 255, 255, 0.2) 4px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.2) 2px,
+      rgba(255, 255, 255, 0.2) 4px
+    ),
+    /* Rainbow gradient overlay with higher opacity */
+    linear-gradient(125deg, 
+      #ff008480 15%, 
+      #fca40070 30%, 
+      #ffff0060 40%, 
+      #00ff8a50 60%, 
+      #00cfff70 70%, 
+      #cc4cfa80 85%
+    );
+  background-position: 
+    20% 35%,
+    60% 80%,
+    40% 20%,
+    80% 10%,
+    10% 70%,
+    0 0,
+    0 0,
+    50% 50%;
+  background-size: 
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    160% 160%;
+  background-blend-mode: screen, screen, screen, screen, screen, overlay, overlay, normal;
+  z-index: 2;
+  filter: brightness(1.2) contrast(1.1); /* Increased brightness */
+  mix-blend-mode: screen; /* Changed to screen for better visibility on dark themes */
+  animation: holoSparkle 12s ease 0s infinite;
+}
+
+/* Additional shimmer layer */
+.holographic-sparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 60%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 3s linear infinite;
+  mix-blend-mode: overlay;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: inherit;
+}
+
+/* Hover effect - intensify the holographic effect */
+.holographic-card:hover {
+  box-shadow: 
+    -20px -20px 30px -25px var(--color1), 
+    20px 20px 30px -25px var(--color2), 
+    -7px -7px 10px -5px var(--color3), 
+    7px 7px 10px -5px var(--color4), 
+    0 0 13px 4px rgba(255,255,255,0.3),
+    0 55px 35px -20px rgba(0, 0, 0, 0.5);
+}
+
+.holographic-card:hover:before {
+  animation: holoGradient 3s ease 0s infinite;
+  opacity: .88;
+  filter: brightness(.66) contrast(1.33);
+}
+
+.holographic-card:hover:after {
+  filter: brightness(1.2) contrast(1.2);
+  opacity: 1;
+  animation: holoSparkle 3s ease 0s infinite;
+}
+
+.holographic-card:hover .holographic-sparkles {
+  animation: shimmer 1s linear infinite;
+  opacity: 0.6;
+}

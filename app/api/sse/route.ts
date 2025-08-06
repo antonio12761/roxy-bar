@@ -4,27 +4,9 @@ import { sseService } from '@/lib/sse/sse-service';
 import { SSEChannels } from '@/lib/sse/sse-events';
 import { verifyToken } from '@/lib/auth-multi-tenant';
 import { prisma } from '@/lib/db';
-
-// Rate limiting storage
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-// Check rate limit
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const limit = rateLimitStore.get(userId);
-  
-  if (!limit || limit.resetAt < now) {
-    rateLimitStore.set(userId, { count: 1, resetAt: now + 60000 }); // 1 minute window
-    return true;
-  }
-  
-  if (limit.count >= 100) { // 100 requests per minute
-    return false;
-  }
-  
-  limit.count++;
-  return true;
-}
+// import { rateLimiter } from '@/lib/security/rate-limiter'; // Removed - file deleted
+// import { crashRecovery } from '@/lib/sse/crash-recovery'; // Removed - file deleted
+// import { secureNotificationService } from '@/lib/sse/secure-notification-service'; // Removed - file deleted
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -33,18 +15,42 @@ export const runtime = 'nodejs';
 const DISABLE_LOGS = process.env.DISABLE_SSE_LOGS === 'true';
 
 export async function GET(request: NextRequest) {
-  // 1. Verifica autenticazione
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.replace('Bearer ', '') || 
-                request.nextUrl.searchParams.get('token');
+  // 1. Verifica autenticazione - prima prova dal cookie, poi dal token
+  const cookieStore = request.cookies;
+  const cookieName = process.env.SESSION_COOKIE_NAME || 'bar-roxy-session';
+  const sessionCookie = cookieStore.get(cookieName);
   
-  if (!token) {
-    return new Response('Unauthorized: No token provided', { status: 401 });
+  // Debug: log tutti i cookie ricevuti
+  if (!DISABLE_LOGS) {
+    const allCookies = cookieStore.getAll();
+    console.log('[SSE] All cookies received:', allCookies.map(c => c.name).join(', '));
+    console.log(`[SSE] Looking for cookie: ${cookieName}`);
+    console.log('[SSE] Cookie found:', sessionCookie ? 'yes' : 'no');
   }
   
-  const tokenData = verifyToken(token);
+  let tokenData = null;
+  
+  // Prima prova a leggere dal cookie httpOnly
+  if (sessionCookie?.value) {
+    tokenData = verifyToken(sessionCookie.value);
+    if (!DISABLE_LOGS) console.log('[SSE] Auth via cookie:', tokenData ? 'valid' : 'invalid');
+  }
+  
+  // Se non c'è il cookie, prova con il token dal query parameter (per retrocompatibilità)
   if (!tokenData) {
-    return new Response('Unauthorized: Invalid token', { status: 401 });
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '') || 
+                  request.nextUrl.searchParams.get('token');
+    
+    if (token) {
+      tokenData = verifyToken(token);
+      if (!DISABLE_LOGS) console.log('[SSE] Auth via token:', tokenData ? 'valid' : 'invalid');
+    }
+  }
+  
+  if (!tokenData) {
+    console.log('[SSE] Authentication failed - no valid cookie or token');
+    return new Response('Unauthorized: No valid authentication', { status: 401 });
   }
   
   // Get user from database with tenant info
@@ -75,10 +81,36 @@ export async function GET(request: NextRequest) {
     return new Response('Unauthorized: Tenant mismatch', { status: 401 });
   }
   
-  // Check rate limit
-  if (!checkRateLimit(user.id)) {
-    return new Response('Too Many Requests', { status: 429 });
-  }
+  // Check rate limit using persistent rate limiter
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+  
+  // Rate limiting disabled
+  // const [userLimit, tenantLimit, ipLimit] = await Promise.all([
+  //   rateLimiter.checkUserLimit(user.id, 'sse'),
+  //   rateLimiter.checkTenantLimit(user.tenantId, 'sse'),
+  //   rateLimiter.checkIPLimit(ip, 'sse')
+  // ]);
+  
+  // Rate limiting check disabled
+  // if (!userLimit.allowed || !tenantLimit.allowed || !ipLimit.allowed) {
+  //   const limit = !userLimit.allowed ? userLimit : !tenantLimit.allowed ? tenantLimit : ipLimit;
+  //   return new Response(
+  //     JSON.stringify({ 
+  //       error: 'Too Many Requests', 
+  //       retryAfter: limit.retryAfter 
+  //     }), 
+  //     { 
+  //       status: 429,
+  //       headers: {
+  //         'Retry-After': Math.ceil((limit.retryAfter || 60000) / 1000).toString(),
+  //         'X-RateLimit-Remaining': limit.remaining.toString(),
+  //         'X-RateLimit-Reset': limit.resetAt.toISOString()
+  //       }
+  //     }
+  //   );
+  // }
   
   // Get station type from query params
   const stationType = request.nextUrl.searchParams.get('station');
@@ -107,7 +139,7 @@ export async function GET(request: NextRequest) {
         return new Response('Service Unavailable: Too many connections', { status: 503 });
       }
       
-      // Silent connection - Removed all console.log
+      console.log(`[SSE Route] Client connected: ${client.id}, station: ${client.stationType}, user: ${user.nome}, tenant: ${user.tenantId}`);
       
       // Subscribe to relevant channels based on user role
       const channels: string[] = [];
@@ -139,6 +171,36 @@ export async function GET(request: NextRequest) {
       
       sseService.subscribeToChannels(client.id, channels as any);
       
+      // Recover undelivered notifications using the new crash recovery service - Disabled
+      // crashRecovery.recoverUserNotifications(user.id, user.tenantId, client.id)
+      //   .then(() => {
+      //     console.log(`[SSE Route] Recovered notifications for user ${user.id}`);
+      //   })
+      //   .catch((error: any) => {
+      //     console.error(`[SSE Route] Failed to recover notifications:`, error);
+      //   });
+      
+      // Also recover from secure notification service - Disabled
+      // secureNotificationService.recoverUndeliveredNotifications(user.id, user.tenantId, client.id)
+      //   .then(() => {
+      //     console.log(`[SSE Route] Recovered secure notifications for user ${user.id}`);
+      //   })
+      //   .catch((error: any) => {
+      //     console.error(`[SSE Route] Failed to recover secure notifications:`, error);
+      //   });
+      
+      // Check for queued events after a delay to ensure client is ready
+      setTimeout(() => {
+        console.log(`[SSE Route] Checking queued events for tenant ${user.tenantId} after delay`);
+        // Trigger queue delivery again to ensure events are received
+        sseService.emit('queue:check', { 
+          tenantId: user.tenantId 
+        }, { 
+          userId: user.id,
+          tenantId: user.tenantId
+        });
+      }, 1500); // 1.5 second delay to ensure client-side is ready
+      
       // 4. Setup heartbeat (importante!) - Reduced to 2s for maximum reliability
       const heartbeat = setInterval(() => {
         try {
@@ -154,7 +216,11 @@ export async function GET(request: NextRequest) {
         clearInterval(heartbeat);
         sseManager.removeClient(client.id);
         sseService.unsubscribeFromChannels(client.id, channels as any);
-        // Silent disconnect
+        
+        // Mark client as disconnected in crash recovery - Disabled
+        // crashRecovery.markClientDisconnected(client.id);
+        
+        console.log(`[SSE Route] Client disconnected: ${client.id}, station: ${client.stationType}`);
       };
       
       request.signal.addEventListener('abort', cleanup);
@@ -169,6 +235,23 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         tenantId: user.tenantId
       });
+      
+      // Force immediate queue check for this specific client
+      // This ensures that any queued events are delivered immediately
+      // Try multiple times to ensure delivery
+      const checkQueue = () => {
+        const tenantClients = sseManager.getTenantsClients(user.tenantId);
+        console.log(`[SSE Route] Force queue check - found ${tenantClients.length} clients for tenant ${user.tenantId}`);
+        
+        // Manually trigger queue processor for immediate delivery
+        sseService.processQueueForTenant(user.tenantId);
+      };
+      
+      // Check immediately and then after short delays
+      setTimeout(checkQueue, 100);
+      setTimeout(checkQueue, 500); 
+      setTimeout(checkQueue, 1000);
+      setTimeout(checkQueue, 2000);
       
       // Silent connect
     },

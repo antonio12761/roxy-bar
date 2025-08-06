@@ -11,6 +11,7 @@ interface Product {
   postazione?: string | null;
   codice?: number | null;
   disponibile?: boolean;
+  terminato?: boolean;
 }
 
 interface SearchProductItemProps {
@@ -32,7 +33,7 @@ export function SearchProductItem({
 }: SearchProductItemProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [prevAvailability, setPrevAvailability] = useState(product.disponibile);
-  const isAvailable = product.disponibile !== false;
+  const isAvailable = product.disponibile !== false && product.terminato !== true;
 
   // Detect availability changes and trigger skeleton effect
   useEffect(() => {
@@ -46,10 +47,15 @@ export function SearchProductItem({
 
   return (
     <div 
-      className={`flex items-center justify-between p-3 transition-all duration-300 ${isUpdating ? 'animate-pulse' : ''} ${!isAvailable ? 'opacity-60' : ''}`}
+      className={`flex items-center justify-between p-3 transition-all duration-300 cursor-pointer ${isUpdating ? 'animate-pulse' : ''} ${!isAvailable ? 'opacity-60' : ''}`}
       style={{
         borderBottom: `1px solid ${colors.border.secondary}`,
         backgroundColor: isUpdating ? colors.bg.hover : 'transparent'
+      }}
+      onClick={() => {
+        if (isAvailable && !isUpdating) {
+          onAdd(product, 1); // Aggiungi 1 prodotto quando si clicca sulla card
+        }
       }}
       onMouseEnter={(e) => {
         if (!isUpdating && isAvailable) {
@@ -70,9 +76,9 @@ export function SearchProductItem({
           )}
         </div>
         <div className="text-sm" style={{ color: colors.text.secondary }}>
-          €{product.prezzo.toFixed(2)} • {product.categoria}
+          €{Number(product.prezzo).toFixed(2)} • {product.categoria}
           {product.codice && <span className="ml-2">#{product.codice}</span>}
-          {!isAvailable && <span className="ml-2" style={{ color: colors.text.error }}>Non disponibile</span>}
+          {!isAvailable && <span className="ml-2" style={{ color: colors.text.error }}>{product.terminato ? 'Esaurito' : 'Non disponibile'}</span>}
         </div>
       </div>
 

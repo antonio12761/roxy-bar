@@ -1,154 +1,1036 @@
 {
-  "totalErrors": 18,
-  "timestamp": "2025-08-01T11:17:33.097Z",
+  "totalErrors": 140,
+  "timestamp": "2025-08-04T09:55:41.941Z",
   "categories": {
     "propertyNotExist": [
       {
-        "file": "app/cameriere/azioni-rapide/page.tsx",
-        "line": "app/cameriere/azioni-rapide/page.tsx(155,61): error TS2339: Property 'warning' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; }'.",
+        "file": "components/cassa/ClientSelectionModal.tsx",
+        "line": "components/cassa/ClientSelectionModal.tsx(33,30): error TS2339: Property 'clienti' does not exist on type '{ success: boolean; error: string; data?: undefined; } | { success: boolean; data: { clienti: { stats: { ordiniTotali: number; debitiAperti: number; debitoTotale: number; totaleSpeso: number; mediaSpesa: number; }; ... 21 more ...; updatedAt: Date; }[]; pagination: { ...; }; }; error?: undefined; }'.",
         "errorCode": "2339",
-        "message": "Property 'warning' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; }'.",
-        "context": "app/cameriere/gestione-conti/page.tsx(211,42): error TS2345: Argument of type '{ id: string; numero: number; tavolo: { numero: string; } | null; tipo: TipoOrdinazione; cameriere: { nome: string; }; cliente: { nome: string; telefono: string | null; } | null; ... 15 more ...; pagamenti: { ...; }[]; }[]' is not assignable to parameter of type 'DeliveredOrder[]'."
+        "message": "Property 'clienti' does not exist on type '{ success: boolean; error: string; data?: undefined; } | { success: boolean; data: { clienti: { stats: { ordiniTotali: number; debitiAperti: number; debitoTotale: number; totaleSpeso: number; mediaSpesa: number; }; ... 21 more ...; updatedAt: Date; }[]; pagination: { ...; }; }; error?: undefined; }'.",
+        "context": "  Property 'clienti' does not exist on type '{ success: boolean; error: string; data?: undefined; }'."
       },
       {
-        "file": "app/dashboard/procedures/page.tsx",
-        "line": "app/dashboard/procedures/page.tsx(225,75): error TS2339: Property 'error' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; danger: string; dangerHover: string; dangerText: string; }'.",
+        "file": "components/cassa/ClientSelectionModal.tsx",
+        "line": "components/cassa/ClientSelectionModal.tsx(57,34): error TS2339: Property 'cliente' does not exist on type 'ActionResult<any>'.",
         "errorCode": "2339",
-        "message": "Property 'error' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; danger: string; dangerHover: string; dangerText: string; }'.",
-        "context": "app/dashboard/products/page.tsx(536,55): error TS2345: Argument of type 'Product' is not assignable to parameter of type 'Product'."
+        "message": "Property 'cliente' does not exist on type 'ActionResult<any>'.",
+        "context": "components/clienti/ClientAnalytics.tsx(68,17): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'."
+      },
+      {
+        "file": "components/clienti/ClientAnalytics.tsx",
+        "line": "components/clienti/ClientAnalytics.tsx(113,70): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClientDetailModal.tsx(72,28): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
+      },
+      {
+        "file": "components/clienti/ClientDetailModal.tsx",
+        "line": "components/clienti/ClientDetailModal.tsx(72,28): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClientDetailModal.tsx(91,7): error TS2322: Type '\"large\"' is not assignable to type '\"sm\" | \"md\" | \"lg\" | \"xl\" | undefined'."
+      },
+      {
+        "file": "components/clienti/ClientDetailModal.tsx",
+        "line": "components/clienti/ClientDetailModal.tsx(202,85): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClientDetailModal.tsx(251,86): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
+      },
+      {
+        "file": "components/clienti/ClientDetailModal.tsx",
+        "line": "components/clienti/ClientDetailModal.tsx(251,86): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClientList.tsx(62,85): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
+      },
+      {
+        "file": "components/clienti/ClientList.tsx",
+        "line": "components/clienti/ClientList.tsx(62,85): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClienteAutocomplete.tsx(8,22): error TS7016: Could not find a declaration file for module 'lodash/debounce'. '/home/colai/projects/bar/guestone/bar-roxy-clean/node_modules/lodash/debounce.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "components/clienti/ClienteDetailModal.tsx",
+        "line": "components/clienti/ClienteDetailModal.tsx(170,79): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'.",
+        "context": "components/clienti/ClienteFormModal.tsx(484,21): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'."
+      },
+      {
+        "file": "components/prepara/CameriereModal.tsx",
+        "line": "components/prepara/CameriereModal.tsx(37,35): error TS2339: Property 'background' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'background' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/CameriereModal.tsx(49,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/CameriereModal.tsx",
+        "line": "components/prepara/CameriereModal.tsx(49,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'foreground' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/CameriereModal.tsx(64,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/CameriereModal.tsx",
+        "line": "components/prepara/CameriereModal.tsx(64,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'foreground' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/CassaModal.tsx(37,35): error TS2339: Property 'background' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/CassaModal.tsx",
+        "line": "components/prepara/CassaModal.tsx(37,35): error TS2339: Property 'background' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'background' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/CassaModal.tsx(49,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/CassaModal.tsx",
+        "line": "components/prepara/CassaModal.tsx(49,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'foreground' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/CassaModal.tsx(64,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/CassaModal.tsx",
+        "line": "components/prepara/CassaModal.tsx(64,29): error TS2339: Property 'foreground' does not exist on type 'ThemeColors'.",
+        "errorCode": "2339",
+        "message": "Property 'foreground' does not exist on type 'ThemeColors'.",
+        "context": "components/prepara/MultiOutOfStockSelector.tsx(415,25): error TS2322: Type 'string | undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(371,36): error TS2339: Property 'message' does not exist on type '{ success: boolean; error: string; } | { originalOrderId: string | null; outOfStockOrderId: string; splitOrder: boolean; success: boolean; message: string; error?: undefined; }'.",
+        "errorCode": "2339",
+        "message": "Property 'message' does not exist on type '{ success: boolean; error: string; } | { originalOrderId: string | null; outOfStockOrderId: string; splitOrder: boolean; success: boolean; message: string; error?: undefined; }'.",
+        "context": "  Property 'message' does not exist on type '{ success: boolean; error: string; }'."
+      },
+      {
+        "file": "hooks/useOrderManagement.ts",
+        "line": "hooks/useOrderManagement.ts(30,18): error TS2339: Property 'success' does not exist on type 'any[]'.",
+        "errorCode": "2339",
+        "message": "Property 'success' does not exist on type 'any[]'.",
+        "context": "hooks/useOrderManagement.ts(30,36): error TS2339: Property 'ordinazioni' does not exist on type 'any[]'."
+      },
+      {
+        "file": "hooks/useOrderManagement.ts",
+        "line": "hooks/useOrderManagement.ts(30,36): error TS2339: Property 'ordinazioni' does not exist on type 'any[]'.",
+        "errorCode": "2339",
+        "message": "Property 'ordinazioni' does not exist on type 'any[]'.",
+        "context": "hooks/useOrderManagement.ts(31,39): error TS2339: Property 'ordinazioni' does not exist on type 'any[]'."
+      },
+      {
+        "file": "hooks/useOrderManagement.ts",
+        "line": "hooks/useOrderManagement.ts(31,39): error TS2339: Property 'ordinazioni' does not exist on type 'any[]'.",
+        "errorCode": "2339",
+        "message": "Property 'ordinazioni' does not exist on type 'any[]'.",
+        "context": "hooks/useSSEDeduplication.ts(10,24): error TS2554: Expected 1 arguments, but got 0."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(51,36): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(52,37): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(52,37): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(52,56): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(55,40): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(55,59): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(58,35): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(59,17): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(68,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(69,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(69,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(69,50): error TS7006: Parameter 'd' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(73,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(74,17): error TS7006: Parameter 'd' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(84,15): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(84,35): error TS7006: Parameter 'ord' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(104,38): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(105,40): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(105,40): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(105,56): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(106,19): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(116,32): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(116,32): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(139,20): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(139,20): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(170,9): error TS2561: Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(234,13): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(234,33): error TS7006: Parameter 'ord' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(268,13): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti-stats.ts(268,28): error TS7006: Parameter 'debito' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(370,26): error TS2339: Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "context": "lib/actions/clienti-stats.ts(370,40): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(398,28): error TS2339: Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "context": "lib/actions/clienti-stats.ts(398,42): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(214,29): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(215,30): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(215,30): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(216,10): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(218,33): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(219,10): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(221,28): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(222,18): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(224,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(225,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(225,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(225,44): error TS7006: Parameter 'd' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(226,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(227,18): error TS7006: Parameter 'd' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(229,35): error TS2339: Property 'ContoScalare' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "errorCode": "2339",
+        "message": "Property 'ContoScalare' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'.",
+        "context": "lib/actions/clienti.ts(404,57): error TS2322: Type '\"RITIRATO\"' is not assignable to type 'StatoOrdinazione'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(808,62): error TS2339: Property 'pagato' does not exist on type '{ RigaOrdinazione: ({ Prodotto: { id: number; createdAt: Date; updatedAt: Date; nome: string; prezzo: Decimal; postazione: DestinazioneRiga | null; ... 20 more ...; requiresGlasses: boolean; }; } & { ...; })[]; } & { ...; }'.",
+        "errorCode": "2339",
+        "message": "Property 'pagato' does not exist on type '{ RigaOrdinazione: ({ Prodotto: { id: number; createdAt: Date; updatedAt: Date; nome: string; prezzo: Decimal; postazione: DestinazioneRiga | null; ... 20 more ...; requiresGlasses: boolean; }; } & { ...; })[]; } & { ...; }'.",
+        "context": "lib/actions/ordinazioni.ts(1586,11): error TS2322: Type '{ id: string; prodottoId: number; quantita: number; prezzo: number; stato: \"INSERITO\"; postazione: string; note: string | null; timestampOrdine: Date; updatedAt: Date; }[]' is not assignable to type '(Without<RigaOrdinazioneCreateWithoutOrdinazioneInput, RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput> & RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput) | (Without<...> & RigaOrdinazioneCreateWithoutOrdinazioneInput) | RigaOrdinazioneCreateWithoutOrdinazioneInput[] | RigaOrdinazioneUncheckedCreateWitho...'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1630,26): error TS2339: Property 'RigaOrdinazione' does not exist on type '{ id: string; numero: number; totale: Decimal; nomeCliente: string | null; note: string | null; stato: StatoOrdinazione; statoPagamento: StatoPagamento; ... 12 more ...; timestamp: Date | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'RigaOrdinazione' does not exist on type '{ id: string; numero: number; totale: Decimal; nomeCliente: string | null; note: string | null; stato: StatoOrdinazione; statoPagamento: StatoPagamento; ... 12 more ...; timestamp: Date | null; }'.",
+        "context": "lib/actions/ordinazioni.ts(1630,46): error TS7006: Parameter 'riga' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(298,21): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(298,51): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(298,51): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(301,19): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(301,19): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "errorCode": "2339",
+        "message": "Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(301,43): error TS7006: Parameter 'merge' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/ordinazioni/tavoli.ts",
+        "line": "lib/actions/ordinazioni/tavoli.ts(85,62): error TS2339: Property 'pagato' does not exist on type '{ RigaOrdinazione: ({ Prodotto: { id: number; nome: string; descrizione: string | null; prezzo: Decimal; categoria: string; categoriaMenuId: number | null; disponibile: boolean; ... 19 more ...; requiresGlasses: boolean; }; } & { ...; })[]; } & { ...; }'.",
+        "errorCode": "2339",
+        "message": "Property 'pagato' does not exist on type '{ RigaOrdinazione: ({ Prodotto: { id: number; nome: string; descrizione: string | null; prezzo: Decimal; categoria: string; categoriaMenuId: number | null; disponibile: boolean; ... 19 more ...; requiresGlasses: boolean; }; } & { ...; })[]; } & { ...; }'.",
+        "context": "lib/actions/out-of-stock-notifications.ts(132,7): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type '{ notificationId: string; claimedBy: string; claimedAt: Date; }'."
       }
     ],
     "cannotFind": [],
     "typeAssignment": [
       {
-        "file": "app/api/admin/users/route.ts",
-        "line": "app/api/admin/users/route.ts(439,7): error TS2322: Type '{ id: string; userId: string; action: \"DELETE\"; entityType: \"USER\"; entityId: string; oldValues: { id: string; email: string; password: string; nome: string; cognome: string; ruolo: $Enums.Role; ... 10 more ...; emailVerified: Date | null; }; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.",
+        "file": "components/cameriere/OutOfStockNotificationProvider.tsx",
+        "line": "components/cameriere/OutOfStockNotificationProvider.tsx(166,11): error TS2322: Type '{ notification: OutOfStockEvent; onClose: () => void; availableProducts: { id: number; nome: string; prezzo: number; categoria: string; }[]; onReplaceProduct: (substituteProductId: number) => Promise<...>; }' is not assignable to type 'IntrinsicAttributes & OutOfStockNotificationProps'.",
         "errorCode": "2322",
-        "message": "Type '{ id: string; userId: string; action: \"DELETE\"; entityType: \"USER\"; entityId: string; oldValues: { id: string; email: string; password: string; nome: string; cognome: string; ruolo: $Enums.Role; ... 10 more ...; emailVerified: Date | null; }; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.",
-        "context": "  Type '{ id: string; userId: string; action: \"DELETE\"; entityType: \"USER\"; entityId: string; oldValues: { id: string; email: string; password: string; nome: string; cognome: string; ruolo: $Enums.Role; ... 10 more ...; emailVerified: Date | null; }; }' is not assignable to type 'Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput'."
+        "message": "Type '{ notification: OutOfStockEvent; onClose: () => void; availableProducts: { id: number; nome: string; prezzo: number; categoria: string; }[]; onReplaceProduct: (substituteProductId: number) => Promise<...>; }' is not assignable to type 'IntrinsicAttributes & OutOfStockNotificationProps'.",
+        "context": "  Property 'onReplaceProduct' does not exist on type 'IntrinsicAttributes & OutOfStockNotificationProps'."
       },
       {
-        "file": "app/cameriere/gestione-conti/page.tsx",
-        "line": "app/cameriere/gestione-conti/page.tsx(211,42): error TS2345: Argument of type '{ id: string; numero: number; tavolo: { numero: string; } | null; tipo: TipoOrdinazione; cameriere: { nome: string; }; cliente: { nome: string; telefono: string | null; } | null; ... 15 more ...; pagamenti: { ...; }[]; }[]' is not assignable to parameter of type 'DeliveredOrder[]'.",
+        "file": "components/cassa/ClientSelectionModal.tsx",
+        "line": "components/cassa/ClientSelectionModal.tsx(31,39): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.",
         "errorCode": "2345",
-        "message": "Argument of type '{ id: string; numero: number; tavolo: { numero: string; } | null; tipo: TipoOrdinazione; cameriere: { nome: string; }; cliente: { nome: string; telefono: string | null; } | null; ... 15 more ...; pagamenti: { ...; }[]; }[]' is not assignable to parameter of type 'DeliveredOrder[]'.",
-        "context": "  Type '{ id: string; numero: number; tavolo: { numero: string; } | null; tipo: $Enums.TipoOrdinazione; cameriere: { nome: string; }; cliente: { nome: string; telefono: string | null; } | null; ... 15 more ...; pagamenti: { ...; }[]; }' is not assignable to type 'DeliveredOrder'."
+        "message": "Argument of type 'string' is not assignable to parameter of type 'number'.",
+        "context": "components/cassa/ClientSelectionModal.tsx(33,30): error TS2339: Property 'clienti' does not exist on type '{ success: boolean; error: string; data?: undefined; } | { success: boolean; data: { clienti: { stats: { ordiniTotali: number; debitiAperti: number; debitoTotale: number; totaleSpeso: number; mediaSpesa: number; }; ... 21 more ...; updatedAt: Date; }[]; pagination: { ...; }; }; error?: undefined; }'."
       },
       {
-        "file": "app/dashboard/products/page.tsx",
-        "line": "app/dashboard/products/page.tsx(536,55): error TS2345: Argument of type 'Product' is not assignable to parameter of type 'Product'.",
-        "errorCode": "2345",
-        "message": "Argument of type 'Product' is not assignable to parameter of type 'Product'.",
-        "context": "  Types of property 'category' are incompatible."
-      },
-      {
-        "file": "app/dashboard/products/page.tsx",
-        "line": "app/dashboard/products/page.tsx(537,17): error TS2322: Type '(product: Product) => Promise<void>' is not assignable to type '(product: Product) => void'.",
+        "file": "components/clienti/ClientDetailModal.tsx",
+        "line": "components/clienti/ClientDetailModal.tsx(91,7): error TS2322: Type '\"large\"' is not assignable to type '\"sm\" | \"md\" | \"lg\" | \"xl\" | undefined'.",
         "errorCode": "2322",
-        "message": "Type '(product: Product) => Promise<void>' is not assignable to type '(product: Product) => void'.",
-        "context": "  Types of parameters 'product' and 'product' are incompatible."
+        "message": "Type '\"large\"' is not assignable to type '\"sm\" | \"md\" | \"lg\" | \"xl\" | undefined'.",
+        "context": "components/clienti/ClientDetailModal.tsx(202,85): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
       },
       {
-        "file": "lib/services/audit-service.ts",
-        "line": "lib/services/audit-service.ts(172,33): error TS2345: Argument of type '{ entityType: \"PAGAMENTO\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { amount: number | undefined; paymentMethod: string | undefined; tableNumber: string | undefined; ordinazioneId: string | undefined; timestamp: string; }; ... 7 more ....' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"PAGAMENTO\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { amount: number | undefined; paymentMethod: string | undefined; tableNumber: string | undefined; ordinazioneId: string | undefined; timestamp: string; }; ... 7 more ....' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"PAGAMENTO\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { amount: number | undefined; paymentMethod: string | undefined; tableNumber: string | undefined; ordinazioneId: string | undefined; timestamp: string; }; ... 7 more ....' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "file": "components/prepara/MultiOutOfStockSelector.tsx",
+        "line": "components/prepara/MultiOutOfStockSelector.tsx(415,25): error TS2322: Type 'string | undefined' is not assignable to type 'string'.",
+        "errorCode": "2322",
+        "message": "Type 'string | undefined' is not assignable to type 'string'.",
+        "context": "  Type 'undefined' is not assignable to type 'string'."
       },
       {
-        "file": "lib/services/audit-service.ts",
-        "line": "lib/services/audit-service.ts(225,33): error TS2345: Argument of type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { tableId: string | undefined; itemCount: number | undefined; totalAmount: number | undefined; timestamp: string; }; ... 7 more ...; relatedEntityId: string | undefi...' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(244,24): error TS2345: Argument of type '\"esauriti\"' is not assignable to parameter of type '\"attesa\" | \"preparazione\" | \"pronti\" | \"ritirati\"'.",
         "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { tableId: string | undefined; itemCount: number | undefined; totalAmount: number | undefined; timestamp: string; }; ... 7 more ...; relatedEntityId: string | undefi...' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; oldValues: any; newValues: any; metadata: { tableId: string | undefined; itemCount: number | undefined; totalAmount: number | undefined; timestamp: string; }; ... 7 more ...; relatedEntityId: string | undefi...' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "message": "Argument of type '\"esauriti\"' is not assignable to parameter of type '\"attesa\" | \"preparazione\" | \"pronti\" | \"ritirati\"'.",
+        "context": "components/prepara/OrderDetailsPanel.tsx(350,9): error TS2367: This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"PRONTO\" | \"CONSEGNATO\" | \"ORDINATO_ESAURITO\"' and '\"INSERITO\"' have no overlap."
       },
       {
-        "file": "lib/services/audit-service.ts",
-        "line": "lib/services/audit-service.ts(267,33): error TS2345: Argument of type '{ entityType: \"USER\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; metadata: { timestamp: string; event: \"LOGIN\" | \"LOGOUT\" | \"ACCESS_DENIED\" | \"SUSPICIOUS_ACTIVITY\"; resource: string | undefined; }; ... 5 more ...; errorMessage: string | undefined; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"USER\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; metadata: { timestamp: string; event: \"LOGIN\" | \"LOGOUT\" | \"ACCESS_DENIED\" | \"SUSPICIOUS_ACTIVITY\"; resource: string | undefined; }; ... 5 more ...; errorMessage: string | undefined; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"USER\"; entityId: string; action: $Enums.AuditAction; userId: string; sessionId: string; metadata: { timestamp: string; event: \"LOGIN\" | \"LOGOUT\" | \"ACCESS_DENIED\" | \"SUSPICIOUS_ACTIVITY\"; resource: string | undefined; }; ... 5 more ...; errorMessage: string | undefined; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(352,11): error TS2322: Type 'import(\"/home/colai/projects/bar/guestone/bar-roxy-clean/app/prepara/types\").OrderItem[]' is not assignable to type 'OrderItem[]'.",
+        "errorCode": "2322",
+        "message": "Type 'import(\"/home/colai/projects/bar/guestone/bar-roxy-clean/app/prepara/types\").OrderItem[]' is not assignable to type 'OrderItem[]'.",
+        "context": "  Type 'import(\"/home/colai/projects/bar/guestone/bar-roxy-clean/app/prepara/types\").OrderItem' is not assignable to type 'OrderItem'."
       },
       {
-        "file": "lib/services/audit-service.ts",
-        "line": "lib/services/audit-service.ts(591,33): error TS2345: Argument of type '{ entityType: \"SYSTEM\"; entityId: string; action: \"ACCESS\"; userId: string | undefined; sessionId: string | undefined; metadata: { method: string; path: string; timestamp: string; }; ipAddress: string | undefined; ... 5 more ...; errorMessage: string | undefined; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(374,30): error TS2345: Argument of type '\"esauriti\"' is not assignable to parameter of type '\"attesa\" | \"preparazione\" | \"pronti\" | \"ritirati\"'.",
         "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"SYSTEM\"; entityId: string; action: \"ACCESS\"; userId: string | undefined; sessionId: string | undefined; metadata: { method: string; path: string; timestamp: string; }; ipAddress: string | undefined; ... 5 more ...; errorMessage: string | undefined; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"SYSTEM\"; entityId: string; action: \"ACCESS\"; userId: string | undefined; sessionId: string | undefined; metadata: { method: string; path: string; timestamp: string; }; ipAddress: string | undefined; ... 5 more ...; errorMessage: string | undefined; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "message": "Argument of type '\"esauriti\"' is not assignable to parameter of type '\"attesa\" | \"preparazione\" | \"pronti\" | \"ritirati\"'.",
+        "context": "components/prepara/OrderDetailsPanel.tsx(976,7): error TS2322: Type 'void' is not assignable to type 'ReactNode'."
       },
       {
-        "file": "lib/services/payment-validator.ts",
-        "line": "lib/services/payment-validator.ts(490,41): error TS2345: Argument of type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: \"VALIDATE\"; userId: string; sessionId: string; metadata: { validation: { calculatedTotal: number; paidTotal: number; difference: number; ... 5 more ...; warningCount: number; }; }; severity: \"LOW\" | ... 1 more ... | \"HIGH\"; category: \"PAYMENT\"; success: boolean;...' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: \"VALIDATE\"; userId: string; sessionId: string; metadata: { validation: { calculatedTotal: number; paidTotal: number; difference: number; ... 5 more ...; warningCount: number; }; }; severity: \"LOW\" | ... 1 more ... | \"HIGH\"; category: \"PAYMENT\"; success: boolean;...' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: \"VALIDATE\"; userId: string; sessionId: string; metadata: { validation: { calculatedTotal: number; paidTotal: number; difference: number; ... 5 more ...; warningCount: number; }; }; severity: \"LOW\" | ... 1 more ... | \"HIGH\"; category: \"PAYMENT\"; success: boolean;...' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(976,7): error TS2322: Type 'void' is not assignable to type 'ReactNode'.",
+        "errorCode": "2322",
+        "message": "Type 'void' is not assignable to type 'ReactNode'.",
+        "context": "components/prepara/OrderItemsList.tsx(50,30): error TS2367: This comparison appears to be unintentional because the types '\"PRONTO\" | \"CONSEGNATO\" | \"INSERITO\" | \"IN_LAVORAZIONE\"' and '\"ESAURITO\"' have no overlap."
       },
       {
-        "file": "lib/services/shift-manager.ts",
-        "line": "lib/services/shift-manager.ts(174,41): error TS2345: Argument of type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_START\"; userId: string; sessionId: string; metadata: { shiftId: string; location: string | undefined; device: string | undefined; previousShift: string | undefined; }; ipAddress: string; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
+        "file": "components/prepara/OrderNotesDisplay.tsx",
+        "line": "components/prepara/OrderNotesDisplay.tsx(57,25): error TS2345: Argument of type '{ id: string; tipo: string; cliente: string; cameriere: string; timestamp: string; items: never[]; totale: number; }[]' is not assignable to parameter of type 'SetStateAction<OrderMergeDetail[]>'.",
         "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_START\"; userId: string; sessionId: string; metadata: { shiftId: string; location: string | undefined; device: string | undefined; previousShift: string | undefined; }; ipAddress: string; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_START\"; userId: string; sessionId: string; metadata: { shiftId: string; location: string | undefined; device: string | undefined; previousShift: string | undefined; }; ipAddress: string; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "message": "Argument of type '{ id: string; tipo: string; cliente: string; cameriere: string; timestamp: string; items: never[]; totale: number; }[]' is not assignable to parameter of type 'SetStateAction<OrderMergeDetail[]>'.",
+        "context": "  Type '{ id: string; tipo: string; cliente: string; cameriere: string; timestamp: string; items: never[]; totale: number; }[]' is not assignable to type 'OrderMergeDetail[]'."
       },
       {
-        "file": "lib/services/shift-manager.ts",
-        "line": "lib/services/shift-manager.ts(253,41): error TS2345: Argument of type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_END\"; userId: string; metadata: { shiftId: string; duration: number; reason: \"TIMEOUT\" | \"NORMAL\" | \"EMERGENCY\" | \"HANDOVER\" | \"AUTOMATIC_HANDOVER\"; performance: { ...; }; }; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_END\"; userId: string; metadata: { shiftId: string; duration: number; reason: \"TIMEOUT\" | \"NORMAL\" | \"EMERGENCY\" | \"HANDOVER\" | \"AUTOMATIC_HANDOVER\"; performance: { ...; }; }; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"USER\"; entityId: string; action: \"SHIFT_END\"; userId: string; metadata: { shiftId: string; duration: number; reason: \"TIMEOUT\" | \"NORMAL\" | \"EMERGENCY\" | \"HANDOVER\" | \"AUTOMATIC_HANDOVER\"; performance: { ...; }; }; severity: \"LOW\"; category: \"SYSTEM\"; success: true; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "file": "components/prepara/OutOfStockModal.tsx",
+        "line": "components/prepara/OutOfStockModal.tsx(93,7): error TS2322: Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "errorCode": "2322",
+        "message": "Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "context": "  Property 'icon' does not exist on type 'IntrinsicAttributes & ThemedModalProps'."
       },
       {
-        "file": "lib/services/shift-manager.ts",
-        "line": "lib/services/shift-manager.ts(365,41): error TS2345: Argument of type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_INITIATED\"; userId: string; sessionId: string; metadata: { handoverId: string; toUserId: string; pendingOrdersCount: number; activeTablesCount: number; }; ... 4 more ...; relatedEntityId: string; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_INITIATED\"; userId: string; sessionId: string; metadata: { handoverId: string; toUserId: string; pendingOrdersCount: number; activeTablesCount: number; }; ... 4 more ...; relatedEntityId: string; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_INITIATED\"; userId: string; sessionId: string; metadata: { handoverId: string; toUserId: string; pendingOrdersCount: number; activeTablesCount: number; }; ... 4 more ...; relatedEntityId: string; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "file": "components/prepara/OutOfStockQuantityModal.tsx",
+        "line": "components/prepara/OutOfStockQuantityModal.tsx(74,7): error TS2322: Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "errorCode": "2322",
+        "message": "Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "context": "  Property 'icon' does not exist on type 'IntrinsicAttributes & ThemedModalProps'."
       },
       {
-        "file": "lib/services/shift-manager.ts",
-        "line": "lib/services/shift-manager.ts(461,41): error TS2345: Argument of type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_ACCEPTED\"; userId: string; sessionId: string; metadata: { handoverId: string; fromUserId: string; newShiftId: string; transferredOrdersCount: number; }; ... 4 more ...; relatedEntityId: string; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
+        "file": "components/prepara/SingleOrderDetailModal.tsx",
+        "line": "components/prepara/SingleOrderDetailModal.tsx(51,7): error TS2322: Type '{ children: Element; isOpen: true; onClose: () => void; title: string; maxWidth: string; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "errorCode": "2322",
+        "message": "Type '{ children: Element; isOpen: true; onClose: () => void; title: string; maxWidth: string; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "context": "  Property 'maxWidth' does not exist on type 'IntrinsicAttributes & ThemedModalProps'."
+      },
+      {
+        "file": "components/prepara/SplitOrderChoiceModal.tsx",
+        "line": "components/prepara/SplitOrderChoiceModal.tsx(39,7): error TS2322: Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "errorCode": "2322",
+        "message": "Type '{ children: Element; isOpen: boolean; onClose: () => void; title: string; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ThemedModalProps'.",
+        "context": "  Property 'icon' does not exist on type 'IntrinsicAttributes & ThemedModalProps'."
+      },
+      {
+        "file": "components/ui/autocomplete.tsx",
+        "line": "components/ui/autocomplete.tsx(105,41): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.",
         "errorCode": "2345",
-        "message": "Argument of type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_ACCEPTED\"; userId: string; sessionId: string; metadata: { handoverId: string; fromUserId: string; newShiftId: string; transferredOrdersCount: number; }; ... 4 more ...; relatedEntityId: string; }' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'.",
-        "context": "  Property 'tenantId' is missing in type '{ entityType: \"USER\"; entityId: string; action: \"HANDOVER_ACCEPTED\"; userId: string; sessionId: string; metadata: { handoverId: string; fromUserId: string; newShiftId: string; transferredOrdersCount: number; }; ... 4 more ...; relatedEntityId: string; }' but required in type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.",
+        "context": "  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "components/ui/autocomplete.tsx",
+        "line": "components/ui/autocomplete.tsx(121,21): error TS2345: Argument of type 'boolean | undefined' is not assignable to parameter of type 'SetStateAction<boolean>'.",
+        "errorCode": "2345",
+        "message": "Argument of type 'boolean | undefined' is not assignable to parameter of type 'SetStateAction<boolean>'.",
+        "context": "  Type 'undefined' is not assignable to type 'SetStateAction<boolean>'."
+      },
+      {
+        "file": "hooks/useSSEDeduplication.ts",
+        "line": "hooks/useSSEDeduplication.ts(36,7): error TS2322: Type 'undefined' is not assignable to type 'Timeout'.",
+        "errorCode": "2322",
+        "message": "Type 'undefined' is not assignable to type 'Timeout'.",
+        "context": "hooks/useSSEEffects.ts(115,33): error TS18047: 'selectedOrder' is possibly 'null'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(404,57): error TS2322: Type '\"RITIRATO\"' is not assignable to type 'StatoOrdinazione'.",
+        "errorCode": "2322",
+        "message": "Type '\"RITIRATO\"' is not assignable to type 'StatoOrdinazione'.",
+        "context": "lib/actions/debiti-direct.ts(65,21): error TS2345: Argument of type '\"debt-created\"' is not assignable to parameter of type 'keyof SSEEventMap'."
+      },
+      {
+        "file": "lib/actions/debiti-direct.ts",
+        "line": "lib/actions/debiti-direct.ts(65,21): error TS2345: Argument of type '\"debt-created\"' is not assignable to parameter of type 'keyof SSEEventMap'.",
+        "errorCode": "2345",
+        "message": "Argument of type '\"debt-created\"' is not assignable to parameter of type 'keyof SSEEventMap'.",
+        "context": "lib/actions/esaurito-handling.ts(176,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "lib/actions/esaurito-handling.ts",
+        "line": "lib/actions/esaurito-handling.ts(176,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.",
+        "errorCode": "2322",
+        "message": "Type 'string | undefined' is not assignable to type 'string'.",
+        "context": "  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "lib/actions/ordinaPerAltri.ts",
+        "line": "lib/actions/ordinaPerAltri.ts(52,11): error TS2322: Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type '(Without<ClienteCreateInput, ClienteUncheckedCreateInput> & ClienteUncheckedCreateInput) | (Without<...> & ClienteCreateInput)'.",
+        "errorCode": "2322",
+        "message": "Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type '(Without<ClienteCreateInput, ClienteUncheckedCreateInput> & ClienteUncheckedCreateInput) | (Without<...> & ClienteCreateInput)'.",
+        "context": "  Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type 'Without<ClienteUncheckedCreateInput, ClienteCreateInput> & ClienteCreateInput'."
+      },
+      {
+        "file": "lib/actions/ordinaPerAltri.ts",
+        "line": "lib/actions/ordinaPerAltri.ts(80,13): error TS2322: Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type '(Without<ClienteCreateInput, ClienteUncheckedCreateInput> & ClienteUncheckedCreateInput) | (Without<...> & ClienteCreateInput)'.",
+        "errorCode": "2322",
+        "message": "Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type '(Without<ClienteCreateInput, ClienteUncheckedCreateInput> & ClienteUncheckedCreateInput) | (Without<...> & ClienteCreateInput)'.",
+        "context": "  Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type 'Without<ClienteUncheckedCreateInput, ClienteCreateInput> & ClienteCreateInput'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1586,11): error TS2322: Type '{ id: string; prodottoId: number; quantita: number; prezzo: number; stato: \"INSERITO\"; postazione: string; note: string | null; timestampOrdine: Date; updatedAt: Date; }[]' is not assignable to type '(Without<RigaOrdinazioneCreateWithoutOrdinazioneInput, RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput> & RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput) | (Without<...> & RigaOrdinazioneCreateWithoutOrdinazioneInput) | RigaOrdinazioneCreateWithoutOrdinazioneInput[] | RigaOrdinazioneUncheckedCreateWitho...'.",
+        "errorCode": "2322",
+        "message": "Type '{ id: string; prodottoId: number; quantita: number; prezzo: number; stato: \"INSERITO\"; postazione: string; note: string | null; timestampOrdine: Date; updatedAt: Date; }[]' is not assignable to type '(Without<RigaOrdinazioneCreateWithoutOrdinazioneInput, RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput> & RigaOrdinazioneUncheckedCreateWithoutOrdinazioneInput) | (Without<...> & RigaOrdinazioneCreateWithoutOrdinazioneInput) | RigaOrdinazioneCreateWithoutOrdinazioneInput[] | RigaOrdinazioneUncheckedCreateWitho...'.",
+        "context": "  Type '{ id: string; prodottoId: number; quantita: number; prezzo: number; stato: \"INSERITO\"; postazione: string; note: string | null; timestampOrdine: Date; updatedAt: Date; }[]' is not assignable to type 'RigaOrdinazioneCreateWithoutOrdinazioneInput[]'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1625,7): error TS2322: Type 'string | number' is not assignable to type 'number | undefined'.",
+        "errorCode": "2322",
+        "message": "Type 'string | number' is not assignable to type 'number | undefined'.",
+        "context": "  Type 'string' is not assignable to type 'number'."
       }
     ],
-    "implicitAny": [],
-    "possiblyNull": [],
+    "implicitAny": [
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(52,56): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(55,40): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(55,59): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(58,35): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(59,17): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(60,18): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(60,18): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(60,23): error TS7006: Parameter 'ord' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(60,23): error TS7006: Parameter 'ord' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'ord' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(61,50): error TS7006: Parameter 's' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(61,50): error TS7006: Parameter 's' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 's' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(61,53): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(61,53): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(68,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(69,50): error TS7006: Parameter 'd' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'd' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(73,36): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(74,17): error TS7006: Parameter 'd' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'd' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(75,18): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(75,18): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(75,23): error TS7006: Parameter 'debito' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(75,23): error TS7006: Parameter 'debito' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'debito' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(77,14): error TS7006: Parameter 's' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(77,14): error TS7006: Parameter 's' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 's' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(77,17): error TS7006: Parameter 'p' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(77,17): error TS7006: Parameter 'p' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'p' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(84,15): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(84,35): error TS7006: Parameter 'ord' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'ord' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(85,27): error TS7006: Parameter 'riga' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(85,27): error TS7006: Parameter 'riga' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'riga' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(104,38): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(105,56): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(106,19): error TS2339: Property 'dataCreazione' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(234,33): error TS7006: Parameter 'ord' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'ord' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(235,40): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(235,40): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(235,45): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(235,45): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(248,45): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(248,45): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(248,50): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(248,50): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(253,29): error TS7006: Parameter 'pag' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(253,29): error TS7006: Parameter 'pag' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'pag' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(268,13): error TS2339: Property 'Debiti' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(268,28): error TS7006: Parameter 'debito' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'debito' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(270,10): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(270,10): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(270,15): error TS7006: Parameter 'p' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(270,15): error TS7006: Parameter 'p' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'p' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(291,38): error TS7006: Parameter 'pag' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(291,38): error TS7006: Parameter 'pag' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'pag' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(360,9): error TS2353: Object literal may only specify known properties, and 'Righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(370,40): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(370,45): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(370,45): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(389,32): error TS2551: Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?"
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(398,42): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti-stats.ts(398,47): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(398,47): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(180,17): error TS2353: Object literal may only specify known properties, and 'firstName' does not exist in type 'UserSelect<DefaultArgs>'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(216,10): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(218,33): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(219,10): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(221,28): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(222,18): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(223,18): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(223,18): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(223,23): error TS7006: Parameter 'o' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(223,23): error TS7006: Parameter 'o' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'o' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(224,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(225,44): error TS7006: Parameter 'd' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'd' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(226,29): error TS2339: Property 'Debiti' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(227,18): error TS7006: Parameter 'd' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'd' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(228,18): error TS7006: Parameter 'sum' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(228,18): error TS7006: Parameter 'sum' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'sum' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(228,23): error TS7006: Parameter 'd' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(228,23): error TS7006: Parameter 'd' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'd' implicitly has an 'any' type.",
+        "context": "lib/actions/clienti.ts(229,35): error TS2339: Property 'ContoScalare' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1630,46): error TS7006: Parameter 'riga' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'riga' implicitly has an 'any' type.",
+        "context": "lib/actions/ordinazioni.ts(1934,40): error TS2367: This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"RICHIESTA_CONTO\" | \"PAGATO\" | \"ANNULLATO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(301,43): error TS7006: Parameter 'merge' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'merge' implicitly has an 'any' type.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(301,50): error TS7006: Parameter 'index' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(301,50): error TS7006: Parameter 'index' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'index' implicitly has an 'any' type.",
+        "context": "lib/actions/ordinazioni/stati-ordini.ts(323,40): error TS2367: This comparison appears to be unintentional because the types '\"IN_PREPARAZIONE\" | \"PAGATO\" | \"ANNULLATO\" | \"ORDINATO\" | \"RICHIESTA_CONTO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap."
+      }
+    ],
+    "possiblyNull": [
+      {
+        "file": "hooks/useSSEEffects.ts",
+        "line": "hooks/useSSEEffects.ts(115,33): error TS18047: 'selectedOrder' is possibly 'null'.",
+        "errorCode": "18047",
+        "message": "'selectedOrder' is possibly 'null'.",
+        "context": "lib/actions/clienti-stats.ts(22,9): error TS2561: Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?"
+      }
+    ],
     "functionDeclaration": [],
-    "argumentCount": [],
+    "argumentCount": [
+      {
+        "file": "hooks/useSSEDeduplication.ts",
+        "line": "hooks/useSSEDeduplication.ts(10,24): error TS2554: Expected 1 arguments, but got 0.",
+        "errorCode": "2554",
+        "message": "Expected 1 arguments, but got 0.",
+        "context": "hooks/useSSEDeduplication.ts(36,7): error TS2322: Type 'undefined' is not assignable to type 'Timeout'."
+      }
+    ],
     "other": [
       {
-        "file": "app/cameriere/nuova-ordinazione/page.tsx",
-        "line": "app/cameriere/nuova-ordinazione/page.tsx(112,19): error TS2503: Cannot find namespace 'JSX'.",
-        "errorCode": "2503",
-        "message": "Cannot find namespace 'JSX'.",
-        "context": "app/dashboard/procedures/page.tsx(225,75): error TS2339: Property 'error' does not exist on type '{ primary: string; primaryHover: string; primaryText: string; outlineBg: string; outlineBorder: string; outlineText: string; outlineHover: string; success: string; successHover: string; successText: string; danger: string; dangerHover: string; dangerText: string; }'."
+        "file": "components/clienti/ClientAnalytics.tsx",
+        "line": "components/clienti/ClientAnalytics.tsx(68,17): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "context": "components/clienti/ClientAnalytics.tsx(113,70): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
       },
       {
-        "file": "app/dashboard/products/page.tsx",
-        "line": "app/dashboard/products/page.tsx(538,17): error TS2719: Type '(product: Product) => void' is not assignable to type '(product: Product) => void'. Two different types with this name exist, but they are unrelated.",
-        "errorCode": "2719",
-        "message": "Type '(product: Product) => void' is not assignable to type '(product: Product) => void'. Two different types with this name exist, but they are unrelated.",
-        "context": "  Types of parameters 'product' and 'product' are incompatible."
+        "file": "components/clienti/ClienteAutocomplete.tsx",
+        "line": "components/clienti/ClienteAutocomplete.tsx(8,22): error TS7016: Could not find a declaration file for module 'lodash/debounce'. '/home/colai/projects/bar/guestone/bar-roxy-clean/node_modules/lodash/debounce.js' implicitly has an 'any' type.",
+        "errorCode": "7016",
+        "message": "Could not find a declaration file for module 'lodash/debounce'. '/home/colai/projects/bar/guestone/bar-roxy-clean/node_modules/lodash/debounce.js' implicitly has an 'any' type.",
+        "context": "  Try `npm i --save-dev @types/lodash` if it exists or add a new declaration (.d.ts) file containing `declare module 'lodash/debounce';`"
       },
       {
-        "file": "lib/services/payment-validator.ts",
-        "line": "lib/services/payment-validator.ts(268,9): error TS2561: Object literal may only specify known properties, but 'tavolo' does not exist in type 'OrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Tavolo'?",
+        "file": "components/clienti/ClienteAutocomplete.tsx",
+        "line": "components/clienti/ClienteAutocomplete.tsx(271,25): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "context": "components/clienti/ClienteAutocomplete.tsx(328,23): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'."
+      },
+      {
+        "file": "components/clienti/ClienteAutocomplete.tsx",
+        "line": "components/clienti/ClienteAutocomplete.tsx(328,23): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "context": "components/clienti/ClienteDetailModal.tsx(170,79): error TS2339: Property 'info' does not exist on type '{ primary: string; secondary: string; muted: string; icon: string; help: string; accent: string; success: string; error: string; warning?: string | undefined; }'."
+      },
+      {
+        "file": "components/clienti/ClienteFormModal.tsx",
+        "line": "components/clienti/ClienteFormModal.tsx(484,21): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "context": "components/prepara/CameriereModal.tsx(37,35): error TS2339: Property 'background' does not exist on type 'ThemeColors'."
+      },
+      {
+        "file": "components/prepara/OrderDetailsPanel.tsx",
+        "line": "components/prepara/OrderDetailsPanel.tsx(350,9): error TS2367: This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"PRONTO\" | \"CONSEGNATO\" | \"ORDINATO_ESAURITO\"' and '\"INSERITO\"' have no overlap.",
+        "errorCode": "2367",
+        "message": "This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"PRONTO\" | \"CONSEGNATO\" | \"ORDINATO_ESAURITO\"' and '\"INSERITO\"' have no overlap.",
+        "context": "components/prepara/OrderDetailsPanel.tsx(352,11): error TS2322: Type 'import(\"/home/colai/projects/bar/guestone/bar-roxy-clean/app/prepara/types\").OrderItem[]' is not assignable to type 'OrderItem[]'."
+      },
+      {
+        "file": "components/prepara/OrderItemsList.tsx",
+        "line": "components/prepara/OrderItemsList.tsx(50,30): error TS2367: This comparison appears to be unintentional because the types '\"PRONTO\" | \"CONSEGNATO\" | \"INSERITO\" | \"IN_LAVORAZIONE\"' and '\"ESAURITO\"' have no overlap.",
+        "errorCode": "2367",
+        "message": "This comparison appears to be unintentional because the types '\"PRONTO\" | \"CONSEGNATO\" | \"INSERITO\" | \"IN_LAVORAZIONE\"' and '\"ESAURITO\"' have no overlap.",
+        "context": "components/prepara/OrderNotesDisplay.tsx(57,25): error TS2345: Argument of type '{ id: string; tipo: string; cliente: string; cameriere: string; timestamp: string; items: never[]; totale: number; }[]' is not assignable to parameter of type 'SetStateAction<OrderMergeDetail[]>'."
+      },
+      {
+        "file": "components/ui/autocomplete.tsx",
+        "line": "components/ui/autocomplete.tsx(264,13): error TS2353: Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'ringColor' does not exist in type 'Properties<string | number, string & {}>'.",
+        "context": "hooks/useOrderManagement.ts(30,18): error TS2339: Property 'success' does not exist on type 'any[]'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(22,9): error TS2561: Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?",
         "errorCode": "2561",
-        "message": "Object literal may only specify known properties, but 'tavolo' does not exist in type 'OrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Tavolo'?",
-        "context": "lib/services/payment-validator.ts(490,41): error TS2345: Argument of type '{ entityType: \"ORDINAZIONE\"; entityId: string; action: \"VALIDATE\"; userId: string; sessionId: string; metadata: { validation: { calculatedTotal: number; paidTotal: number; difference: number; ... 5 more ...; warningCount: number; }; }; severity: \"LOW\" | ... 1 more ... | \"HIGH\"; category: \"PAYMENT\"; success: boolean;...' is not assignable to parameter of type 'Omit<AuditLogEntry, \"id\" | \"timestamp\">'."
+        "message": "Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?",
+        "context": "lib/actions/clienti-stats.ts(51,36): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(170,9): error TS2561: Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?",
+        "errorCode": "2561",
+        "message": "Object literal may only specify known properties, but 'Ordinazioni' does not exist in type 'ClienteInclude<DefaultArgs>'. Did you mean to write 'Ordinazione'?",
+        "context": "lib/actions/clienti-stats.ts(234,13): error TS2339: Property 'Ordinazioni' does not exist on type '{ tenantId: string; id: string; nome: string; createdAt: Date; updatedAt: Date; note: string | null; attivo: boolean; email: string | null; cognome: string | null; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(360,9): error TS2353: Object literal may only specify known properties, and 'Righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'Righe' does not exist in type 'OrdinazioneInclude<DefaultArgs>'.",
+        "context": "lib/actions/clienti-stats.ts(370,26): error TS2339: Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'."
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(389,32): error TS2551: Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?",
+        "errorCode": "2551",
+        "message": "Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?",
+        "context": "lib/actions/clienti-stats.ts(392,23): error TS2551: Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?"
+      },
+      {
+        "file": "lib/actions/clienti-stats.ts",
+        "line": "lib/actions/clienti-stats.ts(392,23): error TS2551: Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?",
+        "errorCode": "2551",
+        "message": "Property 'Cliente' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'clienteId'?",
+        "context": "lib/actions/clienti-stats.ts(398,28): error TS2339: Property 'Righe' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(180,17): error TS2353: Object literal may only specify known properties, and 'firstName' does not exist in type 'UserSelect<DefaultArgs>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'firstName' does not exist in type 'UserSelect<DefaultArgs>'.",
+        "context": "lib/actions/clienti.ts(187,22): error TS2353: Object literal may only specify known properties, and 'createdAt' does not exist in type 'DebitoOrderByWithRelationInput | DebitoOrderByWithRelationInput[]'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(187,22): error TS2353: Object literal may only specify known properties, and 'createdAt' does not exist in type 'DebitoOrderByWithRelationInput | DebitoOrderByWithRelationInput[]'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'createdAt' does not exist in type 'DebitoOrderByWithRelationInput | DebitoOrderByWithRelationInput[]'.",
+        "context": "lib/actions/clienti.ts(189,13): error TS2353: Object literal may only specify known properties, and 'User' does not exist in type 'DebitoInclude<DefaultArgs>'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(189,13): error TS2353: Object literal may only specify known properties, and 'User' does not exist in type 'DebitoInclude<DefaultArgs>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'User' does not exist in type 'DebitoInclude<DefaultArgs>'.",
+        "context": "lib/actions/clienti.ts(199,22): error TS2353: Object literal may only specify known properties, and 'createdAt' does not exist in type 'PagamentoOrderByWithRelationInput | PagamentoOrderByWithRelationInput[]'."
+      },
+      {
+        "file": "lib/actions/clienti.ts",
+        "line": "lib/actions/clienti.ts(199,22): error TS2353: Object literal may only specify known properties, and 'createdAt' does not exist in type 'PagamentoOrderByWithRelationInput | PagamentoOrderByWithRelationInput[]'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'createdAt' does not exist in type 'PagamentoOrderByWithRelationInput | PagamentoOrderByWithRelationInput[]'.",
+        "context": "lib/actions/clienti.ts(214,29): error TS2339: Property 'Ordinazione' does not exist on type '{ id: string; note: string | null; createdAt: Date; updatedAt: Date; attivo: boolean; nome: string; email: string | null; cognome: string | null; tenantId: string; telefono: string | null; ... 8 more ...; preferenze: JsonValue; }'."
+      },
+      {
+        "file": "lib/actions/gestione-esauriti.ts",
+        "line": "lib/actions/gestione-esauriti.ts(435,7): error TS2353: Object literal may only specify known properties, and 'orderNumber' does not exist in type '{ orderId: string; status: \"APERTO\" | \"IN_PREPARAZIONE\" | \"PRONTO\" | \"RITIRATO\" | \"PAGATO\"; previousStatus?: string | undefined; updatedBy?: string | undefined; timestamp: string; }'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'orderNumber' does not exist in type '{ orderId: string; status: \"APERTO\" | \"IN_PREPARAZIONE\" | \"PRONTO\" | \"RITIRATO\" | \"PAGATO\"; previousStatus?: string | undefined; updatedBy?: string | undefined; timestamp: string; }'.",
+        "context": "lib/actions/ordinaPerAltri.ts(52,11): error TS2322: Type '{ id: string; nome: string; telefono: string; updatedAt: Date; }' is not assignable to type '(Without<ClienteCreateInput, ClienteUncheckedCreateInput> & ClienteUncheckedCreateInput) | (Without<...> & ClienteCreateInput)'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1934,40): error TS2367: This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"RICHIESTA_CONTO\" | \"PAGATO\" | \"ANNULLATO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap.",
+        "errorCode": "2367",
+        "message": "This comparison appears to be unintentional because the types '\"ORDINATO\" | \"IN_PREPARAZIONE\" | \"RICHIESTA_CONTO\" | \"PAGATO\" | \"ANNULLATO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(273,9): error TS2353: Object literal may only specify known properties, and 'cameriere' does not exist in type 'OrdinazioneInclude<DefaultArgs>'."
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(273,9): error TS2353: Object literal may only specify known properties, and 'cameriere' does not exist in type 'OrdinazioneInclude<DefaultArgs>'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'cameriere' does not exist in type 'OrdinazioneInclude<DefaultArgs>'.",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(292,30): error TS2551: Property 'cameriere' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'cameriereId'?"
+      },
+      {
+        "file": "lib/actions/ordinazioni/richieste-merge.ts",
+        "line": "lib/actions/ordinazioni/richieste-merge.ts(292,30): error TS2551: Property 'cameriere' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'cameriereId'?",
+        "errorCode": "2551",
+        "message": "Property 'cameriere' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'. Did you mean 'cameriereId'?",
+        "context": "lib/actions/ordinazioni/richieste-merge.ts(298,21): error TS2339: Property 'RichiestaMerge' does not exist on type '{ timestamp: Date | null; id: string; clienteId: string | null; createdAt: Date; updatedAt: Date; stato: StatoOrdinazione; note: string | null; numero: number; ... 11 more ...; numeroOrdine: number | null; }'."
+      },
+      {
+        "file": "lib/actions/ordinazioni/stati-ordini.ts",
+        "line": "lib/actions/ordinazioni/stati-ordini.ts(323,40): error TS2367: This comparison appears to be unintentional because the types '\"IN_PREPARAZIONE\" | \"PAGATO\" | \"ANNULLATO\" | \"ORDINATO\" | \"RICHIESTA_CONTO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap.",
+        "errorCode": "2367",
+        "message": "This comparison appears to be unintentional because the types '\"IN_PREPARAZIONE\" | \"PAGATO\" | \"ANNULLATO\" | \"ORDINATO\" | \"RICHIESTA_CONTO\" | \"PAGAMENTO_RICHIESTO\" | \"ORDINATO_ESAURITO\"' and '\"PRONTO\"' have no overlap.",
+        "context": "lib/actions/ordinazioni/tavoli.ts(85,62): error TS2339: Property 'pagato' does not exist on type '{ RigaOrdinazione: ({ Prodotto: { id: number; nome: string; descrizione: string | null; prezzo: Decimal; categoria: string; categoriaMenuId: number | null; disponibile: boolean; ... 19 more ...; requiresGlasses: boolean; }; } & { ...; })[]; } & { ...; }'."
+      },
+      {
+        "file": "lib/actions/out-of-stock-notifications.ts",
+        "line": "lib/actions/out-of-stock-notifications.ts(132,7): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type '{ notificationId: string; claimedBy: string; claimedAt: Date; }'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'orderId' does not exist in type '{ notificationId: string; claimedBy: string; claimedAt: Date; }'.",
+        "context": "lib/actions/out-of-stock.ts(1228,9): error TS2353: Object literal may only specify known properties, and 'orderNumber' does not exist in type '{ orderId: string; tableNumber?: number | undefined; orderType?: string | undefined; reason?: string | undefined; approvedBy?: string | undefined; timestamp: string; }'."
+      },
+      {
+        "file": "lib/actions/out-of-stock.ts",
+        "line": "lib/actions/out-of-stock.ts(1228,9): error TS2353: Object literal may only specify known properties, and 'orderNumber' does not exist in type '{ orderId: string; tableNumber?: number | undefined; orderType?: string | undefined; reason?: string | undefined; approvedBy?: string | undefined; timestamp: string; }'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'orderNumber' does not exist in type '{ orderId: string; tableNumber?: number | undefined; orderType?: string | undefined; reason?: string | undefined; approvedBy?: string | undefined; timestamp: string; }'.",
+        "context": ""
       }
     ]
   },
   "fileErrors": {
-    "app/cameriere/azioni-rapide/page.tsx": 1,
-    "app/dashboard/procedures/page.tsx": 1,
-    "app/api/admin/users/route.ts": 1,
-    "app/cameriere/gestione-conti/page.tsx": 1,
-    "app/dashboard/products/page.tsx": 3,
-    "lib/services/audit-service.ts": 4,
-    "lib/services/payment-validator.ts": 2,
-    "lib/services/shift-manager.ts": 4,
-    "app/cameriere/nuova-ordinazione/page.tsx": 1
+    "components/cassa/ClientSelectionModal.tsx": 3,
+    "components/clienti/ClientAnalytics.tsx": 2,
+    "components/clienti/ClientDetailModal.tsx": 4,
+    "components/clienti/ClientList.tsx": 1,
+    "components/clienti/ClienteDetailModal.tsx": 1,
+    "components/prepara/CameriereModal.tsx": 3,
+    "components/prepara/CassaModal.tsx": 3,
+    "components/prepara/OrderDetailsPanel.tsx": 6,
+    "hooks/useOrderManagement.ts": 3,
+    "lib/actions/clienti-stats.ts": 52,
+    "lib/actions/clienti.ts": 22,
+    "lib/actions/ordinazioni.ts": 6,
+    "lib/actions/ordinazioni/richieste-merge.ts": 7,
+    "lib/actions/ordinazioni/tavoli.ts": 1,
+    "components/cameriere/OutOfStockNotificationProvider.tsx": 1,
+    "components/prepara/MultiOutOfStockSelector.tsx": 1,
+    "components/prepara/OrderNotesDisplay.tsx": 1,
+    "components/prepara/OutOfStockModal.tsx": 1,
+    "components/prepara/OutOfStockQuantityModal.tsx": 1,
+    "components/prepara/SingleOrderDetailModal.tsx": 1,
+    "components/prepara/SplitOrderChoiceModal.tsx": 1,
+    "components/ui/autocomplete.tsx": 3,
+    "hooks/useSSEDeduplication.ts": 2,
+    "lib/actions/debiti-direct.ts": 1,
+    "lib/actions/esaurito-handling.ts": 1,
+    "lib/actions/ordinaPerAltri.ts": 2,
+    "hooks/useSSEEffects.ts": 1,
+    "components/clienti/ClienteAutocomplete.tsx": 3,
+    "components/clienti/ClienteFormModal.tsx": 1,
+    "components/prepara/OrderItemsList.tsx": 1,
+    "lib/actions/gestione-esauriti.ts": 1,
+    "lib/actions/ordinazioni/stati-ordini.ts": 1,
+    "lib/actions/out-of-stock-notifications.ts": 1,
+    "lib/actions/out-of-stock.ts": 1
   }
 }

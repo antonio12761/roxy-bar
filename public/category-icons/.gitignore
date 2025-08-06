@@ -1,0 +1,6 @@
+# Ignore all uploaded icons
+*
+# But keep this file
+!.gitignore
+# Keep example icon if needed
+!example.png

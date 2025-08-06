@@ -53,7 +53,7 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
             id: `cliente_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             nome: data.clienteOrdinante,
             telefono: "", // Vuoto per ora
-            updatedAt: new Date()
+            tenantId: utente.tenantId
           }
         });
       }
@@ -81,7 +81,7 @@ export async function creaOrdinazionePerAltri(data: OrdinaPerAltriData) {
               id: `cliente_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               nome: data.clienteDestinatario,
               telefono: "",
-              updatedAt: new Date()
+              tenantId: utente.tenantId
             }
           });
         }

@@ -140,6 +140,7 @@ export async function syncOrderNotifications() {
           
           sseService.emit('order:ready', {
             orderId: ordinazione.id,
+            orderNumber: ordinazione.numero,
             tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
             readyItems: ordinazione.RigaOrdinazione.filter((r: any) => r.stato === 'PRONTO').map((r: any) => r.id),
             timestamp: new Date().toISOString()

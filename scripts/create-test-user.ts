@@ -14,7 +14,7 @@ async function createTestUser() {
       // Create test tenant
       tenant = await prisma.tenant.create({
         data: {
-          name: 'Siplit',
+          name: 'Roxy Bar',
           slug: 'bar-roxy',
           plan: 'BASIC',
           maxUsers: 50,

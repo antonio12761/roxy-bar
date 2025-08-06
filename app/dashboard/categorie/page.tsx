@@ -29,6 +29,8 @@ import { getProdotti } from "@/lib/actions/ordinazioni";
 import { bulkUpdateProductsWithPriceAdjustment } from "@/lib/actions/bulk-edit";
 import { exportProductsCSV, importProductsCSV } from "@/lib/actions/products";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Palette, Image as ImageIcon } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 interface CategoriaGerarchica {
   nome: string;
@@ -39,6 +41,14 @@ interface CategoriaGerarchica {
     fullPath: string;
     prodottiCount: number;
   }[];
+}
+
+interface CategoryIcon {
+  id: number;
+  categoryName: string;
+  icon: string | null;
+  iconType: string;
+  color: string | null;
 }
 
 interface Categoria {
@@ -110,9 +120,23 @@ export default function CategoriePage() {
     categoria: null as string | null,
     priceAdjustment: null as {type: 'fixed' | 'percentage', value: number} | null
   });
+  const [categoryIcons, setCategoryIcons] = useState<CategoryIcon[]>([]);
+  const [editingIcon, setEditingIcon] = useState<string | null>(null);
+  const [newIcon, setNewIcon] = useState("");
+  const [newIconColor, setNewIconColor] = useState("#000000");
+  const [uploadingIcon, setUploadingIcon] = useState<string | null>(null);
+  const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false);
+  const [selectedCategoryForSettings, setSelectedCategoryForSettings] = useState<string | null>(null);
+  const [categorySettingsForm, setCategorySettingsForm] = useState({
+    name: '',
+    icon: '',
+    iconType: 'emoji',
+    color: '#000000'
+  });
 
   useEffect(() => {
     loadCategorie();
+    loadCategoryIcons();
   }, []);
 
   // Auto-select first category when categories are loaded
@@ -171,6 +195,71 @@ export default function CategoriePage() {
       console.error("❌ Errore caricamento categorie:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCategoryIcons = async () => {
+    try {
+      const response = await fetch('/api/dashboard/category-icons');
+      if (response.ok) {
+        const data = await response.json();
+        setCategoryIcons(data);
+      }
+    } catch (error) {
+      console.error('Errore caricamento icone:', error);
+    }
+  };
+
+  const handleSaveIcon = async (categoryName: string) => {
+    try {
+      const response = await fetch('/api/dashboard/category-icons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryName,
+          icon: newIcon,
+          iconType: 'emoji',
+          color: newIconColor
+        })
+      });
+      
+      if (response.ok) {
+        toast.success('Icona aggiornata');
+        await loadCategoryIcons();
+        setEditingIcon(null);
+        setNewIcon('');
+        setNewIconColor('#000000');
+      }
+    } catch (error) {
+      console.error('Errore salvataggio icona:', error);
+      toast.error('Errore nel salvataggio');
+    }
+  };
+
+  const handleIconUpload = async (categoryName: string, file: File) => {
+    setUploadingIcon(categoryName);
+    
+    const formData = new FormData();
+    formData.append('icon', file);
+
+    try {
+      const response = await fetch(`/api/dashboard/category-icons/${encodeURIComponent(categoryName)}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        toast.success('Icona caricata con successo');
+        await loadCategoryIcons();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Errore nel caricamento dell\'icona');
+      }
+    } catch (error) {
+      console.error('Errore upload icona:', error);
+      toast.error('Errore nel caricamento dell\'icona');
+    } finally {
+      setUploadingIcon(null);
     }
   };
 
@@ -399,6 +488,10 @@ export default function CategoriePage() {
   };
 
   const getCategoryEmoji = (category: string) => {
+    const icon = categoryIcons.find(i => i.categoryName === category);
+    if (icon?.icon) {
+      return icon.iconType === 'image' ? null : icon.icon;
+    }
     const mainCategory = category.split(' > ')[0];
     const emojiMap: { [key: string]: string } = {
       'CAFFETTERIA': '☕',
@@ -413,6 +506,10 @@ export default function CategoriePage() {
       'GELATI': '🍦'
     };
     return emojiMap[mainCategory] || '🍽️';
+  };
+
+  const getCategoryIcon = (category: string) => {
+    return categoryIcons.find(i => i.categoryName === category);
   };
 
   // Drag & Drop handlers
@@ -1113,6 +1210,269 @@ export default function CategoriePage() {
         </div>
       )}
 
+      {/* Category Settings Modal */}
+      {showCategorySettingsModal && selectedCategoryForSettings && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="p-6 rounded-lg w-full max-w-md" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h3 className="text-2xl font-bold mb-6" style={{ color: colors.text.primary }}>Impostazioni Categoria</h3>
+            
+            <div className="space-y-6">
+              {/* Nome Categoria */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
+                  Nome Categoria
+                </label>
+                <input
+                  type="text"
+                  value={categorySettingsForm.name}
+                  onChange={(e) => setCategorySettingsForm({...categorySettingsForm, name: e.target.value})}
+                  className="w-full p-3 rounded-lg"
+                  style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
+                />
+              </div>
+
+              {/* Icona Section */}
+              <div>
+                <label className="block text-sm font-medium mb-3" style={{ color: colors.text.secondary }}>
+                  Icona Categoria
+                </label>
+                
+                {/* Current Icon Display */}
+                <div className="flex items-center justify-center mb-4 p-4 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
+                  {categorySettingsForm.iconType === 'image' && categorySettingsForm.icon?.startsWith('/') ? (
+                    <img 
+                      src={categorySettingsForm.icon} 
+                      alt="Icona categoria"
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <span className="text-5xl">{categorySettingsForm.icon || '🍽️'}</span>
+                  )}
+                </div>
+
+                {/* Icon Type Tabs */}
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setCategorySettingsForm({...categorySettingsForm, iconType: 'emoji'})}
+                    className={`flex-1 p-2 rounded-lg transition-colors ${
+                      categorySettingsForm.iconType === 'emoji' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Emoji
+                  </button>
+                  <button
+                    onClick={() => setCategorySettingsForm({...categorySettingsForm, iconType: 'image'})}
+                    className={`flex-1 p-2 rounded-lg transition-colors ${
+                      categorySettingsForm.iconType === 'image' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Immagine
+                  </button>
+                </div>
+
+                {/* Emoji Input */}
+                {categorySettingsForm.iconType === 'emoji' && (
+                  <div>
+                    <input
+                      type="text"
+                      value={categorySettingsForm.icon}
+                      onChange={(e) => setCategorySettingsForm({...categorySettingsForm, icon: e.target.value})}
+                      placeholder="Inserisci emoji"
+                      className="w-full p-3 rounded-lg text-2xl text-center mb-3"
+                      style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
+                    />
+                    
+                    {/* Emoji suggerite */}
+                    <div className="flex gap-2 flex-wrap">
+                      <span className="text-sm" style={{ color: colors.text.muted }}>Suggerite:</span>
+                      {['☕', '🍺', '🍹', '🥃', '🍷', '🥤', '🥪', '🍦', '🍰', '🍕', '🍔', '🌮', '🥗', '🍝', '🍜'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => setCategorySettingsForm({...categorySettingsForm, icon: emoji})}
+                          className="text-2xl hover:scale-125 transition-transform"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Image Upload */}
+                {categorySettingsForm.iconType === 'image' && (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="category-icon-upload"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file && selectedCategoryForSettings) {
+                          setUploadingIcon(selectedCategoryForSettings);
+                          
+                          const formData = new FormData();
+                          formData.append('icon', file);
+                          
+                          try {
+                            const response = await fetch(`/api/dashboard/category-icons/${encodeURIComponent(selectedCategoryForSettings)}/upload`, {
+                              method: 'POST',
+                              body: formData
+                            });
+
+                            if (response.ok) {
+                              const data = await response.json();
+                              setCategorySettingsForm({...categorySettingsForm, icon: data.iconUrl, iconType: 'image'});
+                              toast.success('Immagine caricata con successo');
+                              await loadCategoryIcons();
+                            } else {
+                              const error = await response.json();
+                              toast.error(error.error || 'Errore nel caricamento');
+                            }
+                          } catch (error) {
+                            toast.error('Errore nel caricamento dell\'immagine');
+                          } finally {
+                            setUploadingIcon(null);
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => document.getElementById('category-icon-upload')?.click()}
+                      className="w-full p-3 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                      style={{ backgroundColor: colors.button.primary, color: colors.button.primaryText }}
+                      disabled={uploadingIcon === selectedCategoryForSettings}
+                    >
+                      {uploadingIcon === selectedCategoryForSettings ? (
+                        <>
+                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                          Caricamento...
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-4 w-4" />
+                          Carica Immagine
+                        </>
+                      )}
+                    </button>
+                    <p className="text-xs mt-2" style={{ color: colors.text.muted }}>
+                      Formati supportati: PNG, JPG, GIF (max 2MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Colore */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
+                  Colore Tema
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={categorySettingsForm.color}
+                    onChange={(e) => setCategorySettingsForm({...categorySettingsForm, color: e.target.value})}
+                    className="h-12 w-20 rounded-lg cursor-pointer"
+                    style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary }}
+                  />
+                  <input
+                    type="text"
+                    value={categorySettingsForm.color}
+                    onChange={(e) => setCategorySettingsForm({...categorySettingsForm, color: e.target.value})}
+                    placeholder="#000000"
+                    className="flex-1 p-3 rounded-lg"
+                    style={{ backgroundColor: colors.bg.input, borderColor: colors.border.primary, color: colors.text.primary, borderWidth: '1px', borderStyle: 'solid' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6 pt-6" style={{ borderTop: `1px solid ${colors.border.primary}` }}>
+              <button
+                onClick={() => {
+                  setShowCategorySettingsModal(false);
+                  setSelectedCategoryForSettings(null);
+                }}
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.bg.hover, color: colors.text.primary }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={async () => {
+                  if (selectedCategoryForSettings !== categorySettingsForm.name) {
+                    // Rinomina categoria
+                    const result = await rinominaCategoria(selectedCategoryForSettings, categorySettingsForm.name);
+                    if (!result.success) {
+                      toast.error(result.error || 'Errore rinomina');
+                      return;
+                    }
+                  }
+                  
+                  // Salva icona e colore
+                  const response = await fetch('/api/dashboard/category-icons', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      categoryName: categorySettingsForm.name,
+                      icon: categorySettingsForm.icon,
+                      iconType: categorySettingsForm.iconType,
+                      color: categorySettingsForm.color
+                    })
+                  });
+                  
+                  if (response.ok) {
+                    toast.success('Impostazioni salvate');
+                    await loadCategorie();
+                    await loadCategoryIcons();
+                    setShowCategorySettingsModal(false);
+                    setSelectedCategoryForSettings(null);
+                    if (selectedCategory === selectedCategoryForSettings) {
+                      setSelectedCategory(categorySettingsForm.name);
+                    }
+                  } else {
+                    toast.error('Errore salvataggio');
+                  }
+                }}
+                className="flex-1 p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.button.success, color: colors.button.successText }}
+              >
+                Salva Modifiche
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirm(`Sei sicuro di voler eliminare la categoria "${selectedCategoryForSettings}"?\n\nTutti i prodotti verranno spostati in "Non categorizzato".`)) {
+                    const result = await eliminaCategoria(selectedCategoryForSettings);
+                    if (result.success) {
+                      toast.success('Categoria eliminata');
+                      await loadCategorie();
+                      await loadCategoryIcons();
+                      setShowCategorySettingsModal(false);
+                      setSelectedCategoryForSettings(null);
+                      if (selectedCategory === selectedCategoryForSettings) {
+                        setSelectedCategory(null);
+                        setProdotti([]);
+                      }
+                    } else {
+                      toast.error(result.error || 'Errore eliminazione');
+                    }
+                  }
+                }}
+                className="p-3 rounded-lg transition-colors duration-200"
+                style={{ backgroundColor: colors.text.error, color: 'white' }}
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
@@ -1540,11 +1900,44 @@ export default function CategoriePage() {
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{getCategoryEmoji(categoria.nome)}</span>
+                  {(() => {
+                    const icon = getCategoryIcon(categoria.nome);
+                    if (icon?.icon && icon.iconType === 'image') {
+                      return (
+                        <img 
+                          src={icon.icon} 
+                          alt={categoria.nome}
+                          className="w-4 h-4 object-cover rounded"
+                        />
+                      );
+                    }
+                    return <span className="text-sm">{getCategoryEmoji(categoria.nome)}</span>;
+                  })()}
                   <span className="text-sm">{categoria.nome}</span>
                   <span className="text-xs" style={{ color: selectedCategory === categoria.nome ? colors.button.primaryText : colors.text.muted }}>
                     ({categoria.prodottiCount})
                   </span>
+                  {/* Settings button for selected category */}
+                  {selectedCategory === categoria.nome && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const icon = getCategoryIcon(categoria.nome);
+                        setSelectedCategoryForSettings(categoria.nome);
+                        setCategorySettingsForm({
+                          name: categoria.nome,
+                          icon: icon?.icon || getCategoryEmoji(categoria.nome) || '🍽️',
+                          iconType: icon?.iconType || 'emoji',
+                          color: icon?.color || '#000000'
+                        });
+                        setShowCategorySettingsModal(true);
+                      }}
+                      className="ml-2 p-1 rounded hover:bg-black/10 transition-colors"
+                      title="Impostazioni categoria"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
               </button>
             ))}
@@ -1700,7 +2093,19 @@ export default function CategoriePage() {
                 <div className="flex flex-col h-full justify-between relative z-10">
                   <div>
                     <div className="flex items-center gap-1 mb-1">
-                      <span className="text-lg">{getCategoryEmoji(categoria.nome)}</span>
+                      {(() => {
+                        const icon = getCategoryIcon(categoria.nome);
+                        if (icon?.icon && icon.iconType === 'image') {
+                          return (
+                            <img 
+                              src={icon.icon} 
+                              alt={categoria.nome}
+                              className="w-5 h-5 object-cover rounded"
+                            />
+                          );
+                        }
+                        return <span className="text-lg">{getCategoryEmoji(categoria.nome)}</span>;
+                      })()}
                       <h3 className="font-semibold text-xs" style={{ color: colors.text.primary }}>
                         {categoria.nome}
                       </h3>

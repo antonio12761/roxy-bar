@@ -5,12 +5,14 @@ import { Prisma, StatoOrdinazione } from "@prisma/client";
 const TRANSIZIONI_STATO_ORDINE: Record<StatoOrdinazione, StatoOrdinazione[]> = {
   ORDINATO: [
     "IN_PREPARAZIONE", 
-    "ANNULLATO"
+    "ANNULLATO",
+    "ORDINATO_ESAURITO" // Può passare a esaurito se i prodotti non sono disponibili
   ],
   IN_PREPARAZIONE: [
     "ORDINATO",         // Può tornare a ORDINATO
     "PRONTO", 
-    "ANNULLATO"         // Può essere annullato anche in preparazione
+    "ANNULLATO",        // Può essere annullato anche in preparazione
+    "ORDINATO_ESAURITO" // Può passare a esaurito se i prodotti non sono disponibili
   ],
   PRONTO: [
     "IN_PREPARAZIONE",  // Può tornare in preparazione
@@ -30,7 +32,11 @@ const TRANSIZIONI_STATO_ORDINE: Record<StatoOrdinazione, StatoOrdinazione[]> = {
     "PAGATO"
   ],
   PAGATO: [],           // Stato finale - non può cambiare
-  ANNULLATO: []         // Stato finale - non può cambiare
+  ANNULLATO: [],        // Stato finale - non può cambiare
+  ORDINATO_ESAURITO: [  // Può tornare a ORDINATO quando gli articoli tornano disponibili
+    "ORDINATO",
+    "ANNULLATO"
+  ]
 };
 
 // Classe per errori di transizione di stato

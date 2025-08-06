@@ -196,7 +196,7 @@ class OrdersSyncService {
           OR: [
             {
               stato: {
-                in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+                in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "ORDINATO_ESAURITO"]
               }
             },
             {

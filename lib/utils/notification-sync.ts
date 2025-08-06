@@ -82,3 +82,13 @@ export function subscribeToNotificationChanges(callback: (data: NotificationSync
     window.removeEventListener('storage', handleChange);
   };
 }
+
+/**
+ * Notify that a notification was added (for NotificationCenter to pick up)
+ */
+export function notifyNotificationAdded(notification: any): void {
+  // Dispatch custom event that NotificationCenter listens to
+  window.dispatchEvent(new CustomEvent('notificationAdded', { 
+    detail: notification 
+  }));
+}

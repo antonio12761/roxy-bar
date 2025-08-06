@@ -1,32 +1,79 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { CassaErrorBoundary, withCassaErrorBoundary } from "@/components/error-boundary-cassa";
+import { useToast, ToastContainer } from "@/lib/toast-notifications";
 import { 
-  CreditCard, 
-  Euro, 
-  Receipt, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  RefreshCw,
-  Users,
   Package,
   Loader2,
   AlertCircle,
-  ChevronRight,
-  X,
-  User
+  CreditCard,
+  CheckCircle,
+  Plus,
+  ShoppingBag
 } from "lucide-react";
-import { getOrdinazioniConsegnate, generaScontrino } from "@/lib/actions/cassa";
+import { getOrdinazioniPerStato, generaScontrino } from "@/lib/actions/cassa";
 import { creaPagamento } from "@/lib/actions/pagamenti";
-import { useSSE, useOrderUpdates, useNotifications } from "@/contexts/sse-context";
+import { creaPagamentiParziali } from "@/lib/actions/pagamenti-parziali";
+import { creaDebito, getClientiConDebiti } from "@/lib/actions/debiti";
+import { creaDebitoDiretto, getDebitiAperti } from "@/lib/actions/debiti-direct";
+import { useSSE } from "@/contexts/sse-context";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
+import { useCassaState } from "@/hooks/useCassaState";
+import { useSSEDeduplication } from "@/hooks/useSSEDeduplication";
+import { useDebounceCallback, useRequestDeduplication } from "@/hooks/useDebounceCallback";
+import { CreatePaymentSchema, MultiOrderPaymentSchema, CreateDebtSchema, usePaymentValidation } from "@/lib/validation/payment-schemas";
+// import { useClientRateLimit } from "@/lib/middleware/rate-limiter-client"; // Removed - file deleted
 import PaymentHistory from "@/components/cassa/payment-history";
 import ScontrinoQueueManager from "@/components/cassa/scontrino-queue-manager";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ParticleEffect } from "@/components/ui/ParticleEffect";
-import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
-import { ThemeSelector } from "@/components/ui/ThemeSelector";
+import { BrowserNotificationHelper } from "@/lib/utils/notification-helper";
+import dynamic from 'next/dynamic';
+
+// Componenti sempre visibili (non lazy)
+import CassaHeader from "@/components/cassa/CassaHeader";
+import TableCard from "@/components/cassa/TableCard";
+import DebtCard from "@/components/cassa/DebtCard";
+
+// Modal caricati lazy (solo quando necessari)
+const TableDetailsDrawer = dynamic(
+  () => import("@/components/cassa/TableDetailsDrawer"),
+  { 
+    loading: () => <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>,
+    ssr: false 
+  }
+);
+
+const ClientSelectionModal = dynamic(
+  () => import("@/components/cassa/ClientSelectionModal"),
+  { ssr: false }
+);
+
+const PayDebtModal = dynamic(
+  () => import("@/components/cassa/PayDebtModal").then(mod => ({ default: mod.PayDebtModal })),
+  { ssr: false }
+);
+
+const SimplePartialPaymentModal = dynamic(
+  () => import("@/components/cassa/SimplePartialPaymentModal").then(mod => ({ default: mod.SimplePartialPaymentModal })),
+  { ssr: false }
+);
+
+const MultiOrderPartialPaymentModal = dynamic(
+  () => import("@/components/cassa/MultiOrderPartialPaymentModal").then(mod => ({ default: mod.MultiOrderPartialPaymentModal })),
+  { ssr: false }
+);
+
+const AddDebtModal = dynamic(
+  () => import("@/components/cassa/AddDebtModal").then(mod => ({ default: mod.AddDebtModal })),
+  { ssr: false }
+);
+
+const CameriereModal = dynamic(
+  () => import("@/components/prepara/CameriereModal"),
+  { ssr: false }
+);
 
 interface OrderItem {
   id: string;
@@ -37,6 +84,13 @@ interface OrderItem {
   prezzo: number;
   isPagato: boolean;
   pagatoDa?: string;
+}
+
+interface Payment {
+  importo: number;
+  modalita: string;
+  clienteNome: string | null;
+  timestamp: Date | string;
 }
 
 interface Order {
@@ -57,6 +111,7 @@ interface Order {
   stato: string;
   statoPagamento: string;
   dataApertura: string;
+  pagamenti?: Payment[];
 }
 
 interface TableGroup {
@@ -70,159 +125,302 @@ interface TableGroup {
   primaDaApertura: string;
 }
 
-export default function CassaPageOptimized() {
+function CassaPageOptimized() {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  const toast = useToast();
   
-  const [tableGroups, setTableGroups] = useState<TableGroup[]>([]);
+  // Usa il nuovo hook ottimizzato per lo stato
+  const {
+    tableGroupsRitirate,
+    tableGroupsDaPagare,
+    tableGroupsPagate,
+    debiti,
+    clientiConDebiti,
+    updateState,
+    updateSingleOrder,
+    moveOrderBetweenStates,
+    updateDebiti,
+    updateClientiConDebiti,
+    invalidateCache,
+    invalidateCacheOnSSE,
+    cache
+  } = useCassaState();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableGroup | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"POS" | "CONTANTI" | "MISTO">("POS");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showPartialPaymentModal, setShowPartialPaymentModal] = useState(false);
+  const [showMultiOrderPaymentModal, setShowMultiOrderPaymentModal] = useState(false);
   const [showTableDrawer, setShowTableDrawer] = useState(false);
   const [showScontrinoQueue, setShowScontrinoQueue] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<"table" | "order" | "partial">("table");
+  const [paymentMode, setPaymentMode] = useState<"table" | "order" | "partial" | "client">("table");
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [showDebtModal, setShowDebtModal] = useState(false);
+  const [showAddDebtModal, setShowAddDebtModal] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [particleKey, setParticleKey] = useState(0);
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
+  const [showCameriereModal, setShowCameriereModal] = useState(false);
+  
+  // Validazione con Zod
+  const paymentValidation = usePaymentValidation(CreatePaymentSchema);
+  const multiOrderValidation = usePaymentValidation(MultiOrderPaymentSchema);
+  const debtValidation = usePaymentValidation(CreateDebtSchema);
+  
+  // Rate limiting client-side - Disabled
+  // const paymentRateLimit = useClientRateLimit({
+  //   maxRequests: 10,
+  //   interval: 60000, // 1 minuto
+  //   onRateLimited: (resetTime) => {
+  //     const secondsLeft = Math.ceil((resetTime.getTime() - Date.now()) / 1000);
+  //     toast.warning('Troppe richieste', `Riprova tra ${secondsLeft} secondi`);
+  //   }
+  // });
+  
+  // const debtRateLimit = useClientRateLimit({
+  //   maxRequests: 5,
+  //   interval: 60000,
+  //   onRateLimited: (resetTime) => {
+  //     const secondsLeft = Math.ceil((resetTime.getTime() - Date.now()) / 1000);
+  //     toast.warning('Troppe richieste', `Riprova tra ${secondsLeft} secondi`);
+  //   }
+  // });
 
   // Use SSE context
-  const { connected, quality, latency } = useSSE();
+  const { connected, quality, latency, subscribe, isConnected } = useSSE();
+  
+  // Usa il nuovo hook per deduplicazione SSE
+  const { handleEvent, stopCleanup } = useSSEDeduplication(3000);
+  const subscribedRef = useRef(false);
+  const timeoutIdsRef = useRef<Set<NodeJS.Timeout>>(new Set());
 
-  // Load table groups
-  const loadOrders = useCallback(async () => {
+  // Load table groups con deduplicazione
+  const loadOrdersRaw = useCallback(async (forceRefresh = false) => {
     try {
+      // Controlla cache se non è un refresh forzato
+      if (!forceRefresh) {
+        const cachedData = cache.get('orders');
+        if (cachedData) {
+          updateState(cachedData, false);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       // Fetch fresh data
-      const data = await getOrdinazioniConsegnate();
-      const serializedData = serializeDecimalData(data);
+      const data = await getOrdinazioniPerStato();
       
-      // Group orders by table
-      const tableGroupsMap = new Map<string, TableGroup>();
+      // Aggiorna stato con controllo di cambiamenti
+      const hasChanged = updateState(data, forceRefresh);
       
-      serializedData.forEach((order: any) => {
-        const tableNumber = order.tavolo?.numero || 'Asporto';
-        
-        if (!tableGroupsMap.has(tableNumber)) {
-          tableGroupsMap.set(tableNumber, {
-            tavoloNumero: tableNumber,
-            ordinazioni: [],
-            totaleComplessivo: 0,
-            totalePagatoComplessivo: 0,
-            rimanenteComplessivo: 0,
-            numeroClienti: 0,
-            clientiNomi: [],
-            primaDaApertura: order.dataApertura
-          });
-        }
-        
-        const group = tableGroupsMap.get(tableNumber)!;
-        
-        // Add order to group
-        group.ordinazioni.push({
-          id: order.id,
-          numero: order.numero,
-          tavolo: order.tavolo,
-          cameriere: order.cameriere,
-          righe: order.righe,
-          totale: order.totale,
-          totalePagato: order.totalePagamenti || 0,
-          rimanente: order.rimanente,
-          nomeCliente: order.nomeCliente,
-          note: order.note,
-          stato: order.stato,
-          statoPagamento: order.statoPagamento,
-          dataApertura: order.dataApertura
-        });
-        
-        // Update totals
-        group.totaleComplessivo += order.totale;
-        group.totalePagatoComplessivo += order.totalePagamenti || 0;
-        group.rimanenteComplessivo += order.rimanente;
-        
-        // Update client info
-        if (order.nomeCliente) {
-          group.clientiNomi.push(order.nomeCliente);
-          group.numeroClienti += 1;
-        } else {
-          group.numeroClienti += 1;
-        }
-        
-        // Update earliest opening time
-        if (new Date(order.dataApertura) < new Date(group.primaDaApertura)) {
-          group.primaDaApertura = order.dataApertura;
-        }
-      });
+      // Salva in cache solo se i dati sono cambiati
+      if (hasChanged) {
+        cache.set('orders', data);
+      }
       
-      // Convert map to array
-      const tableGroups = Array.from(tableGroupsMap.values());
-      
-      setTableGroups(tableGroups);
       setIsLoading(false);
+      
+      // Load clients with debts (separato per non bloccare UI)
+      getClientiConDebiti().then(clienti => {
+        updateClientiConDebiti(clienti);
+      });
       
     } catch (error) {
       console.error("Errore caricamento tavoli:", error);
       setIsLoading(false);
     }
-  }, []);
+  }, [cache, updateState, updateClientiConDebiti]);
+  
+  // Applica deduplicazione alle richieste
+  const loadOrdersDeduplicated = useRequestDeduplication(loadOrdersRaw, {
+    cacheTime: 3000, // Cache per 3 secondi
+    dedupeTime: 500  // Deduplica richieste entro 500ms
+  });
+  
+  // Applica debouncing per evitare chiamate eccessive
+  const [loadOrders, cancelLoadOrders] = useDebounceCallback(
+    loadOrdersDeduplicated,
+    {
+      delay: 300,      // Attendi 300ms prima di eseguire
+      leading: false,  // Non eseguire immediatamente
+      trailing: true,  // Esegui alla fine del delay
+      maxWait: 2000   // Esegui comunque dopo max 2 secondi
+    }
+  );
 
-  // Handle order delivered event
+  // Handler ottimizzati con aggiornamenti incrementali
   const handleOrderDelivered = useCallback((data: any) => {
-    console.log('[Cassa] Order delivered:', data);
-    // Reload table groups to include the newly delivered order
-    loadOrders();
-  }, [loadOrders]);
+    // Invalida cache basata su evento SSE
+    invalidateCacheOnSSE();
+    // Usa loadOrders con debouncing automatico
+    loadOrders(true);
+  }, [invalidateCacheOnSSE, loadOrders]);
 
-  // Handle order paid event
   const handleOrderPaid = useCallback((data: any) => {
-    console.log('[Cassa] Order paid:', data);
-    // Reload table groups to reflect payment changes
-    loadOrders();
-  }, [loadOrders]);
+    // Invalida cache basata su evento SSE
+    invalidateCacheOnSSE();
+    
+    // Sposta ordine da ritirate/daPagare a pagate
+    if (data.orderId) {
+      // Prima prova a spostare da ritirate
+      moveOrderBetweenStates(data.orderId, 'tableGroupsRitirate', 'tableGroupsPagate');
+      // Poi da daPagare se non era in ritirate
+      moveOrderBetweenStates(data.orderId, 'tableGroupsDaPagare', 'tableGroupsPagate');
+    }
+    // Ricarica dopo un breve delay per sicurezza (with cleanup)
+    const timeoutId = setTimeout(() => {
+      loadOrders(true);
+      timeoutIdsRef.current.delete(timeoutId);
+    }, 500);
+    timeoutIdsRef.current.add(timeoutId);
+  }, [moveOrderBetweenStates, loadOrders, invalidateCacheOnSSE]);
+  
+  const handleOrderStatusChange = useCallback((data: any) => {
+    if (data.orderId && data.newStatus) {
+      // Invalida cache basata su evento SSE
+      invalidateCacheOnSSE();
+      
+      // Aggiorna singolo ordine invece di ricaricare tutto
+      updateSingleOrder(data.orderId, { stato: data.newStatus });
+      
+      // Ricarica solo per cambiamenti di stato significativi
+      if (data.newStatus === 'CONSEGNATO' || data.newStatus === 'RICHIESTA_CONTO') {
+        const timeoutId = setTimeout(() => {
+          loadOrders(true);
+          timeoutIdsRef.current.delete(timeoutId);
+        }, 500);
+        timeoutIdsRef.current.add(timeoutId);
+      }
+    }
+  }, [updateSingleOrder, loadOrders, invalidateCacheOnSSE]);
 
-  // Subscribe to order events
-  useOrderUpdates({
-    onOrderDelivered: handleOrderDelivered,
-    onOrderReady: (data) => {
-      console.log('[Cassa] Order ready:', data);
-      loadOrders();
-      if (Notification.permission === "granted") {
-        new Notification("Ordine Pronto", {
+  // Subscribe to SSE events con deduplicazione automatica
+  useEffect(() => {
+    if (!subscribe || !isConnected || subscribedRef.current) {
+      return;
+    }
+    
+    // Cleanup timeouts esistenti prima di nuove sottoscrizioni
+    timeoutIdsRef.current.forEach(id => clearTimeout(id));
+    timeoutIdsRef.current.clear();
+    
+    subscribedRef.current = true;
+    
+    // Subscribe con wrapper deduplicazione
+    const unsubscribeDelivered = subscribe(
+      'order:delivered', 
+      handleEvent(handleOrderDelivered, 'order:delivered')
+    );
+    
+    const unsubscribePaid = subscribe(
+      'order:paid',
+      handleEvent(handleOrderPaid, 'order:paid')
+    );
+    
+    const unsubscribeStatusChange = subscribe(
+      'order:status-change',
+      handleEvent((data: any) => {
+        if (data.newStatus === 'CONSEGNATO' || data.newStatus === 'RICHIESTA_CONTO') {
+          handleOrderStatusChange(data);
+        }
+      }, 'order:status-change')
+    );
+    
+    const unsubscribeReady = subscribe(
+      'order:ready',
+      handleEvent((data: any) => {
+        loadOrders(true);
+        // Usa helper sicuro per notifiche
+        BrowserNotificationHelper.show("Ordine Pronto", {
           body: `Tavolo ${data.tableNumber} completato`,
           icon: '/icon-192.png'
         });
-      }
-    }
-  });
-  
-  // Subscribe to notifications
-  useNotifications((notification) => {
-    console.log('[Cassa] Notification:', notification);
-    // Handle direct notifications
-    if ((notification as any).type === 'order:paid') {
-      handleOrderPaid((notification as any).data);
-    }
-    // Handle payment/receipt request notifications
-    if ((notification as any).type === 'payment_request') {
-      console.log('[Cassa] Payment/Receipt request received:', notification);
-      // Reload orders to show the new payment request
-      loadOrders();
-      // Show notification to the cashier
-      if (Notification.permission === "granted") {
-        const data = (notification as any).data;
-        new Notification("Richiesta Scontrino", {
-          body: data.tableNumber 
-            ? `Tavolo ${data.tableNumber} - €${data.amount?.toFixed(2)} (${data.paymentMethod || 'N/A'})`
-            : `${data.orderType} - €${data.amount?.toFixed(2)} (${data.paymentMethod || 'N/A'})`,
+      }, 'order:ready')
+    );
+    
+    const unsubscribeUpdate = subscribe(
+      'order:update',
+      handleEvent(handleOrderStatusChange, 'order:update')
+    );
+    
+    const unsubscribeDebtCreated = subscribe(
+      'notification:new',
+      handleEvent((data: any) => {
+        if (data.title?.includes('debito') || data.message?.includes('debito')) {
+          loadOrders(true);
+        }
+      }, 'notification:debt')
+    );
+    
+    const unsubscribeNotifications = subscribe(
+      'notification:new',
+      handleEvent((notification: any) => {
+        if (notification.title === 'Pagamento Completato') {
+          handleOrderPaid(notification);
+        }
+        if (notification.title === 'Richiesta Scontrino' || notification.message?.includes('scontrino')) {
+          loadOrders(true);
+          // Usa helper sicuro per notifiche
+          BrowserNotificationHelper.show("Richiesta Scontrino", {
+            body: notification.message,
+            icon: '/icon-192.png'
+          });
+        }
+      }, 'notification:payment')
+    );
+    
+    // Subscribe to payment cancellation events
+    const unsubscribePaymentCancelled = subscribe(
+      'payment:cancelled',
+      handleEvent((data: any) => {
+        loadOrders(true);
+        // Usa helper sicuro per notifiche
+        BrowserNotificationHelper.show("Pagamento Annullato", {
+          body: `Ordine #${data.numero} - ${data.motivo || 'Annullato'}`,
           icon: '/icon-192.png'
         });
-      }
-    }
-  });
+      }, 'payment:cancelled')
+    );
+    
+    const unsubscribePartialCancelled = subscribe(
+      'payment:partial-cancelled',
+      handleEvent((data: any) => {
+        loadOrders(true);
+        // Usa helper sicuro per notifiche
+        BrowserNotificationHelper.show("Pagamento Parziale Annullato", {
+          body: `€${data.importoAnnullato.toFixed(2)} - Ordine #${data.numero}`,
+          icon: '/icon-192.png'
+        });
+      }, 'payment:partial-cancelled')
+    );
+    
+    return () => {
+      subscribedRef.current = false;
+      stopCleanup();
+      
+      // Cleanup all timeouts
+      timeoutIdsRef.current.forEach(id => clearTimeout(id));
+      timeoutIdsRef.current.clear();
+      
+      // Unsubscribe all SSE listeners
+      unsubscribeDelivered();
+      unsubscribePaid();
+      unsubscribeStatusChange();
+      unsubscribeReady();
+      unsubscribeUpdate();
+      unsubscribeDebtCreated();
+      unsubscribeNotifications();
+      unsubscribePaymentCancelled();
+      unsubscribePartialCancelled();
+    };
+  }, [subscribe, isConnected, handleEvent, handleOrderDelivered, handleOrderPaid, handleOrderStatusChange, loadOrders, stopCleanup]);
 
   // Handle table payment (pay all orders in the table)
-  const handleTablePayment = async () => {
+  const handleTablePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
     if (!selectedTable || isProcessingPayment) return;
     
     setIsProcessingPayment(true);
@@ -233,13 +431,13 @@ export default function CassaPageOptimized() {
         if (order.rimanente > 0) {
           const result = await creaPagamento(
             order.id,
-            paymentMethod,
+            modalita || paymentMethod,
             order.rimanente,
-            order.nomeCliente || undefined
+            clienteNome  // Usa il nome cliente fornito
           );
           
           if (!result.success) {
-            alert(`Errore pagamento ordine #${order.numero}: ${result.error}`);
+            toast.error(`Errore ordine #${order.numero}`, result.error);
             return;
           }
           
@@ -249,12 +447,10 @@ export default function CassaPageOptimized() {
       }
       
       // Success notification
-      if (Notification.permission === "granted") {
-        new Notification("Pagamento Tavolo Completato", {
-          body: `€${selectedTable.rimanenteComplessivo.toFixed(2)} - ${paymentMethod}`,
-          icon: '/icon-192.png'
-        });
-      }
+      BrowserNotificationHelper.showWithSound(
+        "Pagamento Tavolo Completato",
+        `€${selectedTable.rimanenteComplessivo.toFixed(2)} - ${paymentMethod}`
+      );
       
       // Close drawer and refresh data
       setShowTableDrawer(false);
@@ -263,65 +459,137 @@ export default function CassaPageOptimized() {
       
     } catch (error) {
       console.error("Errore pagamento tavolo:", error);
-      alert("Errore durante il pagamento del tavolo");
+      toast.error('Errore pagamento', 'Impossibile completare il pagamento del tavolo');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  // Handle payment by client (pay all orders from same client)
+  const handlePaymentByClient = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
+    if (!selectedTable || !selectedOrder || isProcessingPayment) return;
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      // Trova tutti gli ordini dello stesso cliente
+      const clientName = selectedOrder.nomeCliente || 'Cliente generico';
+      const clientOrders = selectedTable.ordinazioni.filter(
+        o => (o.nomeCliente || 'Cliente generico') === clientName
+      );
+      
+      let totalePagato = 0;
+      
+      // Paga tutti gli ordini del cliente
+      for (const order of clientOrders) {
+        if (order.rimanente > 0) {
+          const result = await creaPagamento(
+            order.id,
+            modalita || paymentMethod,
+            order.rimanente,
+            clienteNome  // Usa il nome cliente fornito
+          );
+          
+          if (!result.success) {
+            toast.error(`Errore ordine #${order.numero}`, result.error);
+            return;
+          }
+          
+          totalePagato += order.rimanente;
+          
+          // Generate receipt for each order
+          await generaScontrino(order.id);
+        }
+      }
+      
+      // Success notification
+      BrowserNotificationHelper.showWithSound(
+        "Pagamento Cliente Completato",
+        `${clienteNome} ha pagato €${totalePagato.toFixed(2)} per ${clientOrders.length} ordini`
+      );
+      
+      // Close drawer and refresh data
+      setShowTableDrawer(false);
+      setSelectedTable(null);
+      setSelectedOrder(null);
+      loadOrders();
+      
+    } catch (error) {
+      console.error("Errore pagamento per cliente:", error);
+      toast.error('Errore pagamento', 'Impossibile completare il pagamento del cliente');
     } finally {
       setIsProcessingPayment(false);
     }
   };
 
   // Process payment with optimistic updates
-  const handlePayment = async () => {
+  const handlePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
     if (!selectedOrder || isProcessingPayment) return;
     
     // Prevent payment if order is already paid or has no remaining balance
     if (selectedOrder.rimanente <= 0) {
-      alert("Questo ordine è già stato pagato completamente.");
+      toast.warning('Ordine già pagato', 'Questo ordine è stato completamente pagato');
       return;
     }
+    
+    // Validazione dati pagamento
+    const paymentData = {
+      ordinazioneId: selectedOrder.id,
+      modalita: modalita || paymentMethod,
+      importo: selectedOrder.rimanente,
+      clienteNome
+    };
+    
+    if (!paymentValidation.validate(paymentData)) {
+      toast.error('Errori di validazione', paymentValidation.errors.join(', '));
+      return;
+    }
+    
+    // Rate limiting client-side - Disabled
+    // if (!paymentRateLimit.checkRateLimit()) {
+    //   return;
+    // }
     
     setIsProcessingPayment(true);
     
     // Store backup for rollback
     const originalStatus = selectedOrder.statoPagamento;
     
-    // Apply optimistic update to table groups
-    const tableGroupsBackup = [...tableGroups];
-    setTableGroups(prev => 
-      prev.map((table: TableGroup) => {
-        if (table.ordinazioni.some((ord: Order) => ord.id === selectedOrder.id)) {
-          return {
-            ...table,
-            ordinazioni: table.ordinazioni.filter((ord: Order) => ord.id !== selectedOrder.id),
-            rimanenteComplessivo: table.rimanenteComplessivo - selectedOrder.rimanente
-          };
-        }
-        return table;
-      }).filter((table: TableGroup) => table.ordinazioni.length > 0)
+    // Apply optimistic update using the new state management
+    const inRitirate = tableGroupsRitirate.some(table => 
+      table.ordinazioni.some(ord => ord.id === selectedOrder.id)
+    );
+    const inDaPagare = tableGroupsDaPagare.some(table => 
+      table.ordinazioni.some(ord => ord.id === selectedOrder.id)
     );
     
     try {
       const result = await creaPagamento(
         selectedOrder.id,
-        paymentMethod,
+        modalita || paymentMethod,
         selectedOrder.rimanente,
-        selectedOrder.nomeCliente || undefined
+        clienteNome
       );
       
       if (!result.success) {
-        // Rollback on failure
-        setTableGroups(tableGroupsBackup);
-        alert(`Errore: ${result.error}`);
+        // Refresh data on failure
+        loadOrders(true);
+        toast.error('Errore pagamento', result.error || 'Errore sconosciuto');
       } else {
+        // Move order to paid state
+        if (inRitirate) {
+          moveOrderBetweenStates(selectedOrder.id, 'tableGroupsRitirate', 'tableGroupsPagate');
+        } else if (inDaPagare) {
+          moveOrderBetweenStates(selectedOrder.id, 'tableGroupsDaPagare', 'tableGroupsPagate');
+        }
         // Generate receipt
         await generaScontrino(selectedOrder.id);
         
         // Show success notification
-        if (Notification.permission === "granted") {
-          new Notification("Pagamento Completato", {
-            body: `€${selectedOrder.rimanente.toFixed(2)} - ${paymentMethod}`,
-            icon: '/icon-192.png'
-          });
-        }
+        BrowserNotificationHelper.showWithSound(
+          "Pagamento Completato",
+          `€${selectedOrder.rimanente.toFixed(2)} - ${paymentMethod}`
+        );
         
         // Clear selection and refresh data
         setSelectedOrder(null);
@@ -332,12 +600,91 @@ export default function CassaPageOptimized() {
         }
       }
     } catch (error) {
-      // Rollback on error
-      setTableGroups(tableGroupsBackup);
+      // Refresh data on error
+      loadOrders(true);
       console.error("Errore pagamento:", error);
-      alert("Errore durante il pagamento");
+      toast.error('Errore', 'Si è verificato un errore durante il pagamento');
     } finally {
       setIsProcessingPayment(false);
+    }
+  };
+
+  const handleCreateDebt = async (selectedClient: any) => {
+    setIsProcessingPayment(true);
+    try {
+      const amount = paymentMode === 'table' 
+        ? selectedTable?.rimanenteComplessivo || 0
+        : selectedOrder?.rimanente || 0;
+      
+      const orderId = paymentMode === 'table'
+        ? selectedTable?.ordinazioni[0].id
+        : selectedOrder?.id;
+
+      if (!orderId) return;
+      
+      // Validazione dati debito
+      const debtData = {
+        clienteId: selectedClient.id,
+        ordinazioneId: orderId,
+        importo: amount,
+        note: `Debito per ${paymentMode === 'table' ? `tavolo ${selectedTable?.tavoloNumero}` : `ordine #${selectedOrder?.numero}`}`
+      };
+      
+      if (!debtValidation.validate(debtData)) {
+        toast.error('Errori di validazione', debtValidation.errors.join(', '));
+        setIsProcessingPayment(false);
+        return;
+      }
+      
+      // Rate limiting client-side - Disabled
+      // if (!debtRateLimit.checkRateLimit()) {
+      //   setIsProcessingPayment(false);
+      //   return;
+      // }
+
+      const result = await creaDebito(
+        selectedClient.id,
+        orderId,
+        amount,
+        `Debito per ${paymentMode === 'table' ? `tavolo ${selectedTable?.tavoloNumero}` : `ordine #${selectedOrder?.numero}`}`
+      );
+
+      if (result.success) {
+        setShowClientModal(false);
+        setShowTableDrawer(false);
+        setSelectedTable(null);
+        setSelectedOrder(null);
+        loadOrders();
+      } else {
+        toast.error('Errore', result.error || 'Impossibile creare il debito');
+      }
+    } catch (error) {
+      console.error("Errore creazione debito:", error);
+      toast.error('Errore', 'Si è verificato un errore durante la creazione del debito');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleCreateDirectDebt = async (clienteId: string, clienteNome: string, importo: number, note?: string, data?: string) => {
+    try {
+      const result = await creaDebitoDiretto(clienteId, importo, note);
+      
+      if (result.success) {
+        setShowAddDebtModal(false);
+        loadOrders();
+        
+        // Show success notification
+        BrowserNotificationHelper.show("Debito Creato", {
+          body: `Debito di €${importo.toFixed(2)} creato per ${clienteNome}`,
+          icon: '/icon-192.png'
+        });
+      } else {
+        toast.error('Errore', result.error || 'Impossibile creare il debito');
+      }
+    } catch (error) {
+      console.error("Errore creazione debito diretto:", error);
+      toast.error('Errore', 'Si è verificato un errore durante la creazione del debito');
     }
   };
 
@@ -349,16 +696,29 @@ export default function CassaPageOptimized() {
     }
   }, []);
 
-  // Initial load
+  // Initial load - usa la versione non debounced per caricamento iniziale
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
-
-  const getElapsedTime = (date: string) => {
-    const minutes = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-    if (minutes < 60) return `${minutes}m`;
-    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  };
+    loadOrdersDeduplicated();
+  }, [loadOrdersDeduplicated]);
+  
+  // Reload on reconnection
+  useEffect(() => {
+    if (connected) {
+      // Small delay to ensure any queued events are delivered (with cleanup)
+      const timeoutId = setTimeout(() => {
+        loadOrders(); // Usa versione debounced
+        timeoutIdsRef.current.delete(timeoutId);
+      }, 500);
+      timeoutIdsRef.current.add(timeoutId);
+    }
+  }, [connected, loadOrders]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancelLoadOrders();
+    };
+  }, [cancelLoadOrders]);
 
   const triggerParticles = (element: HTMLElement | null) => {
     if (!element) return;
@@ -376,77 +736,35 @@ export default function CassaPageOptimized() {
   }
 
   return (
-    <div className="min-h-screen pb-96" style={{ backgroundColor: colors.bg.dark }}>
-      {/* Header - Full Width Header Pattern from Style Guide */}
-      <div className="px-4 py-3 border-b" style={{ borderColor: colors.border.primary, backgroundColor: colors.bg.card }}>
-        <div className="flex items-center gap-4">
-          <CreditCard className="h-5 w-5" style={{ color: colors.text.secondary }} />
-          <h1 className="text-lg font-medium" style={{ color: colors.text.primary }}>Postazione Cassa</h1>
-          <span className="text-base" style={{ color: colors.text.secondary }}>
-            {new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-          <div className="h-5 w-px" style={{ backgroundColor: colors.border.secondary }} />
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" style={{ color: colors.text.secondary }} />
-            <span className="text-base" style={{ color: colors.text.primary }}>
-              {tableGroups.length} tavoli
-            </span>
-          </div>
-          <div className="flex-1" />
-            
-          {/* Connection Status */}
-          <SSEConnectionStatus 
-            compact={true}
-            showLatency={true}
-            showReconnectAttempts={false}
+    <CassaErrorBoundary level="page">
+      <div className="min-h-screen pb-96" style={{ backgroundColor: colors.bg.dark }}>
+        <ToastContainer />
+        {/* Header */}
+        <CassaErrorBoundary level="section" isolate>
+          <CassaHeader
+        stats={{
+          daPagere: tableGroupsRitirate.length,
+          pagando: tableGroupsDaPagare.length,
+          pagati: tableGroupsPagate.length,
+          debiti: debiti.length
+        }}
+        onRefresh={loadOrders}
+        onShowHistory={() => setShowHistory(!showHistory)}
+        onShowScontrinoQueue={() => setShowScontrinoQueue(!showScontrinoQueue)}
+        onShowMultiPayment={() => {
+          // Raccogli tutti gli ordini non pagati da tutti i tavoli
+          setSelectedTable(null);
+          setSelectedOrder(null);
+          setShowMultiOrderPaymentModal(true);
+        }}
+        showHistory={showHistory}
+        showScontrinoQueue={showScontrinoQueue}
           />
+        </CassaErrorBoundary>
 
-          {/* Theme Selector */}
-          <ThemeSelector />
-              
-          {/* Actions */}
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
-            style={{ 
-              backgroundColor: colors.bg.hover,
-              color: colors.text.primary
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.darker}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
-          >
-            <Clock className="h-4 w-4" />
-            Storico
-          </button>
-              
-          <button
-            onClick={() => setShowScontrinoQueue(!showScontrinoQueue)}
-            className="px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
-            style={{ 
-              backgroundColor: colors.button.primary,
-              color: colors.button.primaryText
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
-          >
-            <Receipt className="h-4 w-4" />
-            Queue Scontrini
-          </button>
-              
-          <button
-            onClick={loadOrders}
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ backgroundColor: 'transparent' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <RefreshCw className="h-5 w-5" style={{ color: colors.text.secondary }} />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-4">
+        {/* Main Content */}
+        <CassaErrorBoundary level="section" isolate>
+          <div className="p-4">
         {showHistory ? (
           <PaymentHistory isOpen={showHistory} onClose={() => setShowHistory(false)} />
         ) : showScontrinoQueue ? (
@@ -455,378 +773,444 @@ export default function CassaPageOptimized() {
             onClose={() => setShowScontrinoQueue(false)} 
           />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tables List */}
+          <div className="space-y-6">
+            {/* Tavoli da Pagare - Unificato */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Tavoli da Pagare</h2>
-              
-              {tableGroups.length === 0 ? (
-                <div className="text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
-                  <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
-                  <p style={{ color: colors.text.secondary }}>Nessun tavolo da pagare</p>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                  Ordini da Pagare
+                </h2>
+                <div className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                  <span className="px-2 py-1 rounded" style={{ backgroundColor: colors.bg.hover }}>
+                    {tableGroupsRitirate.length} da pagare
+                  </span>
+                  <span className="px-2 py-1 rounded" style={{ backgroundColor: colors.bg.hover }}>
+                    {tableGroupsDaPagare.length} in pagamento
+                  </span>
                 </div>
-              ) : (
-                tableGroups.map((table: TableGroup) => {
-                  // Ensure table has required properties
-                  if (!table || !table.ordinazioni) {
-                    return null;
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {(() => {
+                  // Usa i dati pre-aggregati dal server per evitare duplicazioni
+                  const allTables = [...tableGroupsRitirate, ...tableGroupsDaPagare];
+                  
+                  if (allTables.length === 0) {
+                    return (
+                      <div className="col-span-3 text-center py-12 rounded-lg" 
+                        style={{ 
+                          backgroundColor: colors.bg.card, 
+                          borderColor: colors.border.primary, 
+                          borderWidth: '1px', 
+                          borderStyle: 'solid' 
+                        }}
+                      >
+                        <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
+                        <p style={{ color: colors.text.secondary }}>Nessun ordine da pagare</p>
+                      </div>
+                    );
                   }
-                  return (
-                  <div
-                    key={table.tavoloNumero}
-                    onClick={() => {
-                      setSelectedTable(table);
-                      setShowTableDrawer(true);
-                    }}
-                    className="rounded-lg p-6 cursor-pointer transition-all duration-200 hover:scale-105"
-                    style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        {table.tavoloNumero === 'Asporto' ? (
-                          <>
-                            <Package className="h-5 w-5" style={{ color: colors.text.secondary }} />
-                            <span className="font-medium" style={{ color: colors.text.primary }}>Asporto</span>
-                          </>
-                        ) : (
-                          <>
-                            <Users className="h-5 w-5" style={{ color: colors.text.secondary }} />
-                            <span className="font-medium" style={{ color: colors.text.primary }}>Tavolo {table.tavoloNumero}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm" style={{ color: colors.text.secondary }}>
-                          {getElapsedTime(table.primaDaApertura)}
-                        </span>
-                        <ChevronRight className="h-4 w-4" style={{ color: colors.text.muted }} />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div className="text-sm">
-                        <span style={{ color: colors.text.secondary }}>Ordinazioni: </span>
-                        <span className="font-medium" style={{ color: colors.text.primary }}>{table.ordinazioni?.length || 0}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span style={{ color: colors.text.secondary }}>Clienti: </span>
-                        <span className="font-medium" style={{ color: colors.text.primary }}>{table.numeroClienti}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm" style={{ color: colors.text.secondary }}>
-                        {table.clientiNomi?.length > 0 ? 
-                          table.clientiNomi.slice(0, 2).join(', ') + 
-                          (table.clientiNomi.length > 2 ? ` +${table.clientiNomi.length - 2}` : '') 
-                          : 'Nessun nome cliente'
-                        }
-                      </div>
-                      <div className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-                        €{(table.rimanenteComplessivo || 0).toFixed(2)}
-                      </div>
-                    </div>
-                    
-                    {(table.totalePagatoComplessivo || 0) > 0 && (
-                      <div className="mt-2 text-sm" style={{ color: colors.text.success }}>
-                        Pagato parzialmente: €{table.totalePagatoComplessivo.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                );
-                })
-              )}
+                  
+                  return allTables.map((table) => (
+                    <TableCard
+                      key={table.tavoloNumero}
+                      table={table}
+                      onClick={() => {
+                        setSelectedTable(table);
+                        setShowTableDrawer(true);
+                      }}
+                    />
+                  ));
+                })()}
+              </div>
             </div>
 
-            {/* Quick Actions Panel */}
+            {/* Pagato (COMPLETAMENTE_PAGATO) */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Azioni Rapide</h2>
+              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Pagato</h2>
               
-              <div className="rounded-lg p-6 text-center" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
-                <AlertCircle className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
-                <p className="mb-4" style={{ color: colors.text.secondary }}>Seleziona un tavolo per vedere le opzioni di pagamento</p>
-                <p className="text-sm" style={{ color: colors.text.muted }}>
-                  Clicca su un tavolo a sinistra per aprire i dettagli e procedere con i pagamenti
-                </p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {tableGroupsPagate.length === 0 ? (
+                  <div className="col-span-3 text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <CheckCircle className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.success }} />
+                    <p style={{ color: colors.text.secondary }}>Nessun ordine pagato recentemente</p>
+                  </div>
+                ) : (
+                  tableGroupsPagate.map((table: TableGroup) => (
+                    <TableCard
+                      key={table.tavoloNumero}
+                      table={table}
+                      onClick={() => {
+                        setSelectedTable(table);
+                        setShowTableDrawer(true);
+                      }}
+                      variant="paid"
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Debiti */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Debiti Aperti</h2>
+                <button
+                  onClick={() => setShowAddDebtModal(true)}
+                  className="px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  style={{
+                    backgroundColor: colors.button.primary,
+                    color: colors.button.primaryText
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.button.primaryHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.button.primary;
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Aggiungi Debito
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {debiti.length === 0 ? (
+                  <div className="col-span-3 text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <CreditCard className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
+                    <p style={{ color: colors.text.secondary }}>Nessun debito aperto</p>
+                  </div>
+                ) : (
+                  debiti.map((debito: any) => (
+                    <DebtCard
+                      key={debito.id}
+                      debito={debito}
+                      onClick={() => {
+                        setSelectedDebt(debito);
+                        setShowDebtModal(true);
+                      }}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </div>
-        )}
-      </div>
+          )}
+          </div>
+        </CassaErrorBoundary>
 
-      {/* Scontrino Queue Manager */}
-      <ScontrinoQueueManager 
+        {/* Scontrino Queue Manager */}
+        <CassaErrorBoundary level="component" isolate>
+          <ScontrinoQueueManager 
         isOpen={showScontrinoQueue} 
         onClose={() => setShowScontrinoQueue(false)} 
-      />
+          />
+        </CassaErrorBoundary>
 
-      {/* Table Details Drawer */}
-      {showTableDrawer && selectedTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: colors.border.primary }}>
-              <div className="flex items-center gap-3">
-                {selectedTable.tavoloNumero === 'Asporto' ? (
-                  <>
-                    <Package className="h-6 w-6" style={{ color: colors.text.secondary }} />
-                    <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>Ordini Asporto</h2>
-                  </>
-                ) : (
-                  <>
-                    <Users className="h-6 w-6" style={{ color: colors.text.secondary }} />
-                    <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>Tavolo {selectedTable.tavoloNumero}</h2>
-                  </>
-                )}
-                <span className="text-sm" style={{ color: colors.text.secondary }}>
-                  {selectedTable.ordinazioni?.length || 0} ordinazioni • {selectedTable.numeroClienti || 0} clienti
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setShowTableDrawer(false);
-                  setSelectedTable(null);
-                  setSelectedOrder(null);
-                }}
-                className="p-2 rounded-lg transition-colors"
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
-              </button>
-            </div>
+        {/* Table Details Drawer */}
+        <CassaErrorBoundary level="component" isolate>
+          <TableDetailsDrawer
+        isOpen={showTableDrawer}
+        selectedTable={selectedTable}
+        selectedOrder={selectedOrder}
+        paymentMethod={paymentMethod}
+        paymentMode={paymentMode}
+        isProcessingPayment={isProcessingPayment}
+        onClose={() => {
+          setShowTableDrawer(false);
+          setSelectedTable(null);
+          setSelectedOrder(null);
+        }}
+        onSelectOrder={setSelectedOrder}
+        onChangePaymentMethod={setPaymentMethod}
+        onChangePaymentMode={setPaymentMode}
+        onPayTable={(clienteNome) => handleTablePayment(clienteNome, paymentMethod)}
+        onPayOrder={(clienteNome) => handlePayment(clienteNome, paymentMethod)}
+        onPayByClient={(clienteNome) => handlePaymentByClient(clienteNome, paymentMethod)}
+        onPayPartial={() => {
+          // Se c'è un ordine selezionato, usa il modal singolo
+          // Altrimenti usa il modal multi-ordine per il tavolo
+          if (selectedOrder) {
+            // Trova l'ordine aggiornato dai dati correnti
+            const updatedOrder = selectedTable?.ordinazioni.find(o => o.id === selectedOrder.id);
+            if (updatedOrder) {
+              setSelectedOrder(updatedOrder);
+            }
+            setShowPartialPaymentModal(true);
+          } else if (selectedTable) {
+            setShowMultiOrderPaymentModal(true);
+          }
+        }}
+        onCreateDebt={() => setShowClientModal(true)}
+        onTriggerParticles={triggerParticles}
+        onRefreshData={loadOrders} // Passa il metodo di refresh incrementale
+          />
+        </CassaErrorBoundary>
+        
+        {/* Client Selection Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <ClientSelectionModal
+        isOpen={showClientModal}
+        onClose={() => setShowClientModal(false)}
+        onSelectClient={handleCreateDebt}
+          />
+        </CassaErrorBoundary>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Orders List */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium" style={{ color: colors.text.primary }}>Ordinazioni</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setPaymentMode('table')}
-                        className="px-3 py-1 text-sm rounded-lg transition-colors duration-200"
-                        style={{ 
-                          backgroundColor: paymentMode === 'table' ? colors.button.primary : colors.bg.hover,
-                          color: paymentMode === 'table' ? colors.button.primaryText : colors.text.primary
-                        }}
-                      >
-                        Tutto il tavolo
-                      </button>
-                      <button
-                        onClick={() => setPaymentMode('order')}
-                        className="px-3 py-1 text-sm rounded-lg transition-colors duration-200"
-                        style={{ 
-                          backgroundColor: paymentMode === 'order' ? colors.button.primary : colors.bg.hover,
-                          color: paymentMode === 'order' ? colors.button.primaryText : colors.text.primary
-                        }}
-                      >
-                        Singola ordinazione
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {(selectedTable.ordinazioni || []).map((order: Order) => (
-                    <div
-                      key={order.id}
-                      onClick={() => paymentMode === 'order' ? setSelectedOrder(order) : null}
-                      className={`rounded-lg p-4 transition-all duration-200 ${
-                        paymentMode === 'order'
-                          ? `cursor-pointer hover:scale-105 ${
-                              selectedOrder?.id === order.id ? 'ring-2' : ''
-                            }`
-                          : 'opacity-75'
-                      }`}
-                      style={{ 
-                        backgroundColor: colors.bg.darker,
-                        borderColor: selectedOrder?.id === order.id ? colors.border.primary : colors.border.secondary,
-                        borderWidth: selectedOrder?.id === order.id ? '2px' : '1px',
-                        borderStyle: 'solid'
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" style={{ color: colors.text.secondary }} />
-                          <span className="font-medium" style={{ color: colors.text.primary }}>
-                            Ordine #{order.numero}
-                          </span>
-                          {order.nomeCliente && (
-                            <span className="text-sm" style={{ color: colors.text.secondary }}>- {order.nomeCliente}</span>
-                          )}
-                        </div>
-                        <span className="text-sm" style={{ color: colors.text.secondary }}>
-                          {getElapsedTime(order.dataApertura)}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-1 mb-3">
-                        {order.righe.slice(0, 3).map((item: OrderItem) => (
-                          <div key={item.id} className="flex justify-between text-sm">
-                            <span className="flex items-center gap-2" style={{ color: colors.text.primary }}>
-                              {item.quantita}x {item.prodotto.nome}
-                              {item.isPagato && (
-                                <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: colors.button.success, color: colors.button.successText }}>
-                                  Pagato
-                                </span>
-                              )}
-                            </span>
-                            <span style={{ color: colors.text.primary }}>€{(item.prezzo * item.quantita).toFixed(2)}</span>
-                          </div>
-                        ))}
-                        {order.righe.length > 3 && (
-                          <div className="text-xs text-center" style={{ color: colors.text.muted }}>
-                            ... e altri {order.righe.length - 3} articoli
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm" style={{ color: colors.text.secondary }}>
-                          {order.righe.length} articoli • {order.cameriere.nome}
-                        </div>
-                        <div className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-                          €{order.rimanente.toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      {order.totalePagato > 0 && (
-                        <div className="mt-2 text-sm" style={{ color: colors.text.success }}>
-                          Pagato parzialmente: €{order.totalePagato.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+        {/* Debt Payment Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <PayDebtModal
+        isOpen={showDebtModal}
+        onClose={() => {
+          setShowDebtModal(false);
+          setSelectedDebt(null);
+        }}
+        debt={selectedDebt}
+        onPaymentComplete={loadOrders}
+          />
+        </CassaErrorBoundary>
+        
+        {/* Add Debt Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <AddDebtModal
+        isOpen={showAddDebtModal}
+        onClose={() => setShowAddDebtModal(false)}
+        onSubmit={handleCreateDirectDebt}
+          />
+        </CassaErrorBoundary>
+        
+        {/* Multi-Order Partial Payment Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <MultiOrderPartialPaymentModal
+        isOpen={showMultiOrderPaymentModal}
+        orders={(() => {
+          // Se c'è un tavolo selezionato, usa solo i suoi ordini
+          if (selectedTable) {
+            return selectedTable.ordinazioni;
+          }
+          
+          // Altrimenti raccogli tutti gli ordini non pagati da tutti i tavoli
+          const allOrders: Order[] = [];
+          
+          // Aggiungi ordini da tavoli da pagare
+          tableGroupsRitirate.forEach(table => {
+            table.ordinazioni.forEach(order => {
+              if (order.rimanente > 0) {
+                allOrders.push(order);
+              }
+            });
+          });
+          
+          // Aggiungi ordini da tavoli in pagamento
+          tableGroupsDaPagare.forEach(table => {
+            table.ordinazioni.forEach(order => {
+              if (order.rimanente > 0) {
+                allOrders.push(order);
+              }
+            });
+          });
+          
+          return allOrders;
+        })()}
+        onClose={() => setShowMultiOrderPaymentModal(false)}
+        onConfirmPayment={async (payments, clienteNome, modalita) => {
+          // Validazione multi-ordine
+          const multiOrderData = {
+            payments,
+            clienteNome,
+            modalita
+          };
+          
+          if (!multiOrderValidation.validate(multiOrderData)) {
+            toast.error('Errori di validazione', multiOrderValidation.errors.join(', '));
+            return;
+          }
+          
+          setIsProcessingPayment(true);
+          try {
+            // Processa pagamenti per ogni ordine
+            for (const payment of payments) {
+              // Crea mappa delle quantità per riga
+              const quantitaPerRiga: Record<string, number> = {};
+              payment.items.forEach(item => {
+                quantitaPerRiga[item.id] = item.quantita;
+              });
+              
+              // Crea pagamento parziale per questo ordine
+              const result = await creaPagamentiParziali(
+                payment.orderId,
+                [{
+                  clienteNome,
+                  importo: payment.importo,
+                  modalita,
+                  righeSelezionate: payment.items.map(i => i.id),
+                  quantitaPerRiga
+                }]
+              );
+              
+              if (!result.success) {
+                toast.error('Errore pagamento', 'error' in result ? result.error : 'Errore sconosciuto');
+                return;
+              }
+              
+              // Generate receipt if fully paid
+              if (result.success && 'data' in result && result.data.statoPagamento === 'COMPLETAMENTE_PAGATO') {
+                await generaScontrino(payment.orderId);
+              }
+            }
+            
+            // Success notification
+            const totale = payments.reduce((sum, p) => sum + p.importo, 0);
+            BrowserNotificationHelper.showWithSound(
+              "Pagamento Multi-Ordine Completato",
+              `${clienteNome} ha pagato €${totale.toFixed(2)} per ${payments.length} ordini`
+            );
+            
+            // Refresh data and close modals
+            loadOrders(true);
+            setShowMultiOrderPaymentModal(false);
+            setShowTableDrawer(false);
+            setSelectedTable(null);
+          } catch (error) {
+            console.error('Errore durante il pagamento multi-ordine:', error);
+            toast.error('Errore', 'Si è verificato un errore durante il pagamento');
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        }}
+          />
+        </CassaErrorBoundary>
+        
+        {/* Simple Partial Payment Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <SimplePartialPaymentModal
+        isOpen={showPartialPaymentModal}
+        order={selectedOrder}
+        onClose={() => setShowPartialPaymentModal(false)}
+        onConfirmPayment={async (selectedItems, clienteNome, modalita) => {
+          if (!selectedOrder) return;
+          
+          setIsProcessingPayment(true);
+          try {
+            // Calcola l'importo totale basato sulle quantità selezionate
+            const importoTotale = selectedItems.reduce((sum, item) => 
+              sum + (item.quantita * item.prezzo), 0
+            );
+            
+            // Prepara i dati per il pagamento parziale
+            const righeSelezionate = selectedItems.map(item => item.id);
+            
+            // Crea mappa delle quantità per riga
+            const quantitaPerRiga: Record<string, number> = {};
+            selectedItems.forEach(item => {
+              quantitaPerRiga[item.id] = item.quantita;
+            });
+            
+            // Crea un singolo pagamento con gli articoli selezionati e le quantità
+            const result = await creaPagamentiParziali(
+              selectedOrder.id,
+              [{
+                clienteNome,
+                importo: importoTotale,
+                modalita,
+                righeSelezionate,
+                quantitaPerRiga
+              }]
+            );
+            
+            if (result.success) {
+              // Success notification
+              BrowserNotificationHelper.show("Pagamento Parziale Completato", {
+                body: `${clienteNome} ha pagato €${importoTotale.toFixed(2)}`,
+                icon: '/icon-192.png'
+              });
+              
+              // Check if order is now fully paid
+              const isFullyPaid = result.success && 'data' in result && 
+                (result.data.statoPagamento === 'COMPLETAMENTE_PAGATO' || 
+                 result.data.totaleRimanente === 0);
+              
+              if (isFullyPaid) {
+                // Move order to paid state before refreshing
+                const inRitirate = tableGroupsRitirate.some(table => 
+                  table.ordinazioni.some(ord => ord.id === selectedOrder.id)
+                );
+                const inDaPagare = tableGroupsDaPagare.some(table => 
+                  table.ordinazioni.some(ord => ord.id === selectedOrder.id)
+                );
+                
+                if (inRitirate) {
+                  moveOrderBetweenStates(selectedOrder.id, 'tableGroupsRitirate', 'tableGroupsPagate');
+                } else if (inDaPagare) {
+                  moveOrderBetweenStates(selectedOrder.id, 'tableGroupsDaPagare', 'tableGroupsPagate');
+                }
+                
+                // Generate receipt
+                await generaScontrino(selectedOrder.id);
+                setSelectedOrder(null);
+                setShowPartialPaymentModal(false);
+              }
+              
+              // Refresh data per aggiornare l'ordine con i nuovi pagamenti
+              await loadOrders(true);
+              
+              // Chiudi i modal dopo il pagamento
+              setShowPartialPaymentModal(false);
+              setShowTableDrawer(false);
+              setSelectedTable(null);
+              setSelectedOrder(null);
+            } else {
+              toast.error('Errore pagamento', 'error' in result ? result.error : 'Errore sconosciuto');
+            }
+          } catch (error) {
+            console.error('Errore durante il pagamento parziale:', error);
+            toast.error('Errore', 'Si è verificato un errore durante il pagamento');
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        }}
+          />
+        </CassaErrorBoundary>
 
-                {/* Payment Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium" style={{ color: colors.text.primary }}>Pagamento</h3>
-                  
-                  <div className="rounded-lg p-4 space-y-4" style={{ backgroundColor: colors.bg.darker, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
-                    {/* Payment Summary */}
-                    <div className="space-y-2">
-                      {paymentMode === 'table' ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span style={{ color: colors.text.primary }}>Totale tavolo</span>
-                            <span style={{ color: colors.text.primary }}>€{(selectedTable.totaleComplessivo || 0).toFixed(2)}</span>
-                          </div>
-                          {selectedTable.totalePagatoComplessivo > 0 && (
-                            <div className="flex justify-between" style={{ color: colors.text.success }}>
-                              <span>Già pagato</span>
-                              <span>-€{(selectedTable.totalePagatoComplessivo || 0).toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-lg font-semibold border-t pt-2" style={{ borderColor: colors.border.secondary }}>
-                            <span style={{ color: colors.text.primary }}>Da pagare</span>
-                            <span style={{ color: colors.text.primary }}>€{(selectedTable.rimanenteComplessivo || 0).toFixed(2)}</span>
-                          </div>
-                        </>
-                      ) : selectedOrder ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span style={{ color: colors.text.primary }}>Totale ordine #{selectedOrder.numero}</span>
-                            <span style={{ color: colors.text.primary }}>€{selectedOrder.totale.toFixed(2)}</span>
-                          </div>
-                          {selectedOrder.totalePagato > 0 && (
-                            <div className="flex justify-between" style={{ color: colors.text.success }}>
-                              <span>Già pagato</span>
-                              <span>-€{selectedOrder.totalePagato.toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-lg font-semibold border-t pt-2" style={{ borderColor: colors.border.secondary }}>
-                            <span style={{ color: colors.text.primary }}>Da pagare</span>
-                            <span style={{ color: colors.text.primary }}>€{selectedOrder.rimanente.toFixed(2)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center py-4" style={{ color: colors.text.secondary }}>
-                          Seleziona un'ordinazione per vedere i dettagli
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Payment Method */}
-                    {(paymentMode === 'table' || selectedOrder) && (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium" style={{ color: colors.text.primary }}>Metodo di pagamento</label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {(['POS', 'CONTANTI', 'MISTO'] as const).map((method: 'POS' | 'CONTANTI' | 'MISTO') => (
-                              <button
-                                key={method}
-                                onClick={() => setPaymentMethod(method)}
-                                className="py-2 px-3 rounded-lg transition-all duration-200"
-                                style={{ 
-                                  backgroundColor: paymentMethod === method ? colors.button.primary : 'transparent',
-                                  color: paymentMethod === method ? colors.button.primaryText : colors.text.primary,
-                                  borderColor: paymentMethod === method ? colors.button.primary : colors.border.primary,
-                                  borderWidth: '1px',
-                                  borderStyle: 'solid'
-                                }}
-                              >
-                                {method === 'POS' && <CreditCard className="h-4 w-4 mx-auto mb-1" />}
-                                {method === 'CONTANTI' && <Euro className="h-4 w-4 mx-auto mb-1" />}
-                                {method === 'MISTO' && <Receipt className="h-4 w-4 mx-auto mb-1" />}
-                                <span className="text-sm">{method}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-3">
-                          <button
-                            onClick={(e) => {
-                              if (paymentMode === 'table') {
-                                handleTablePayment();
-                              } else {
-                                handlePayment();
-                              }
-                              triggerParticles(e.currentTarget);
-                            }}
-                            disabled={isProcessingPayment}
-                            className="flex-1 py-3 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            style={{ 
-                              backgroundColor: colors.button.success,
-                              color: colors.button.successText
-                            }}
-                            onMouseEnter={(e) => !isProcessingPayment && (e.currentTarget.style.backgroundColor = colors.button.successHover)}
-                            onMouseLeave={(e) => !isProcessingPayment && (e.currentTarget.style.backgroundColor = colors.button.success)}
-                          >
-                            {isProcessingPayment ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : (
-                              <CheckCircle className="h-5 w-5" />
-                            )}
-                            {isProcessingPayment 
-                              ? 'Elaborazione...' 
-                              : paymentMode === 'table' 
-                                ? 'Paga tutto il tavolo' 
-                                : 'Paga ordinazione'
-                            }
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Particle Effect */}
-      <ParticleEffect 
+        {/* Particle Effect */}
+        <ParticleEffect 
         key={particleKey}
         trigger={true} 
         x={particlePos.x} 
         y={particlePos.y}
         particleCount={20}
         duration={3000}
-      />
-    </div>
+        />
+
+        {/* Cameriere Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <CameriereModal 
+        isOpen={showCameriereModal}
+        onClose={() => setShowCameriereModal(false)}
+          />
+        </CassaErrorBoundary>
+
+        {/* Floating Action Button for Cameriere */}
+        <button
+        onClick={() => setShowCameriereModal(true)}
+        className="fixed bottom-6 right-6 z-40 shadow-lg rounded-full p-4 transition-all hover:scale-110"
+        style={{
+          backgroundColor: colors.button.primary,
+          color: colors.button.primaryText,
+        }}
+      >
+        <ShoppingBag className="w-6 h-6" />
+        </button>
+      </div>
+    </CassaErrorBoundary>
   );
 }
+
+// Esporta il componente wrappato con Error Boundary
+export default withCassaErrorBoundary(CassaPageOptimized, {
+  level: 'page',
+  onError: (error, errorInfo) => {
+    console.error('Cassa Page Error:', error);
+    // Qui potresti inviare l'errore a un servizio di monitoring
+  },
+  resetOnPropsChange: true
+});

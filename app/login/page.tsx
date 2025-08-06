@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Coffee, Loader2, Eye, EyeOff, User } from "lucide-react";
 import dynamic from "next/dynamic";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
@@ -19,9 +19,11 @@ const AnimatedBackground = dynamic(() => import("@/components/AnimatedBackground
   loading: () => <div className="fixed inset-0 bg-black" />
 });
 
-export default function LoginPage() {
-  console.log("🌙 LOGIN PAGE LOADED - Multi-Tenant Dark Mode Siplit");
+function LoginPageContent() {
+  console.log("🌙 LOGIN PAGE LOADED - Multi-Tenant Dark Mode Roxy Bar");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isFromOrdine = searchParams.get('access') === 'ordine';
   
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -105,11 +107,18 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Siplit
+            Roxy Bar
           </h1>
           <p className="text-gray-400">
             Gestionale Operativo Ristorazione
           </p>
+          {isFromOrdine && (
+            <div className="mt-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+              <p className="text-green-400 text-sm font-medium">
+                ✅ Accesso autorizzato - Area operatori
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -217,10 +226,22 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
-            © 2025 Siplit
+            © 2025 Roxy Bar
           </p>
         </div>
       </LiquidGlassCard>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Loader2 className="h-8 w-8 text-white animate-spin" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

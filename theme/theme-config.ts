@@ -25,6 +25,7 @@ export const themeConfig = {
         accent: "#3b82f6", // Accent text color (blue)
         success: "#14f195", // Success text color
         error: "#ef4444", // Error text color
+        warning: "#f59e0b", // Warning text color
       },
   
       // Border Colors
@@ -52,6 +53,12 @@ export const themeConfig = {
         dangerHover: "rgba(239, 68, 68, 0.9)", // Danger button hover
         dangerText: "#ffffff", // Danger button text
         error: "#ef4444", // Error button (alias for danger)
+        warning: "#f59e0b", // Warning button
+        warningHover: "rgba(245, 158, 11, 0.9)", // Warning button hover
+        warningText: "#ffffff", // Warning button text
+        secondary: "#6b7280", // Secondary button
+        secondaryHover: "rgba(107, 114, 128, 0.9)", // Secondary button hover
+        secondaryText: "#ffffff", // Secondary button text
       },
   
       // Step Colors

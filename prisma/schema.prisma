@@ -179,12 +179,24 @@ model Category {
 model Cliente {
   id                                                             String                  @id
   nome                                                           String
+  cognome                                                        String?
   telefono                                                       String?
   email                                                          String?
+  codiceFiscale                                                  String?
+  partitaIva                                                     String?
+  indirizzo                                                      String?
+  citta                                                          String?
+  cap                                                            String?
+  provincia                                                      String?
+  dataNascita                                                    DateTime?
+  tags                                                           String[]                @default([])
+  preferenze                                                     Json?
   note                                                           String?
   attivo                                                         Boolean                 @default(true)
+  tenantId                                                       String
   createdAt                                                      DateTime                @default(now())
-  updatedAt                                                      DateTime
+  updatedAt                                                      DateTime                @updatedAt
+  Tenant                                                         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ContoScalare                                                   ContoScalare[]
   ContributoCliente_ContributoCliente_clienteIdToCliente         ContributoCliente[]     @relation("ContributoCliente_clienteIdToCliente")
   ContributoCliente_ContributoCliente_clientePagatoreIdToCliente ContributoCliente[]     @relation("ContributoCliente_clientePagatoreIdToCliente")
@@ -194,6 +206,13 @@ model Cliente {
   Pagamento                                                      Pagamento[]
   RigaOrdinazione_RigaOrdinazione_clienteBeneficiarioIdToCliente RigaOrdinazione[]       @relation("RigaOrdinazione_clienteBeneficiarioIdToCliente")
   RigaOrdinazione_RigaOrdinazione_clienteOrdinanteIdToCliente    RigaOrdinazione[]       @relation("RigaOrdinazione_clienteOrdinanteIdToCliente")
+  Debiti                                                         Debito[]
+
+  @@index([tenantId])
+  @@index([nome])
+  @@index([email])
+  @@index([telefono])
+  @@index([attivo])
 }
 
 model ClientiRicorrenti {
@@ -458,6 +477,38 @@ model NotificaPagamento {
   @@index([timestamp])
 }
 
+model NotificationClaim {
+  id             String   @id
+  notificationId String   @unique
+  claimedBy      String
+  claimedById    String
+  claimedAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([notificationId])
+  @@index([claimedById])
+  @@index([claimedAt])
+}
+
+model Notification {
+  id        String    @id
+  userId    String
+  type      String
+  title     String
+  message   String
+  data      Json?
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
 model Ordinazione {
   id                    String                  @id
   numero                Int                     @unique @default(autoincrement())
@@ -474,6 +525,11 @@ model Ordinazione {
   updatedAt             DateTime
   nomeCliente           String?
   statoPagamento        StatoPagamento          @default(NON_PAGATO)
+  customerInformed      Boolean?                @default(false)
+  customerInformedBy    String?
+  customerInformedAt    DateTime?
+  numeroOrdine          Int?
+  timestamp             DateTime?
   MovimentoConto        MovimentoConto[]
   MovimentoContoScalare MovimentoContoScalare[]
   User                  User                    @relation(fields: [cameriereId], references: [id])
@@ -483,6 +539,10 @@ model Ordinazione {
   RichiestaMerge        RichiestaMerge[]
   RigaOrdinazione       RigaOrdinazione[]
   RichiestaAnnullamento RichiestaAnnullamento[]
+  Debiti                Debito[]
+  OrdineEsaurito        OrdineEsaurito?
+  OriginalOrderFor      OrdineEsaurito[]        @relation("OriginalOrder")
+  PaymentHistory        PaymentHistory[]
 
   @@index([cameriereId, dataApertura, stato])
   @@index([cameriereId])
@@ -540,6 +600,7 @@ model Pagamento {
   ContributoCliente     ContributoCliente?      @relation(fields: [contributoId], references: [id])
   User                  User                    @relation(fields: [operatoreId], references: [id])
   Ordinazione           Ordinazione             @relation(fields: [ordinazioneId], references: [id], onDelete: Cascade)
+  PaymentHistory        PaymentHistory[]
 
   @@index([clientePagatoreId])
   @@index([modalita, timestamp, importo])
@@ -549,6 +610,78 @@ model Pagamento {
   @@index([ordinazioneId, timestamp])
   @@index([timestamp])
   @@index([timestamp, modalita])
+}
+
+model PaymentHistory {
+  id            String    @id
+  pagamentoId   String
+  ordinazioneId String
+  action        String // CREATE, UPDATE, CANCEL, REFUND, PARTIAL_CANCEL
+  previousState Json? // Stato precedente per rollback
+  newState      Json? // Nuovo stato
+  importo       Decimal   @db.Decimal(10, 2)
+  modalita      String
+  clienteNome   String?
+  operatoreId   String
+  operatoreNome String
+  motivo        String? // Motivo cancellazione/modifica
+  metadata      Json? // IP, browser, device info
+  sessionId     String? // Per batch operations
+  timestamp     DateTime  @default(now())
+  isReversed    Boolean   @default(false)
+  reversedAt    DateTime?
+  reversedBy    String?
+
+  Pagamento   Pagamento   @relation(fields: [pagamentoId], references: [id])
+  Ordinazione Ordinazione @relation(fields: [ordinazioneId], references: [id])
+  User        User        @relation(fields: [operatoreId], references: [id])
+
+  @@index([pagamentoId])
+  @@index([ordinazioneId])
+  @@index([operatoreId])
+  @@index([timestamp])
+  @@index([action])
+  @@index([sessionId])
+}
+
+model Debito {
+  id            String      @id
+  clienteId     String
+  ordinazioneId String?
+  importo       Decimal     @db.Decimal(10, 2)
+  importoPagato Decimal     @default(0) @db.Decimal(10, 2)
+  stato         StatoDebito @default(APERTO)
+  dataCreazione DateTime    @default(now())
+  dataScadenza  DateTime?
+  dataPagamento DateTime?
+  note          String?
+  operatoreId   String
+
+  Cliente         Cliente           @relation(fields: [clienteId], references: [id])
+  Ordinazione     Ordinazione?      @relation(fields: [ordinazioneId], references: [id])
+  Operatore       User              @relation("Debito_operatoreId", fields: [operatoreId], references: [id])
+  PagamentiDebito PagamentoDebito[]
+
+  @@index([clienteId, stato])
+  @@index([stato, dataCreazione])
+  @@index([ordinazioneId])
+  @@index([dataScadenza])
+}
+
+model PagamentoDebito {
+  id            String            @id
+  debitoId      String
+  importo       Decimal           @db.Decimal(10, 2)
+  modalita      ModalitaPagamento
+  dataPagamento DateTime          @default(now())
+  operatoreId   String
+  note          String?
+
+  Debito    Debito @relation(fields: [debitoId], references: [id])
+  Operatore User   @relation(fields: [operatoreId], references: [id])
+
+  @@index([debitoId])
+  @@index([dataPagamento])
 }
 
 model PaginaCategoria {
@@ -624,6 +757,9 @@ model Prodotto {
   ProductProcedure        ProductProcedure?
   RigaOrdinazione         RigaOrdinazione[]
   RigaOrdineFornitore     RigaOrdineFornitore[]
+  ProdottiEsauriti        ProdottoEsaurito[]
+  InventarioEsaurito      InventarioEsaurito?
+  MenuItems               MenuItem[]
 
   @@index([categoriaMenuId])
   @@index([categoria])
@@ -826,6 +962,10 @@ model RigaOrdinazione {
   timestampConsegna                                      DateTime?
   newProductId                                           Int?
   glassesCount                                           Int?
+  esaurito                                               Boolean               @default(false)
+  nomeProdotto                                           String?
+  rigaOriginaleId                                        String? // Riferimento alla riga originale se è uno split
+  isSplit                                                Boolean               @default(false) // Indica se è una riga splittata
   ProdottiInPagamento                                    ProdottiInPagamento[]
   Cliente_RigaOrdinazione_clienteBeneficiarioIdToCliente Cliente?              @relation("RigaOrdinazione_clienteBeneficiarioIdToCliente", fields: [clienteBeneficiarioId], references: [id])
   Cliente_RigaOrdinazione_clienteOrdinanteIdToCliente    Cliente?              @relation("RigaOrdinazione_clienteOrdinanteIdToCliente", fields: [clienteOrdinanteId], references: [id])
@@ -1010,6 +1150,7 @@ model Tavolo {
   TavoloUnione      TavoloUnione[]
   UnioneTavoli      UnioneTavoli[]
   ProdottoRecente   ProdottoRecente[]
+  OrdineEsaurito    OrdineEsaurito[]
 
   @@index([numero, stato])
   @@index([stato])
@@ -1068,6 +1209,8 @@ model Tenant {
   CustomRole  CustomRole[]
   Session     Session[]
   User        User[]
+  Cliente     Cliente[]
+  SSEConnection SSEConnection[]
 
   @@index([isActive])
   @@index([slug])
@@ -1154,6 +1297,13 @@ model User {
   UserShift                                             UserShift[]
   RichiestaAnnullamento                                 RichiestaAnnullamento[]
   ProdottoRecente                                       ProdottoRecente[]
+  HandledOrders                                         OrdineEsaurito[]        @relation("HandledByUser")
+  ResolvedOrders                                        OrdineEsaurito[]        @relation("ResolvedByUser")
+  DebitiCreati                                          Debito[]                @relation("Debito_operatoreId")
+  PagamentiDebito                                       PagamentoDebito[]
+  Notification                                          Notification[]
+  PaymentHistory                                        PaymentHistory[]
+  SSEConnection                                         SSEConnection[]
 
   @@index([tenantId, attivo])
   @@index([tenantId])
@@ -1402,6 +1552,9 @@ enum AuditAction {
   HANDOVER_INITIATED
   HANDOVER_ACCEPTED
   HANDOVER_REJECTED
+  NOTIFICATION_CLAIMED
+  CUSTOMER_INFORMED
+  ORDER_RESTORED
 }
 
 enum AuditCategory {
@@ -1523,6 +1676,7 @@ enum StatoOrdinazione {
   PAGATO
   ANNULLATO
   PAGAMENTO_RICHIESTO
+  ORDINATO_ESAURITO
 }
 
 enum StatoOrdine {
@@ -1537,6 +1691,13 @@ enum StatoPagamento {
   NON_PAGATO
   PARZIALMENTE_PAGATO
   COMPLETAMENTE_PAGATO
+}
+
+enum StatoDebito {
+  APERTO
+  PARZIALMENTE_PAGATO
+  PAGATO
+  ANNULLATO
 }
 
 enum StatoPagamentoProdotto {
@@ -1654,16 +1815,236 @@ model ProdottoRecente {
   id         String   @id @default(cuid())
   tavoloId   Int
   prodottoId Int
-  utenteId   String?  // Chi ha ordinato il prodotto
+  utenteId   String? // Chi ha ordinato il prodotto
   orderedAt  DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
-  Tavolo     Tavolo   @relation(fields: [tavoloId], references: [id], onDelete: Cascade)
-  Prodotto   Prodotto @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
-  User       User?    @relation(fields: [utenteId], references: [id], onDelete: SetNull)
-  
+
+  Tavolo   Tavolo   @relation(fields: [tavoloId], references: [id], onDelete: Cascade)
+  Prodotto Prodotto @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+  User     User?    @relation(fields: [utenteId], references: [id], onDelete: SetNull)
+
   @@unique([tavoloId, prodottoId])
   @@index([tavoloId, orderedAt(sort: Desc)])
   @@index([prodottoId])
+}
+
+// Tabella per gestire gli ordini esauriti
+model OrdineEsaurito {
+  id                    String              @id @default(cuid())
+  ordinazioneId         String              @unique // L'ordine ORDINATO_ESAURITO
+  originalOrdinazioneId String? // L'ordine originale se c'è stato uno split
+  tavoloId              Int?
+  stato                 StatoOrdineEsaurito @default(ATTIVO)
+  splitOrder            Boolean             @default(false)
+  handledBy             String? // ID utente che sta gestendo
+  handledByName         String? // Nome utente che sta gestendo
+  handledAt             DateTime?
+  resolvedBy            String? // ID utente che ha risolto
+  resolvedByName        String? // Nome utente che ha risolto  
+  resolvedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  Ordinazione         Ordinazione        @relation(fields: [ordinazioneId], references: [id])
+  OriginalOrdinazione Ordinazione?       @relation("OriginalOrder", fields: [originalOrdinazioneId], references: [id])
+  Tavolo              Tavolo?            @relation(fields: [tavoloId], references: [id])
+  HandledByUser       User?              @relation("HandledByUser", fields: [handledBy], references: [id])
+  ResolvedByUser      User?              @relation("ResolvedByUser", fields: [resolvedBy], references: [id])
+  ProdottiEsauriti    ProdottoEsaurito[]
+
+  @@index([stato])
+  @@index([tavoloId])
+  @@index([createdAt])
+  @@index([handledBy])
+}
+
+// Tabella per i singoli prodotti esauriti
+model ProdottoEsaurito {
+  id               String   @id @default(cuid())
+  ordineEsauritoId String
+  prodottoId       Int
+  prodottoNome     String
+  quantitaEsaurita Int
+  quantitaTotale   Int // Quantità totale originale nell'ordine
+  createdAt        DateTime @default(now())
+
+  OrdineEsaurito OrdineEsaurito @relation(fields: [ordineEsauritoId], references: [id], onDelete: Cascade)
+  Prodotto       Prodotto       @relation(fields: [prodottoId], references: [id])
+
+  @@index([ordineEsauritoId])
+  @@index([prodottoId])
+}
+
+// Tabella per tracciare l'inventario disponibile in tempo reale
+model InventarioEsaurito {
+  id                  String   @id @default(cuid())
+  prodottoId          Int      @unique
+  quantitaDisponibile Int // Quantità attualmente disponibile
+  ultimoAggiornamento DateTime @default(now())
+  aggiornatoDa        String? // ID utente che ha aggiornato
+  aggiornatoDaNome    String? // Nome utente che ha aggiornato
+  note                String? // Note sull'aggiornamento
+
+  Prodotto Prodotto @relation(fields: [prodottoId], references: [id])
+
+  @@index([prodottoId])
+  @@index([ultimoAggiornamento])
+}
+
+enum StatoOrdineEsaurito {
+  ATTIVO // Ordine esaurito attivo
+  IN_GESTIONE // Qualcuno sta gestendo
+  RISOLTO // Ordine risolto
+  ANNULLATO // Ordine annullato
+}
+
+// ============================================
+// SISTEMA MENU PUBBLICO
+// ============================================
+
+// Gruppi principali del menu (es. Colazione, Aperitivo, Long Drinks)
+model MenuGroup {
+  id              String   @id @default(cuid())
+  nome            String   @unique
+  descrizione     String?
+  icona           String? // Emoji o icona
+  colore          String? // Colore esadecimale per lo stile
+  ordinamento     Int      @default(0)
+  attivo          Boolean  @default(true)
+  orarioInizio    String? // Formato HH:MM
+  orarioFine      String? // Formato HH:MM
+  giorniSettimana Int[]    @default([1, 2, 3, 4, 5, 6, 7]) // 1=Lun, 7=Dom
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  MenuCategories MenuCategory[]
+
+  @@index([ordinamento])
+  @@index([attivo])
+}
+
+// Categorie dentro i gruppi (es. dentro Aperitivo: Cocktails classici, Spritz, etc)
+model MenuCategory {
+  id            String   @id @default(cuid())
+  groupId       String
+  nome          String
+  descrizione   String?
+  ordinamento   Int      @default(0)
+  attivo        Boolean  @default(true)
+  stileSpeciale Json? // Per stili CSS personalizzati
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  MenuGroup MenuGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  MenuItems MenuItem[]
+
+  @@unique([groupId, nome])
+  @@index([groupId, ordinamento])
+  @@index([attivo])
+}
+
+// Prodotti del menu con supporto per varianti
+model MenuItem {
+  id          String   @id @default(cuid())
+  categoryId  String
+  prodottoId  Int? // Collegamento al prodotto esistente (opzionale)
+  nome        String
+  descrizione String?
+  prezzoBase  Decimal? @db.Decimal(10, 2)
+  icona       String?
+  coloreNome  String? // Per colorare il nome del prodotto
+  ordinamento Int      @default(0)
+  attivo      Boolean  @default(true)
+  disponibile Boolean  @default(true)
+  evidenziato Boolean  @default(false) // Per prodotti in evidenza
+  novita      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  MenuCategory MenuCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  Prodotto     Prodotto?     @relation(fields: [prodottoId], references: [id], onDelete: SetNull)
+  MenuVariants MenuVariant[]
+
+  @@index([categoryId, ordinamento])
+  @@index([prodottoId])
+  @@index([attivo, disponibile])
+}
+
+// Varianti per i prodotti (es. Cornetto: semplice, alla marmellata, al cioccolato)
+model MenuVariant {
+  id          String   @id @default(cuid())
+  menuItemId  String
+  nome        String
+  prezzo      Decimal  @db.Decimal(10, 2)
+  disponibile Boolean  @default(true)
+  ordinamento Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  MenuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([menuItemId, ordinamento])
+}
+
+// Tabella semplice per icone categorie
+model CategoryIcon {
+  id           Int      @id @default(autoincrement())
+  categoryName String   @unique
+  icon         String?  // Emoji or path to image
+  iconType     String   @default("emoji") // "emoji" or "image"
+  color        String?  // Hex color
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+// Rate limiting persistente
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "user:123" or "tenant:abc" or "ip:192.168.1.1"
+  count     Int      @default(0)
+  window    String   // e.g., "1m", "1h", "1d"
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([resetAt])
+  @@index([key, resetAt])
+}
+
+// SSE Connection tracking
+model SSEConnection {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  userId       String
+  tenantId     String
+  stationType  String?
+  ipAddress    String?
+  userAgent    String?
+  connectedAt  DateTime @default(now())
+  lastPingAt   DateTime @default(now())
+  disconnectedAt DateTime?
+  metadata     Json?
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, connectedAt])
+  @@index([tenantId, connectedAt])
+  @@index([disconnectedAt])
+}
+
+// Enums per notifiche
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationStatus {
+  PENDING
+  DELIVERED
+  ACKNOWLEDGED
+  FAILED
+  EXPIRED
 }

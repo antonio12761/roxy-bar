@@ -29,6 +29,10 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:delivered',       // Conferma consegna
       'order:paid',           // Conferma pagamento
       'order:update',         // Aggiornamenti generali
+      'order:esaurito:alert', // Alert per ordini con prodotti esauriti
+      'order:esaurito:taken', // Notifica quando qualcuno prende in carico
+      'order:esaurito:released', // Notifica quando viene rilasciato
+      'product:availability', // Aggiornamenti disponibilità prodotti
       'notification:new',     // Notifiche dirette
       'system:announcement',  // Annunci sistema
       'system:heartbeat',     // Heartbeat per mantenere connessione
@@ -49,6 +53,10 @@ export const STATION_FILTERS: Record<StationType, StationFilter> = {
       'order:sent',           // Ordini inviati
       'order:item:update',    // Aggiornamenti singoli item
       'order:cancelled',      // Ordini annullati
+      'order:esaurito:alert', // Alert per ordini con prodotti esauriti
+      'order:esaurito:taken', // Notifica quando qualcuno prende in carico
+      'order:esaurito:released', // Notifica quando viene rilasciato
+      'product:availability', // Aggiornamenti disponibilità prodotti
       'notification:reminder', // Promemoria
       'system:heartbeat',     // Heartbeat per mantenere connessione
       'connection:status',    // Stato connessione

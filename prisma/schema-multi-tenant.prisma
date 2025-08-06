@@ -1,4 +1,4 @@
-// Schema Multi-Tenant per Siplit
+// Schema Multi-Tenant per Roxy Bar
 
 generator client {
   provider = "prisma-client-js"

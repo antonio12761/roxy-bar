@@ -1,8 +1,8 @@
-# 🍺 Git Manager Siplit - Guida all'uso
+# 🍺 Git Manager Roxy Bar - Guida all'uso
 
 ## 📖 Panoramica
 
-Il Git Manager Safe è uno strumento interattivo per gestire in sicurezza il repository del progetto Siplit. È stato personalizzato specificamente per questo progetto Next.js + TypeScript + Prisma.
+Il Git Manager Safe è uno strumento interattivo per gestire in sicurezza il repository del progetto Roxy Bar. È stato personalizzato specificamente per questo progetto Next.js + TypeScript + Prisma.
 
 ## 🚀 Come avviare
 
@@ -150,4 +150,4 @@ Il manager ha fallback automatici ai controlli standard TypeScript/ESLint.
 
 ---
 
-**⚠️ Importante**: Questo tool è configurato per il progetto Siplit. Le path e gli script sono specifici per questo setup.
+**⚠️ Importante**: Questo tool è configurato per il progetto Roxy Bar. Le path e gli script sono specifici per questo setup.

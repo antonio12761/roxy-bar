@@ -2,7 +2,7 @@
 
 ## Current Implementation Overview
 
-The Siplit SSE system provides real-time communication between server and clients using Server-Sent Events. The system has been enhanced with reliability features, offline support, and granular updates.
+The Roxy Bar SSE system provides real-time communication between server and clients using Server-Sent Events. The system has been enhanced with reliability features, offline support, and granular updates.
 
 ## Strengths
 

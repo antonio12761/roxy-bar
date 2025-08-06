@@ -348,7 +348,7 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
 
               <div className="rounded p-4 font-mono text-sm" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
                 <div className="text-center border-b pb-2 mb-3" style={{ borderColor: colors.border.secondary }}>
-                  <div className="font-bold" style={{ color: colors.text.primary }}>Siplit</div>
+                  <div className="font-bold" style={{ color: colors.text.primary }}>Roxy Bar</div>
                   <div className="text-xs" style={{ color: colors.text.secondary }}>Via Example 123, Città</div>
                   <div className="text-xs" style={{ color: colors.text.secondary }}>Tel: 123-456-7890</div>
                 </div>

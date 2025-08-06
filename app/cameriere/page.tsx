@@ -1,8 +1,15 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function CameriereLandingPage() {
-  // Redirect immediately to nuova-ordinazione as the main page
-  redirect("/cameriere/nuova-ordinazione");
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Redirect immediately to nuova-ordinazione as the main page
+    router.replace("/cameriere/nuova-ordinazione");
+  }, [router]);
+  
+  return null; // o un loading spinner se preferisci
 }

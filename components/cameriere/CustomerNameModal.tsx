@@ -1,9 +1,11 @@
 "use client";
 
 import { Users, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThemedModal } from "@/components/ui/ThemedModal";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Autocomplete } from "@/components/ui/autocomplete";
+import { searchClientiAutocomplete, getOrCreateCliente, getClientiRecenti } from "@/lib/actions/clienti";
 
 interface CustomerNameModalProps {
   isOpen: boolean;
@@ -16,6 +18,8 @@ interface CustomerNameModalProps {
   initialName?: string;
   initialSeats?: number;
   onBack?: () => void;
+  submitButtonText?: string;
+  isSubmitting?: boolean;
 }
 
 export function CustomerNameModal({
@@ -28,7 +32,9 @@ export function CustomerNameModal({
   suggestions = [],
   initialName = "",
   initialSeats = 2,
-  onBack
+  onBack,
+  submitButtonText = "Conferma",
+  isSubmitting = false
 }: CustomerNameModalProps) {
   const { currentTheme, themeMode } = useTheme();
   const resolvedMode = themeMode === 'system' 
@@ -39,10 +45,52 @@ export function CustomerNameModal({
   const [customerName, setCustomerName] = useState(initialName);
   const [customerSeats, setCustomerSeats] = useState(initialSeats);
   const [showError, setShowError] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [recentCustomers, setRecentCustomers] = useState<string[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadRecentCustomers = async () => {
+      const result = await getClientiRecenti();
+      if (result.success && result.clienti) {
+        setRecentCustomers(result.clienti.map(c => c.nome));
+      }
+    };
+    
+    if (isOpen) {
+      loadRecentCustomers();
+    }
+  }, [isOpen]);
+
+  const handleSearchCustomers = async (query: string) => {
+    const result = await searchClientiAutocomplete(query);
+    if (result.success && result.clienti) {
+      return result.clienti;
+    }
+    return [];
+  };
+
+  const handleCreateCustomer = async (nome: string) => {
+    const result = await getOrCreateCliente(nome);
+    if (result.success && result.cliente) {
+      setSelectedCustomer(result.cliente);
+      setCustomerName(result.cliente.nome);
+      // Don't auto-submit here, let handleSubmit do it
+      setShowError(false);
+      return result.cliente;
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (customerName.trim()) {
+      if (!selectedCustomer) {
+        const cliente = await handleCreateCustomer(customerName);
+        if (!cliente) {
+          // Failed to create customer, don't submit
+          return;
+        }
+      }
       onSubmit(customerName, customerSeats);
       setShowError(false);
     } else {
@@ -110,33 +158,42 @@ export function CustomerNameModal({
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
+            <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
               Nome Cliente
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => {
-                  let value = e.target.value;
-                  // Capitalize first letter of each word
-                  value = value.replace(/\b\w/g, (char) => char.toUpperCase());
-                  setCustomerName(value);
+            <p className="text-xs mb-2" style={{ color: colors.text.muted }}>
+              Seleziona dall'elenco o digita un nuovo nome
+            </p>
+            <Autocomplete
+              value={customerName}
+              onChange={(value) => {
+                // Capitalize first letter of each word
+                const formatted = value.replace(/\b\w/g, (char) => char.toUpperCase());
+                setCustomerName(formatted);
+                setShowError(false);
+                // Se c'è già un customer selezionato con lo stesso nome, mantienilo
+                if (selectedCustomer && selectedCustomer.nome === formatted) {
+                  setSelectedCustomer(selectedCustomer);
+                }
+              }}
+              onSelect={async (option) => {
+                setSelectedCustomer(option);
+                if (option) {
+                  setCustomerName(option.nome);
+                  // Don't auto-submit when selecting a customer
+                  // Let the user click the submit button
                   setShowError(false);
-                }}
-                placeholder="Inserisci il nome del cliente"
-                className="w-full p-3 rounded-lg focus:outline-none focus:ring-2 text-center text-lg"
-                style={{
-                  backgroundColor: colors.bg.input,
-                  borderColor: colors.border.primary,
-                  color: colors.text.primary,
-                  borderWidth: '1px',
-                  borderStyle: 'solid'
-                }}
-                autoFocus
-                required
-              />
-            </div>
+                }
+              }}
+              onSearch={handleSearchCustomers}
+              onCreate={async (nome: string) => {
+                await handleCreateCustomer(nome);
+              }}
+              placeholder="Cerca o aggiungi nuovo cliente..."
+              autoFocus
+              required
+              suggestions={recentCustomers}
+            />
           </div>
           
           <div>
@@ -184,66 +241,37 @@ export function CustomerNameModal({
             </div>
           </div>
           
-          <button
-            type="submit"
-            className="w-full p-3 rounded-lg font-bold transition-colors"
-            style={{
-              backgroundColor: colors.button.primary,
-              color: colors.button.primaryText
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.button.primaryHover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.button.primary;
-            }}
-          >
-            Conferma
-          </button>
-          
-          {/* Customer suggestions as tags */}
-          {suggestions.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs mb-2" style={{ color: colors.text.muted }}>
-                Clienti precedenti tavolo {tableNumber}:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {suggestions.slice(0, 8).map((name, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => {
-                      setCustomerName(name);
-                      setShowError(false);
-                    }}
-                    className="px-3 py-1 rounded-full text-sm transition-all duration-200 hover:scale-105"
-                    style={{
-                      backgroundColor: colors.bg.hover,
-                      color: colors.text.primary,
-                      borderColor: colors.border.primary,
-                      borderWidth: '1px',
-                      borderStyle: 'solid'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = colors.bg.darker;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = colors.bg.hover;
-                    }}
-                  >
-                    {name}
-                  </button>
-                ))}
-                {suggestions.length > 8 && (
-                  <span 
-                    className="px-3 py-1 text-sm" 
-                    style={{ color: colors.text.muted }}
-                  >
-                    +{suggestions.length - 8} altri
-                  </span>
-                )}
-              </div>
-            </div>
+          {/* Mostra il pulsante solo se c'è un nome inserito manualmente */}
+          {customerName.trim() && (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full p-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: isSubmitting ? colors.bg.hover : colors.button.primary,
+                color: colors.button.primaryText,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) e.currentTarget.style.backgroundColor = colors.button.primaryHover;
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) e.currentTarget.style.backgroundColor = colors.button.primary;
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Invio in corso...
+                </>
+              ) : (
+                submitButtonText
+              )}
+            </button>
           )}
         </div>
       </form>

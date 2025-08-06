@@ -22,11 +22,15 @@ async function resetOrders() {
     const deletedRighe = await prisma.rigaOrdinazione.deleteMany({});
     console.log(`✅ Eliminate ${deletedRighe.count} righe di ordinazione`);
 
-    // 5. Elimina tutte le ordinazioni
+    // 5. Elimina tutti gli ordini esauriti
+    const deletedOrdiniEsauriti = await prisma.ordineEsaurito.deleteMany({});
+    console.log(`✅ Eliminati ${deletedOrdiniEsauriti.count} ordini esauriti`);
+
+    // 6. Elimina tutte le ordinazioni
     const deletedOrdinazioni = await prisma.ordinazione.deleteMany({});
     console.log(`✅ Eliminate ${deletedOrdinazioni.count} ordinazioni`);
 
-    // 6. Libera tutti i tavoli
+    // 7. Libera tutti i tavoli
     const updatedTavoli = await prisma.tavolo.updateMany({
       where: {
         stato: {

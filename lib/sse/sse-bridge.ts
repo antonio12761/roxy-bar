@@ -5,6 +5,7 @@
 
 import { sseService } from './sse-service';
 import { SSEEventName, SSEChannels, SSEChannel } from './sse-events';
+import { generateSecureId } from '@/lib/utils/secure-id';
 
 // Map user roles to SSE channels
 const roleToChannelMap: Record<string, SSEChannel> = {
@@ -22,6 +23,7 @@ const notificationTypeMap: Record<string, SSEEventName> = {
   'order_update': 'order:update',
   'order_ready': 'order:ready',
   'order_delivered': 'order:delivered',
+  'order_out_of_stock': 'order:out-of-stock',
   'payment_request': 'notification:new',
   'payment_completed': 'order:paid',
   'order_conflict': 'notification:new',
@@ -121,9 +123,86 @@ export function broadcastEnhanced(
       });
       break;
       
+    case 'order:paid':
+      sseService.emit('order:paid', {
+        orderId: notification.data?.orderId || '',
+        amount: notification.data?.amount || 0,
+        paymentMethod: notification.data?.paymentMethod || 'POS',
+        cashierId: notification.data?.cashierId,
+        timestamp: new Date().toISOString()
+      }, {
+        channels: notification.targetRoles?.map(role => 
+          roleToChannelMap[role] || SSEChannels.NOTIFICATIONS
+        ).filter(Boolean)
+      });
+      break;
+      
+    case 'order:delivered':
+      sseService.emit('order:delivered', {
+        orderId: notification.data?.orderId || '',
+        tableNumber: notification.data?.tableNumber,
+        deliveredBy: notification.data?.deliveredBy,
+        timestamp: new Date().toISOString()
+      }, {
+        channels: notification.targetRoles?.map(role => 
+          roleToChannelMap[role] || SSEChannels.NOTIFICATIONS
+        ).filter(Boolean)
+      });
+      break;
+      
+    case 'order:out-of-stock':
+      sseService.emit('order:out-of-stock', {
+        originalOrderId: notification.data?.originalOrderId || notification.data?.orderId || '',
+        originalOrderNumber: notification.data?.originalOrderNumber || 0,
+        newOrderId: notification.data?.outOfStockOrderId || notification.data?.newOrderId || '',
+        newOrderNumber: notification.data?.outOfStockOrderNumber || notification.data?.newOrderNumber || 0,
+        tableNumber: notification.data?.tableNumber,
+        waiterId: notification.data?.waiterId || '',
+        waiterName: notification.data?.waiterName,
+        outOfStockProduct: notification.data?.outOfStockProduct || '',
+        outOfStockItems: notification.data?.outOfStockItems || [],
+        timestamp: new Date().toISOString()
+      }, {
+        channels: notification.targetRoles?.map(role => 
+          roleToChannelMap[role] || SSEChannels.NOTIFICATIONS
+        ).filter(Boolean)
+      });
+      break;
+      
+    case 'debt:created':
+      sseService.emit('debt:created' as any, {
+        debitoId: notification.data?.debitoId || '',
+        clienteId: notification.data?.clienteId || '',
+        clienteName: notification.data?.clienteName || '',
+        amount: notification.data?.amount || 0,
+        orderId: notification.data?.orderId || '',
+        tableNumber: notification.data?.tableNumber,
+        timestamp: new Date().toISOString()
+      }, {
+        channels: notification.targetRoles?.map(role => 
+          roleToChannelMap[role] || SSEChannels.NOTIFICATIONS
+        ).filter(Boolean)
+      });
+      break;
+      
+    case 'debt:paid':
+      sseService.emit('debt:paid' as any, {
+        debitoId: notification.data?.debitoId || '',
+        paymentId: notification.data?.paymentId || '',
+        amount: notification.data?.amount || 0,
+        remainingAmount: notification.data?.remainingAmount || 0,
+        status: notification.data?.status || '',
+        timestamp: new Date().toISOString()
+      }, {
+        channels: notification.targetRoles?.map(role => 
+          roleToChannelMap[role] || SSEChannels.NOTIFICATIONS
+        ).filter(Boolean)
+      });
+      break;
+      
     case 'notification:new':
       sseService.emit('notification:new', {
-        id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `notif_${Date.now()}_${generateSecureId(8)}`,
         title: notification.title || notification.type,
         message: notification.message,
         priority,
@@ -155,7 +234,7 @@ export function broadcastEnhanced(
     default:
       // Fallback to generic notification
       sseService.emit('notification:new', {
-        id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `notif_${Date.now()}_${generateSecureId(8)}`,
         title: notification.type,
         message: notification.message,
         priority,

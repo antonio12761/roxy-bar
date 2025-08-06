@@ -323,7 +323,7 @@ export async function getAllCategorieNomi() {
 export async function eliminaCategoria(nomeCategoria: string) {
   try {
     // Controlla se ci sono prodotti reali in questa categoria
-    const prodottiRealiCount = await prisma.prodotto.count({
+    const prodottiReali = await prisma.prodotto.findMany({
       where: {
         categoria: nomeCategoria,
         isDeleted: false,
@@ -335,11 +335,22 @@ export async function eliminaCategoria(nomeCategoria: string) {
       }
     });
 
-    if (prodottiRealiCount > 0) {
-      return {
-        success: false,
-        error: `Impossibile eliminare: ci sono ancora ${prodottiRealiCount} prodotti in questa categoria`
-      };
+    if (prodottiReali.length > 0) {
+      // Sposta i prodotti in "Non categorizzato" invece di bloccare l'eliminazione
+      await prisma.prodotto.updateMany({
+        where: {
+          categoria: nomeCategoria,
+          isDeleted: false,
+          NOT: {
+            nome: {
+              startsWith: "_CATEGORIA_PLACEHOLDER_"
+            }
+          }
+        },
+        data: {
+          categoria: "Non categorizzato"
+        }
+      });
     }
 
     // Elimina il placeholder se esiste
@@ -350,22 +361,41 @@ export async function eliminaCategoria(nomeCategoria: string) {
       }
     });
 
-    // Se ci sono sottocategorie, elimina anche i loro placeholder
+    // Se ci sono sottocategorie, gestiscile
     const sottocategorie = await prisma.prodotto.findMany({
       where: {
         categoria: {
           startsWith: `${nomeCategoria} > `
-        },
-        nome: {
-          startsWith: "_CATEGORIA_PLACEHOLDER_"
         }
       },
       select: {
-        categoria: true
-      }
+        categoria: true,
+        nome: true,
+        isDeleted: true
+      },
+      distinct: ['categoria']
     });
 
     for (const sub of sottocategorie) {
+      // Sposta i prodotti reali delle sottocategorie
+      if (!sub.nome.startsWith("_CATEGORIA_PLACEHOLDER_")) {
+        await prisma.prodotto.updateMany({
+          where: {
+            categoria: sub.categoria,
+            isDeleted: false,
+            NOT: {
+              nome: {
+                startsWith: "_CATEGORIA_PLACEHOLDER_"
+              }
+            }
+          },
+          data: {
+            categoria: "Non categorizzato"
+          }
+        });
+      }
+      
+      // Elimina i placeholder delle sottocategorie
       await prisma.prodotto.deleteMany({
         where: {
           categoria: sub.categoria,
@@ -374,9 +404,13 @@ export async function eliminaCategoria(nomeCategoria: string) {
       });
     }
 
+    const message = prodottiReali.length > 0 
+      ? `Categoria "${nomeCategoria}" eliminata. ${prodottiReali.length} prodotti spostati in "Non categorizzato"`
+      : `Categoria "${nomeCategoria}" eliminata`;
+
     return {
       success: true,
-      message: `Categoria "${nomeCategoria}" eliminata`
+      message: message
     };
   } catch (error) {
     console.error("Errore eliminazione categoria:", error);

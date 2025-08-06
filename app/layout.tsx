@@ -14,13 +14,13 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Siplit",
-  description: "Sistema di gestione per Siplit",
+  title: "Roxy Bar",
+  description: "Sistema di gestione per Roxy Bar",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Siplit"
+    title: "Roxy Bar"
   },
   formatDetection: {
     telephone: false,

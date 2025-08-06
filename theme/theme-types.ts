@@ -31,6 +31,8 @@ export interface ThemeColors {
     accent: string
     success: string
     error: string
+    warning?: string
+    info?: string
   }
 
   // Border Colors
@@ -57,6 +59,12 @@ export interface ThemeColors {
     danger: string
     dangerHover: string
     dangerText: string
+    warning?: string
+    warningHover?: string
+    warningText?: string
+    secondary?: string
+    secondaryHover?: string
+    secondaryText?: string
   }
 
   // Table Colors
@@ -122,6 +130,7 @@ export interface ThemeColors {
     error: string
     warning?: string
     info?: string
+    pending?: string
   }
 }
 

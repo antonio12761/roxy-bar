@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Gift } from 'lucide-react';
+import { Gift, AlertTriangle, User } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface TableCardProps {
@@ -9,6 +9,8 @@ interface TableCardProps {
     stato: "LIBERO" | "OCCUPATO" | "RISERVATO" | "IN_PULIZIA";
     posti: number;
     clienteNome?: string | null;
+    hasOutOfStockOrder?: boolean;
+    outOfStockHandledBy?: string | null;
   };
   isGiftMode: boolean;
   onClick: () => void;
@@ -34,14 +36,14 @@ export const TableCard = memo(function TableCard({
   // CSS classes based on state - computed once
   const stateClasses = {
     LIBERO: `table-card-free`,
-    OCCUPATO: `table-card-occupied`,
+    OCCUPATO: table.hasOutOfStockOrder ? `table-card-out-of-stock` : `table-card-occupied`,
     RISERVATO: `table-card-reserved`,
     IN_PULIZIA: `table-card-cleaning`
   };
 
   const baseClasses = `
     aspect-square p-2 rounded-lg border-2 transition-all duration-200 
-    flex flex-col items-center justify-center hover:scale-105 w-full
+    flex flex-col items-center justify-center hover:scale-105 w-full relative
     ${stateClasses[table.stato]}
     ${isGiftMode ? 'cursor-pointer transform hover:-translate-y-1' : ''}
   `;
@@ -68,6 +70,26 @@ export const TableCard = memo(function TableCard({
         .table-card-occupied:hover {
           opacity: 0.9;
           border-color: ${colors.accent};
+        }
+        
+        .table-card-out-of-stock {
+          background-color: #ef4444;
+          border-color: #dc2626;
+          color: white;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .table-card-out-of-stock:hover {
+          opacity: 0.9;
+          border-color: #991b1b;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
         }
         
         .table-card-reserved {
@@ -108,12 +130,26 @@ export const TableCard = memo(function TableCard({
           ) : (
             <>
               <div className="text-xs">{table.posti}</div>
-              {table.stato === "OCCUPATO" && (
+              {table.stato === "OCCUPATO" && !table.hasOutOfStockOrder && (
                 <div className="text-[10px] bg-white/10 text-white/60 px-1 rounded mt-1">
                   +Ordine
                 </div>
               )}
-              {table.clienteNome && (
+              {table.hasOutOfStockOrder && (
+                <div className="flex flex-col items-center gap-1 mt-1">
+                  <AlertTriangle className="h-4 w-4 text-white animate-bounce" />
+                  <div className="text-[9px] text-white font-bold">
+                    ESAURITO
+                  </div>
+                  {table.outOfStockHandledBy && (
+                    <div className="text-[8px] text-white/80 flex items-center gap-0.5">
+                      <User className="h-3 w-3" />
+                      {table.outOfStockHandledBy}
+                    </div>
+                  )}
+                </div>
+              )}
+              {table.clienteNome && !table.hasOutOfStockOrder && (
                 <div className="text-[10px] text-foreground mt-1 truncate w-full text-center">
                   {table.clienteNome}
                 </div>

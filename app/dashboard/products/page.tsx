@@ -11,7 +11,11 @@ import {
   Upload,
   Eye,
   EyeOff,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  FileSpreadsheet,
+  AlertCircle,
+  Beer
 } from "lucide-react";
 import Link from "next/link";
 import { 
@@ -19,6 +23,13 @@ import {
   getProducts, 
   deleteProduct
 } from "@/lib/actions/products";
+import { 
+  importProductsFromExcel, 
+  deleteAllProducts, 
+  getProductsStats,
+  getAllProducts,
+  markBeersAsRequiringGlasses 
+} from "@/lib/actions/products-import";
 import { AuthGuard } from "@/components/auth-guard";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -66,6 +77,11 @@ interface Product {
 export default function ProductsPage() {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode === 'system' ? 'dark' : themeMode];
+  
+  // New states for Excel import
+  const [isImporting, setIsImporting] = useState(false);
+  const [importStats, setImportStats] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Page skeleton component
   const PageSkeleton = () => (
@@ -275,6 +291,64 @@ export default function ProductsPage() {
     }
   };
 
+  // Handle Excel file upload
+  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!validTypes.includes(file.type)) {
+      alert('❌ Per favore carica un file Excel (.xlsx o .xls)');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const result = await importProductsFromExcel(buffer);
+      
+      if (result.success) {
+        setImportStats(result);
+        await loadData();
+        alert(`✅ Importazione completata!\n\nProdotti creati: ${result.prodottiCreati}\nProdotti aggiornati: ${result.prodottiAggiornati}\nErrori: ${result.errori}`);
+      } else {
+        alert(`❌ Errore durante l'importazione: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Errore upload:', error);
+      alert('❌ Errore durante il caricamento del file');
+    } finally {
+      setIsImporting(false);
+      // Reset input
+      event.target.value = '';
+    }
+  };
+
+  // Handle delete all products
+  const handleDeleteAllProducts = async () => {
+    setShowDeleteConfirm(false);
+    
+    const result = await deleteAllProducts();
+    if (result.success) {
+      await loadData();
+      alert(`✅ ${result.message}`);
+    } else {
+      alert(`❌ Errore: ${result.error}`);
+    }
+  };
+
+  // Handle mark beers as requiring glasses
+  const handleMarkBeersRequireGlasses = async () => {
+    const result = await markBeersAsRequiringGlasses();
+    if (result.success) {
+      await loadData();
+      alert(`✅ ${result.message}`);
+    } else {
+      alert(`❌ Errore: ${result.error}`);
+    }
+  };
+
   // Show full page skeleton during initial load
   if (isLoading && products.length === 0) {
     return (
@@ -311,18 +385,72 @@ export default function ProductsPage() {
           </div>
           
           <div className="flex items-center justify-end gap-3 mb-4">
+            {/* Excel Import Button */}
+            <label className="relative">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleExcelUpload}
+                className="hidden"
+                disabled={isImporting}
+              />
+              <div
+                className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200 cursor-pointer"
+                style={{ 
+                  backgroundColor: isImporting ? colors.bg.card : colors.button.success, 
+                  color: isImporting ? colors.text.muted : colors.button.successText,
+                  opacity: isImporting ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => !isImporting && (e.currentTarget.style.backgroundColor = colors.button.successHover)}
+                onMouseLeave={(e) => !isImporting && (e.currentTarget.style.backgroundColor = colors.button.success)}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                {isImporting ? 'Importazione...' : 'Importa Excel'}
+              </div>
+            </label>
+
+            {/* Mark Beers Button */}
+            <button
+              onClick={handleMarkBeersRequireGlasses}
+              className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+              style={{ 
+                backgroundColor: colors.button.warning || '#f59e0b', 
+                color: colors.button.warningText || '#ffffff'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.warningHover || '#d97706'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.warning || '#f59e0b'}
+            >
+              <Beer className="h-4 w-4" />
+              Marca Birre (Bicchiere)
+            </button>
+
+            {/* Delete All Button */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+              style={{ 
+                backgroundColor: colors.button.danger, 
+                color: colors.button.dangerText 
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.dangerHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.danger}
+            >
+              <Trash2 className="h-4 w-4" />
+              Elimina Tutti
+            </button>
+
             <button
               onClick={() => setShowImportModal(true)}
               className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
               style={{ 
-                backgroundColor: colors.button.success, 
-                color: colors.button.successText 
+                backgroundColor: colors.button.primary, 
+                color: colors.button.primaryText 
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
             >
               <Upload className="h-4 w-4" />
-              Importa CSV/Excel
+              Importa CSV
             </button>
             <button
               onClick={() => setShowCategoryModal(true)}
@@ -590,6 +718,82 @@ export default function ProductsPage() {
           productName={procedureProduct?.name || ""}
           onSuccess={loadData}
         />
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div 
+              className="p-6 rounded-lg max-w-md w-full mx-4"
+              style={{ backgroundColor: colors.bg.card }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <AlertCircle className="h-6 w-6 text-red-500" />
+                <h3 className="text-xl font-semibold" style={{ color: colors.text.primary }}>
+                  Conferma Eliminazione
+                </h3>
+              </div>
+              
+              <p className="mb-6" style={{ color: colors.text.secondary }}>
+                Sei sicuro di voler eliminare <strong>TUTTI</strong> i prodotti? 
+                Questa azione non può essere annullata.
+              </p>
+
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-6">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  ⚠️ Verranno eliminati {products.length} prodotti dal database.
+                </p>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg transition-colors duration-200"
+                  style={{ 
+                    backgroundColor: colors.bg.hover, 
+                    color: colors.text.primary 
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleDeleteAllProducts}
+                  className="px-4 py-2 rounded-lg transition-colors duration-200"
+                  style={{ 
+                    backgroundColor: colors.button.danger, 
+                    color: colors.button.dangerText 
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.dangerHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.danger}
+                >
+                  Elimina Tutti
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import Stats Display */}
+        {importStats && (
+          <div className="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm"
+               style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+            <h4 className="font-semibold mb-2" style={{ color: colors.text.primary }}>
+              Risultati Importazione
+            </h4>
+            <div className="space-y-1 text-sm" style={{ color: colors.text.secondary }}>
+              <p>✅ Creati: {importStats.prodottiCreati}</p>
+              <p>📝 Aggiornati: {importStats.prodottiAggiornati}</p>
+              {importStats.errori > 0 && <p>❌ Errori: {importStats.errori}</p>}
+              <p>📊 Totale: {importStats.totaleProcessati}</p>
+            </div>
+            <button
+              onClick={() => setImportStats(null)}
+              className="mt-3 text-xs underline"
+              style={{ color: colors.text.muted }}
+            >
+              Chiudi
+            </button>
+          </div>
+        )}
       </div>
     </AuthGuard>
   );

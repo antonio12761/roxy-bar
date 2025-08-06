@@ -11,7 +11,7 @@ async function createPoskiUser() {
     });
 
     if (!tenant) {
-      console.log('❌ Tenant Siplit not found. Run create-test-user.ts first.');
+      console.log('❌ Tenant Roxy Bar not found. Run create-test-user.ts first.');
       return;
     }
 

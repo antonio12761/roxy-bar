@@ -20,7 +20,7 @@ async function seedUsers() {
       { nome: "Anastasia", password: "anastasia", ruolo: "CAMERIERE", cognome: "Ricci" },
     ];
 
-    console.log("🔐 Inizializzazione utenti Siplit...\n");
+    console.log("🔐 Inizializzazione utenti Roxy Bar...\n");
 
     for (const userData of users) {
       try {

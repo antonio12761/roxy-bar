@@ -19,7 +19,10 @@ import {
   Sheet,
   ChevronLeft,
   Shield,
-  ChefHat
+  ChefHat,
+  Layers,
+  TableProperties,
+  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,7 +50,11 @@ export default function DashboardSidebar() {
       icon: Package,
       subItems: [
         { label: "Gestione Categorie", href: "/dashboard/categorie", icon: Tag },
+        { label: "Categories (EN)", href: "/dashboard/categories", icon: Layers },
+        { label: "Icone Categorie", href: "/dashboard/categorie-icone", icon: Grid3X3 },
         { label: "Tutti i Prodotti", href: "/dashboard/products", icon: Coffee },
+        { label: "Tabella Prodotti", href: "/dashboard/products-table", icon: TableProperties },
+        { label: "Foglio Calcolo", href: "/dashboard/products-spreadsheet", icon: Sheet },
         { label: "Procedure Preparazione", href: "/dashboard/procedures", icon: ChefHat },
         { label: "Statistiche", href: "/dashboard/statistiche", icon: BarChart3 },
         { label: "Menu Builder", href: "/dashboard/menu-builder", icon: Menu }
@@ -61,6 +68,12 @@ export default function DashboardSidebar() {
         { label: "Gestione Utenti", href: "/dashboard/users", icon: Users },
         { label: "Gestione Ruoli", href: "/dashboard/roles", icon: Shield }
       ]
+    },
+    {
+      id: "customers",
+      label: "Clienti",
+      icon: UserCheck,
+      href: "/dashboard/clienti"
     },
     {
       id: "orders",
@@ -111,7 +124,7 @@ export default function DashboardSidebar() {
             className={`font-bold transition-all duration-300 ${isCollapsed ? 'text-2xl' : 'text-xl'}`}
             style={{ color: colors.text.primary }}
           >
-            {isCollapsed ? 'S' : 'Siplit'}
+            {isCollapsed ? 'S' : 'Roxy Bar'}
           </h2>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}

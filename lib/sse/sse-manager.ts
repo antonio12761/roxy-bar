@@ -3,6 +3,10 @@ if (typeof window !== 'undefined') {
   throw new Error('SSE Manager cannot be imported on the client side');
 }
 
+// Disable logs in production for performance
+const DEBUG = false; // Set to true to enable debug logs
+const log = DEBUG ? console.log : () => {};
+
 import { EventEmitter } from 'events';
 
 interface SSEClient {
@@ -66,8 +70,15 @@ class SSEManager extends EventEmitter {
     }
     
     this.clients.set(client.id, client);
-    // Log only for debugging issues
-    // console.log(`[SSE Manager] Client added: ${client.id} (user: ${client.userId}, station: ${client.stationType}, total: ${this.clients.size})`);
+    log(`[SSE Manager] Client added: ${client.id} (station: ${client.stationType}, user: ${client.userId}, tenant: ${client.tenantId}, total clients: ${this.clients.size})`);
+    
+    // Log all current clients
+    log('[SSE Manager] Current clients:', Array.from(this.clients.values()).map(c => ({
+      id: c.id.substring(0, 20) + '...',
+      station: c.stationType,
+      userId: c.userId,
+      tenantId: c.tenantId
+    })));
     
     // Invia messaggio di benvenuto
     this.sendToClient(client.id, {
@@ -90,8 +101,7 @@ class SSEManager extends EventEmitter {
         // Controller già chiuso
       }
       this.clients.delete(clientId);
-      // Log only for debugging issues
-      // console.log(`[SSE Manager] Client removed: ${clientId} (station: ${client.stationType}, remaining: ${this.clients.size})`);
+      log(`[SSE Manager] Client removed: ${clientId} (station: ${client.stationType}, remaining: ${this.clients.size}`);
     }
   }
   
@@ -101,6 +111,13 @@ class SSEManager extends EventEmitter {
     
     try {
       const formattedMessage = this.formatSSEMessage(message);
+      
+      // Debug for product:availability
+      if (message.event === 'product:availability') {
+        log(`[SSE Manager] Sending product:availability to client ${clientId}`);
+        log('[SSE Manager] Formatted message:', new TextDecoder().decode(formattedMessage));
+      }
+      
       client.controller.enqueue(formattedMessage);
       client.lastActivity = Date.now();
       return true;
@@ -208,9 +225,12 @@ class SSEManager extends EventEmitter {
       const now = Date.now();
       const timeout = this.clientTimeout;
       
+      log(`[SSE Cleanup] Checking ${this.clients.size} clients for inactivity`);
+      
       for (const [clientId, client] of this.clients) {
-        if (now - client.lastActivity > timeout) {
-          console.log(`[SSE] Removing inactive client: ${clientId}`);
+        const timeSinceLastActivity = now - client.lastActivity;
+        if (timeSinceLastActivity > timeout) {
+          log(`[SSE Cleanup] Removing inactive client: ${clientId} (inactive for ${Math.round(timeSinceLastActivity/1000)}s)`);
           this.removeClient(clientId);
         }
       }
@@ -272,17 +292,26 @@ class SSEManager extends EventEmitter {
   }
 }
 
-// Export singleton
-export const sseManager = SSEManager.getInstance();
+// Export singleton with global cache to prevent multiple instances
+// This is critical for Next.js dev mode which can create multiple module instances
+const globalForSSEManager = global as unknown as { sseManager?: SSEManager };
+
+export const sseManager = globalForSSEManager.sseManager || SSEManager.getInstance();
+
+if (!globalForSSEManager.sseManager) {
+  globalForSSEManager.sseManager = sseManager;
+}
 
 // Helper per creare client
+import { generateSecureId } from '@/lib/utils/secure-id';
+
 export function createSSEClient(
   userId: string,
   tenantId: string | undefined,
   controller: ReadableStreamDefaultController
 ): SSEClient {
   return {
-    id: `${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `${userId}_${Date.now()}_${generateSecureId(8)}`,
     userId,
     tenantId,
     controller,

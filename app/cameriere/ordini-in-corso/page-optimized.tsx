@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Clock, Coffee, ChefHat, Users, CheckCircle, RefreshCw, ChevronDown, ChevronUp, CreditCard, ArrowLeft, X, Edit3, Package, Loader2 } from "lucide-react";
+import { Clock, Coffee, ChefHat, RefreshCw, ChevronDown, ChevronUp, ArrowLeft, X, Edit3, Package } from "lucide-react";
 import { getOrdinazioniAperte, aggiornaStatoRiga } from "@/lib/actions/ordinazioni";
 import Link from "next/link";
 import { useStationSSE } from "@/hooks/useStationSSE";
@@ -15,6 +15,8 @@ import { StationType } from "@/lib/sse/station-filters";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "@/lib/toast";
+import { ConnectionStatus } from "@/components/cameriere/ConnectionStatus";
+import { OrderItem } from "@/components/cameriere/OrderItem";
 
 interface LocalOrderItem {
   id: string;
@@ -529,24 +531,7 @@ export default function OrdiniInCorsoPageOptimized() {
           
           <div className="flex items-center gap-2">
             {/* Connection Status */}
-            <div 
-              className="flex items-center gap-2 px-3 py-1 rounded-lg"
-              style={{ backgroundColor: colors.bg.card }}
-            >
-              <div 
-                className={`w-2 h-2 rounded-full ${
-                  connectionHealth.status === 'connected' ? 'animate-pulse' : ''
-                }`}
-                style={{
-                  backgroundColor: connectionHealth.status === 'connected' ? colors.button.success :
-                                 connectionHealth.status === 'connecting' ? colors.accent : colors.text.error
-                }}
-              />
-              <span className="text-sm" style={{ color: colors.text.secondary }}>
-                {connectionHealth.status === 'connected' ? `${connectionHealth.latency}ms` : 
-                 connectionHealth.status === 'connecting' ? 'Connessione...' : 'Offline'}
-              </span>
-            </div>
+            <ConnectionStatus connectionHealth={connectionHealth} />
             
             <button
               onClick={loadOrders}
@@ -775,57 +760,12 @@ export default function OrdiniInCorsoPageOptimized() {
                     }}
                   >
                     {order.righe.map((item: LocalOrderItem) => (
-                      <div 
-                        key={item.id} 
-                        className="flex items-center justify-between p-3 rounded-lg"
-                        style={{ backgroundColor: colors.bg.hover }}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium" style={{ color: colors.text.primary }}>
-                              {item.quantita}x {item.prodotto.nome}
-                            </span>
-                            {getStatoBadge(item.stato)}
-                          </div>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs" style={{ color: colors.text.muted }}>
-                              {item.postazione}
-                            </span>
-                            <span className="text-xs" style={{ color: colors.text.muted }}>
-                              {item.prodotto.categoria}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Action buttons */}
-                        {item.stato === "PRONTO" && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStatusUpdate(item, order.id, "CONSEGNATO");
-                            }}
-                            disabled={updatingItems.has(item.id)}
-                            className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                            style={{
-                              backgroundColor: colors.button.success,
-                              color: colors.button.successText
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = colors.button.successHover;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = colors.button.success;
-                            }}
-                          >
-                            {updatingItems.has(item.id) ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <CheckCircle className="h-4 w-4" />
-                            )}
-                            Consegnato
-                          </button>
-                        )}
-                      </div>
+                      <OrderItem
+                        key={item.id}
+                        item={item}
+                        isUpdating={updatingItems.has(item.id)}
+                        onStatusUpdate={(newStatus) => handleStatusUpdate(item, order.id, newStatus)}
+                      />
                     ))}
                     
                     {/* Order Total */}

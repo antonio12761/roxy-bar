@@ -2,6 +2,363 @@
 
 import { prisma } from "@/lib/db";
 
+export async function getOrdinazioniPerStato() {
+  try {
+    console.log("🔍 Recupero ordinazioni per stato...");
+    
+    // Recupera ordini CONSEGNATO, RICHIESTA_CONTO e PAGAMENTO_RICHIESTO (tavoli da pagare)
+    // Escludi ordini PARZIALMENTE_PAGATO che saranno in ordinazioniDaPagare
+    const ordinazioniRitirate = await prisma.ordinazione.findMany({
+      where: {
+        stato: {
+          in: ["CONSEGNATO", "RICHIESTA_CONTO", "PAGAMENTO_RICHIESTO"]
+        },
+        statoPagamento: "NON_PAGATO"
+      },
+      include: {
+        Tavolo: {
+          select: {
+            numero: true
+          }
+        },
+        User: {
+          select: {
+            nome: true
+          }
+        },
+        Cliente: {
+          select: {
+            nome: true,
+            telefono: true
+          }
+        },
+        RigaOrdinazione: {
+          select: {
+            id: true,
+            quantita: true,
+            prezzo: true,
+            note: true,
+            isPagato: true,
+            pagatoDa: true,
+            Prodotto: {
+              select: {
+                nome: true
+              }
+            }
+          }
+        },
+        Pagamento: {
+          select: {
+            importo: true,
+            modalita: true,
+            clienteNome: true,
+            timestamp: true
+          }
+        }
+      },
+      orderBy: {
+        dataApertura: 'desc'
+      }
+    });
+
+    // Recupera ordini con stato pagamento PARZIALMENTE_PAGATO (pagando - in attesa di pagamento completo)
+    const ordinazioniDaPagare = await prisma.ordinazione.findMany({
+      where: {
+        statoPagamento: "PARZIALMENTE_PAGATO",
+        stato: {
+          in: ["CONSEGNATO", "RICHIESTA_CONTO", "PAGAMENTO_RICHIESTO"]
+        }
+      },
+      include: {
+        Tavolo: {
+          select: {
+            numero: true
+          }
+        },
+        User: {
+          select: {
+            nome: true
+          }
+        },
+        Cliente: {
+          select: {
+            nome: true,
+            telefono: true
+          }
+        },
+        RigaOrdinazione: {
+          select: {
+            id: true,
+            quantita: true,
+            prezzo: true,
+            note: true,
+            isPagato: true,
+            pagatoDa: true,
+            Prodotto: {
+              select: {
+                nome: true
+              }
+            }
+          }
+        },
+        Pagamento: {
+          select: {
+            importo: true,
+            modalita: true,
+            clienteNome: true,
+            timestamp: true
+          }
+        }
+      },
+      orderBy: {
+        dataApertura: 'desc'
+      }
+    });
+
+    // Recupera ordini PAGATO (ultimi 50)
+    const ordinazioniPagate = await prisma.ordinazione.findMany({
+      where: {
+        OR: [
+          { statoPagamento: "COMPLETAMENTE_PAGATO" },
+          { stato: "PAGATO" }
+        ]
+      },
+      include: {
+        Tavolo: {
+          select: {
+            numero: true
+          }
+        },
+        User: {
+          select: {
+            nome: true
+          }
+        },
+        Cliente: {
+          select: {
+            nome: true,
+            telefono: true
+          }
+        },
+        RigaOrdinazione: {
+          select: {
+            id: true,
+            quantita: true,
+            prezzo: true,
+            note: true,
+            isPagato: true,
+            pagatoDa: true,
+            Prodotto: {
+              select: {
+                nome: true
+              }
+            }
+          }
+        },
+        Pagamento: {
+          select: {
+            importo: true,
+            modalita: true,
+            clienteNome: true,
+            timestamp: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: 50
+    });
+
+    console.log(`📊 Trovate ${ordinazioniRitirate.length} ordini RITIRATO (da pagare), ${ordinazioniDaPagare.length} ordini DA_PAGARE (parzialmente pagati), ${ordinazioniPagate.length} ordini PAGATO`);
+    
+    // Debug: mostra il primo ordine di ogni categoria
+    if (ordinazioniRitirate.length > 0) {
+      console.log('Esempio ordine ritirato:', {
+        id: ordinazioniRitirate[0].id,
+        numero: ordinazioniRitirate[0].numero,
+        stato: ordinazioniRitirate[0].stato,
+        statoPagamento: ordinazioniRitirate[0].statoPagamento,
+        totale: ordinazioniRitirate[0].totale
+      });
+    }
+
+    const mapOrdinazione = (ord: any) => {
+      const totalePagamenti = ord.Pagamento.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0);
+      const totaleOrdine = ord.totale.toNumber();
+      
+      // Debug: log per ordini con pagamenti
+      if (totalePagamenti > 0) {
+        console.log(`📋 Ordine #${ord.numero} - Righe:`, ord.RigaOrdinazione.map((r: any) => ({
+          id: r.id,
+          prodotto: r.Prodotto?.nome,
+          isPagato: r.isPagato,
+          pagatoDa: r.pagatoDa
+        })));
+      }
+      
+      // Per ora usa il calcolo standard: totale - pagamenti
+      // TODO: Implementare tracciamento quantità parziali
+      const rimanenteEffettivo = Math.max(0, totaleOrdine - totalePagamenti);
+      
+      return {
+        id: ord.id,
+        numero: ord.numero,
+        tavolo: ord.Tavolo,
+        tipo: ord.tipo,
+        cameriere: ord.User,
+        cliente: ord.Cliente,
+        nomeCliente: ord.nomeCliente,
+        totale: totaleOrdine,
+        totalePagamenti: totalePagamenti,
+        totalePagato: totalePagamenti, // Aggiungi questo per compatibilità
+        rimanente: rimanenteEffettivo,
+        pagato: rimanenteEffettivo === 0 && totalePagamenti > 0,
+        statoPagamento: ord.statoPagamento,
+        stato: ord.stato,
+        dataConsegna: ord.updatedAt.toISOString(),
+        dataApertura: ord.dataApertura,
+        righe: ord.RigaOrdinazione.map((riga: any) => ({
+          id: riga.id,
+          prezzo: riga.prezzo.toNumber(),
+          quantita: riga.quantita,
+          isPagato: riga.isPagato || false,  // Assicurati che sia sempre un boolean
+          pagatoDa: riga.pagatoDa || null,
+          prodotto: riga.Prodotto,
+          note: riga.note
+        })),
+        pagamenti: ord.Pagamento.map((pag: any) => ({
+          importo: pag.importo.toNumber(),
+          modalita: pag.modalita,
+          clienteNome: pag.clienteNome,
+          timestamp: pag.timestamp,
+          righeIds: pag.righeIds // Aggiungi info su quali righe sono state pagate
+        }))
+      };
+    };
+
+    // Recupera debiti aperti con limite (ultimi 20)
+    const debiti = await prisma.debito.findMany({
+      where: {
+        stato: {
+          in: ["APERTO", "PARZIALMENTE_PAGATO"]
+        },
+        // Solo debiti degli ultimi 30 giorni per performance
+        dataCreazione: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        }
+      },
+      include: {
+        Cliente: true,
+        Ordinazione: {
+          include: {
+            Tavolo: true
+          }
+        },
+        PagamentiDebito: true
+      },
+      orderBy: {
+        dataCreazione: 'desc'
+      },
+      take: 20 // Limita a 20 debiti per performance
+    });
+
+    console.log(`📊 Trovati ${debiti.length} debiti aperti`);
+
+    const debitiMapped = debiti.map((debito: any) => {
+      const totalePagato = debito.PagamentiDebito.reduce(
+        (sum: number, pag: any) => sum + pag.importo.toNumber(),
+        0
+      );
+      const rimanente = debito.importo.toNumber() - totalePagato;
+
+      return {
+        id: debito.id,
+        clienteId: debito.clienteId,
+        clienteNome: debito.Cliente.nome,
+        ordinazioneId: debito.ordinazioneId,
+        numeroOrdine: debito.Ordinazione?.numero || null,
+        tavolo: debito.Ordinazione?.Tavolo || null,
+        importo: debito.importo.toNumber(),
+        importoPagato: totalePagato,
+        rimanente,
+        stato: debito.stato,
+        dataCreazione: debito.dataCreazione.toISOString(),
+        note: debito.note
+      };
+    });
+
+    // Aggrega ordini per tavolo lato server per evitare duplicazioni
+    const aggregaPerTavolo = (ordini: any[]) => {
+      const tavoliMap = new Map<string, any>();
+      
+      ordini.forEach(ord => {
+        const tavoloKey = ord.tavolo?.numero || 'Asporto';
+        
+        if (!tavoliMap.has(tavoloKey)) {
+          tavoliMap.set(tavoloKey, {
+            tavoloNumero: tavoloKey,
+            ordinazioni: [],
+            totaleComplessivo: 0,
+            totalePagatoComplessivo: 0,
+            rimanenteComplessivo: 0,
+            numeroClienti: 0,
+            clientiNomi: [],
+            primaDaApertura: ord.dataApertura
+          });
+        }
+        
+        const gruppo = tavoliMap.get(tavoloKey);
+        gruppo.ordinazioni.push(ord);
+        gruppo.totaleComplessivo += ord.totale;
+        gruppo.totalePagatoComplessivo += ord.totalePagato || 0;
+        gruppo.rimanenteComplessivo += ord.rimanente;
+        
+        if (ord.nomeCliente && !gruppo.clientiNomi.includes(ord.nomeCliente)) {
+          gruppo.clientiNomi.push(ord.nomeCliente);
+          gruppo.numeroClienti++;
+        } else if (!ord.nomeCliente) {
+          gruppo.numeroClienti++;
+        }
+        
+        if (new Date(ord.dataApertura) < new Date(gruppo.primaDaApertura)) {
+          gruppo.primaDaApertura = ord.dataApertura;
+        }
+      });
+      
+      return Array.from(tavoliMap.values());
+    };
+    
+    // Prepara dati mappati
+    const ritirateMap = ordinazioniRitirate.map(mapOrdinazione);
+    const daPagareMap = ordinazioniDaPagare.map(mapOrdinazione);
+    const pagateMap = ordinazioniPagate.map(mapOrdinazione);
+    
+    const result = {
+      ritirate: ritirateMap,
+      daPagare: daPagareMap,
+      pagate: pagateMap,
+      debiti: debitiMapped,
+      // Aggiungi dati pre-aggregati per tavolo per evitare duplicazioni client-side
+      tavoliRitirate: aggregaPerTavolo(ritirateMap),
+      tavoliDaPagare: aggregaPerTavolo(daPagareMap),
+      tavoliPagate: aggregaPerTavolo(pagateMap)
+    };
+    
+    console.log(`📊 Ritorno risultati: ${result.ritirate.length} ritirate (${result.tavoliRitirate.length} tavoli), ${result.daPagare.length} da pagare (${result.tavoliDaPagare.length} tavoli), ${result.pagate.length} pagate (${result.tavoliPagate.length} tavoli), ${result.debiti.length} debiti`);
+    
+    return result;
+  } catch (error) {
+    console.error("Errore recupero ordinazioni per stato:", error);
+    return {
+      ritirate: [],
+      daPagare: [],
+      pagate: [],
+      debiti: []
+    };
+  }
+}
+
 export async function getOrdinazioniConsegnate() {
   try {
     console.log("🔍 Recupero ordinazioni consegnate...");
@@ -33,7 +390,13 @@ export async function getOrdinazioniConsegnate() {
           }
         },
         RigaOrdinazione: {
-          include: {
+          select: {
+            id: true,
+            quantita: true,
+            prezzo: true,
+            note: true,
+            isPagato: true,
+            pagatoDa: true,
             Prodotto: {
               select: {
                 nome: true
@@ -44,7 +407,9 @@ export async function getOrdinazioniConsegnate() {
         Pagamento: {
           select: {
             importo: true,
-            modalita: true
+            modalita: true,
+            clienteNome: true,
+            timestamp: true
           }
         }
       },
@@ -73,6 +438,10 @@ export async function getOrdinazioniConsegnate() {
         .filter(riga => !riga.isPagato)
         .reduce((sum, riga) => sum + (riga.prezzo.toNumber() * riga.quantita), 0);
       
+      // Per ora usa il calcolo standard: totale - pagamenti
+      // TODO: Implementare tracciamento quantità parziali
+      const rimanenteEffettivo = totaleOrdine - totalePagamenti;
+      
       return {
         id: ord.id,
         numero: ord.numero,
@@ -83,8 +452,8 @@ export async function getOrdinazioniConsegnate() {
         nomeCliente: ord.nomeCliente,
         totale: totaleOrdine,
         totalePagamenti: totalePagamenti,
-        rimanente: totaleOrdine - totalePagamenti,
-        pagato: totalePagamenti >= totaleOrdine,
+        rimanente: rimanenteEffettivo,
+        pagato: rimanenteEffettivo <= 0,
         statoPagamento: ord.statoPagamento,
         stato: ord.stato,
         dataConsegna: ord.updatedAt.toISOString(),
@@ -94,7 +463,7 @@ export async function getOrdinazioniConsegnate() {
         righeNonPagate,
         totaleRighePagate,
         totaleRigheNonPagate,
-        hasPagamentoParziale: totalePagamenti > 0 && totalePagamenti < totaleOrdine,
+        hasPagamentoParziale: totalePagamenti > 0 && rimanenteEffettivo > 0,
         righe: ord.RigaOrdinazione.map(riga => ({
           id: riga.id,
           prezzo: riga.prezzo.toNumber(),
@@ -105,7 +474,9 @@ export async function getOrdinazioniConsegnate() {
         })),
         pagamenti: ord.Pagamento.map(pag => ({
           importo: pag.importo.toNumber(),
-          modalita: pag.modalita
+          modalita: pag.modalita,
+          clienteNome: pag.clienteNome,
+          timestamp: pag.timestamp
         }))
       };
     });

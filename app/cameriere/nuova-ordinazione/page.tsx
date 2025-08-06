@@ -3,10 +3,11 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Coffee, Gift, Folder, Home, Utensils, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Filter, Search, Grid3x3, ClipboardList, UserPlus, Square } from "lucide-react";
+import { Coffee, Gift, Folder, Home, Utensils, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Filter } from "lucide-react";
 // Removed old useSSE import - now using SSE context
 import { getTavoli, getCustomerNamesForTable, getProdotti } from "@/lib/actions/ordinazioni";
 import { creaOrdinazionePerAltri } from "@/lib/actions/ordinaPerAltri";
+import { getTablesWithOutOfStockOrders } from "@/lib/actions/gestione-esauriti";
 import Link from "next/link";
 import { ClientClock } from "@/components/ClientClock";
 import { OrdinaPerAltriModal } from "@/components/cameriere/OrdinaPerAltriModal";
@@ -14,6 +15,12 @@ import { TableOperationsModal } from "@/components/cameriere/TableOperationsModa
 import { TableCard } from "@/components/cameriere/TableCard";
 import { toast } from "@/lib/toast";
 import { useTheme } from "@/contexts/ThemeContext";
+import { GiftModeAlert } from "@/components/cameriere/GiftModeAlert";
+import { StatsBar } from "@/components/cameriere/StatsBar";
+import { TableSkeletonLoader } from "@/components/cameriere/TableSkeletonLoader";
+import { FireworksAnimation } from "@/components/ui/FireworksAnimation";
+import { HeartsAnimation } from "@/components/ui/HeartsAnimation";
+import { useSSE } from "@/contexts/sse-context";
 
 // Cache per evitare ricaricamenti
 const tablesCache = new Map<string, { data: Table[], timestamp: number }>();
@@ -27,6 +34,9 @@ interface Table {
   zona?: string | null;
   attivo: boolean;
   clienteNome?: string | null;
+  hasOutOfStockOrder?: boolean;
+  outOfStockHandledBy?: string | null;
+  outOfStockOrders?: string[];
   GruppoTavoli?: {
     id: number;
     nome: string;
@@ -42,8 +52,9 @@ export default function NuovaOrdinazionePage() {
     : themeMode;
   const colors = currentTheme.colors[resolvedMode as 'light' | 'dark'];
   
-  // Connection status will be shown from context
-  const isConnected = true; // Temporary - will be replaced with context
+  // SSE context for real-time updates
+  const sseContext = useSSE();
+  const isConnected = sseContext?.connected || false;
   const [tables, setTables] = useState<Table[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGiftMode, setIsGiftMode] = useState(false);
@@ -57,6 +68,8 @@ export default function NuovaOrdinazionePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [ordersCount, setOrdersCount] = useState(0);
   const [filterMode, setFilterMode] = useState<'all' | 'occupied' | 'free'>('all');
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [outOfStockTables, setOutOfStockTables] = useState<any[]>([]);
 
   // Helper functions for table interactions
 
@@ -193,6 +206,8 @@ export default function NuovaOrdinazionePage() {
                     setSelectedTableForGift(table.id);
                     setShowOrdinaPerAltriModal(true);
                   } else {
+                    // Always show table operations modal
+                    // It will handle out of stock orders internally
                     setSelectedTable(table);
                     setShowTableOperationsModal(true);
                   }
@@ -251,16 +266,36 @@ export default function NuovaOrdinazionePage() {
       }
       
       // Load from API only if not cached
-      const [tavoliData, prodottiData] = await Promise.all([
+      const [tavoliData, prodottiData, outOfStockData] = await Promise.all([
         getTavoli(),
-        getProdotti()
+        getProdotti(),
+        getTablesWithOutOfStockOrders()
       ]);
       
       console.log("✅ Tavoli caricati dal server:", tavoliData?.length || 0);
       
       if (Array.isArray(tavoliData) && tavoliData.length > 0) {
-        setTables(tavoliData);
+        // Merge out of stock info with tables
+        const tablesWithOutOfStock = tavoliData.map(table => {
+          const outOfStockInfo = outOfStockData?.success && outOfStockData.tables?.find(
+            (ost: any) => ost.table.id === table.id
+          );
+          
+          return {
+            ...table,
+            hasOutOfStockOrder: !!outOfStockInfo,
+            outOfStockHandledBy: outOfStockInfo?.handledBy || null,
+            outOfStockOrders: outOfStockInfo?.orders || []
+          };
+        });
+        
+        setTables(tablesWithOutOfStock);
         setProducts(prodottiData || []);
+        
+        // Store out of stock tables
+        if (outOfStockData?.success) {
+          setOutOfStockTables(outOfStockData.tables || []);
+        }
         
         // Count orders
         const activeOrders = tavoliData.filter(t => t.stato === 'OCCUPATO' && t.Ordinazione && t.Ordinazione.length > 0).length;
@@ -285,6 +320,28 @@ export default function NuovaOrdinazionePage() {
     }
   };
 
+  // Check for fireworks continuation from order submission
+  const [lastCustomerName, setLastCustomerName] = useState('');
+  
+  useEffect(() => {
+    const shouldShowFireworks = sessionStorage.getItem('showFireworks');
+    const customerName = sessionStorage.getItem('lastCustomerName') || '';
+    
+    if (shouldShowFireworks === 'true') {
+      setLastCustomerName(customerName);
+      setShowFireworks(true);
+      sessionStorage.removeItem('showFireworks');
+      sessionStorage.removeItem('lastCustomerName');
+      
+      // Hide animation after appropriate duration
+      const duration = customerName.toLowerCase() === 'giulio colaizzi' ? 3000 : 500;
+      setTimeout(() => {
+        setShowFireworks(false);
+        setLastCustomerName('');
+      }, duration);
+    }
+  }, []);
+
   // Carica tavoli dal database
   useEffect(() => {
     loadData();
@@ -304,6 +361,99 @@ export default function NuovaOrdinazionePage() {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Sottoscrivi agli eventi SSE per ordini esauriti
+  useEffect(() => {
+    if (!sseContext?.subscribe) return;
+
+    // Quando arriva un alert di ordine esaurito, aggiorna i tavoli
+    const unsubAlert = sseContext.subscribe('order:esaurito:alert', async (data) => {
+      console.log('[NuovaOrdinazione] Ricevuto alert ordine esaurito:', data);
+      
+      // Aggiorna immediatamente lo stato locale del tavolo
+      if (data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            return {
+              ...table,
+              hasOutOfStockOrder: true,
+              outOfStockHandledBy: data.takenBy || null,  // Potrebbe già essere preso in carico
+              outOfStockOrders: [data.orderId]
+            } as any;
+          }
+          return table;
+        }));
+      }
+      
+      // Ricarica i dati dopo aver aggiornato lo stato locale
+      // per avere i dati aggiornati dal server ma senza perdere lo stato immediato
+      setTimeout(() => loadData(), 1000);
+    });
+
+    // Quando qualcuno prende in carico un ordine esaurito
+    const unsubTaken = sseContext.subscribe('order:esaurito:taken', async (data) => {
+      console.log('[NuovaOrdinazione] Ordine esaurito preso in carico:', data);
+      
+      // Aggiorna lo stato del tavolo mantenendo lo stato di esaurito
+      if (data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            return {
+              ...table,
+              hasOutOfStockOrder: true,  // Mantieni lo stato di problema
+              outOfStockHandledBy: data.takenBy,  // Mostra chi lo sta gestendo
+              outOfStockOrders: [data.orderId]
+            } as any;
+          }
+          return table;
+        }));
+      }
+      
+      // NON ricaricare i dati subito per evitare di sovrascrivere lo stato locale
+      // Il reload avverrà quando l'ordine sarà risolto o rilasciato
+    });
+
+    // Quando viene rilasciato un ordine esaurito
+    const unsubReleased = sseContext.subscribe('order:esaurito:released', async (data) => {
+      console.log('[NuovaOrdinazione] Ordine esaurito rilasciato:', data);
+      
+      // Ricarica i dati
+      await loadData();
+    });
+
+    // Quando un ordine esaurito viene risolto
+    const unsubResolved = sseContext.subscribe('order:esaurito:resolved', async (data) => {
+      console.log('[NuovaOrdinazione] Ordine esaurito risolto:', data);
+      
+      // Rimuovi lo stato di esaurito dal tavolo
+      if (data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            // Controlla se ci sono altri ordini esauriti per questo tavolo
+            const remainingOrders = table.outOfStockOrders?.filter((id: string) => id !== data.originalOrderId) || [];
+            
+            return {
+              ...table,
+              hasOutOfStockOrder: remainingOrders.length > 0,
+              outOfStockHandledBy: remainingOrders.length > 0 ? table.outOfStockHandledBy : null,
+              outOfStockOrders: remainingOrders
+            } as any;
+          }
+          return table;
+        }));
+      }
+      
+      // Ricarica i dati dopo un breve delay per avere dati aggiornati
+      setTimeout(() => loadData(), 500);
+    });
+
+    return () => {
+      unsubAlert();
+      unsubTaken();
+      unsubReleased();
+      unsubResolved();
+    };
+  }, [sseContext]);
 
   const handleOrdinaPerAltri = async (orderData: any) => {
     try {
@@ -394,55 +544,9 @@ export default function NuovaOrdinazionePage() {
 
       <div className="space-y-4">
         {/* Gift Mode Info */}
-        {isGiftMode && (
-          <div className="p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-400/40 text-yellow-200 rounded-xl text-center font-medium shadow-lg backdrop-blur-sm animate-pulse">
-            🎁 Modalità Regalo Attiva - Seleziona un tavolo per il destinatario
-          </div>
-        )}
+        <GiftModeAlert isActive={isGiftMode} />
         {isLoading ? (
-          // Skeleton Loader
-          <div className="space-y-0">
-            {[1, 2, 3].map((groupIndex) => (
-              <div 
-                key={groupIndex}
-                className={`p-6 border-2 border-l-2 border-r-2 animate-pulse ${
-                  groupIndex === 0 ? 'rounded-t-2xl border-t-2' : 'border-t-0'
-                } ${
-                  groupIndex === 2 ? 'rounded-b-2xl border-b-2' : 'border-b-0'
-                }`}
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: colors.border.secondary
-                }}
-              >
-                {/* Group Header Skeleton */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-6 h-6 rounded-full" style={{ backgroundColor: colors.bg.hover }}></div>
-                  <div className="h-5 w-32 rounded" style={{ backgroundColor: colors.bg.hover }}></div>
-                  <div className="h-4 w-8 rounded" style={{ backgroundColor: colors.bg.hover }}></div>
-                </div>
-                
-                {/* Tables Grid Skeleton */}
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                  {[...Array(groupIndex === 0 ? 8 : groupIndex === 1 ? 6 : 4)].map((_, tableIndex) => (
-                    <div 
-                      key={tableIndex}
-                      className="aspect-square rounded-lg border-2 p-2"
-                      style={{
-                        backgroundColor: colors.bg.hover,
-                        borderColor: colors.border.secondary
-                      }}
-                    >
-                      <div className="flex flex-col items-center justify-center h-full gap-1">
-                        <div className="w-8 h-5 rounded" style={{ backgroundColor: colors.bg.dark }}></div>
-                        <div className="w-4 h-3 rounded" style={{ backgroundColor: colors.bg.dark }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <TableSkeletonLoader />
         ) : tables.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <div className="text-muted-foreground mb-2">Nessun tavolo trovato</div>
@@ -498,42 +602,40 @@ export default function NuovaOrdinazionePage() {
           setSelectedTable(null);
         }}
         table={selectedTable}
+        onTableUpdate={() => {
+          // Ricarica i tavoli quando viene aggiornato un ordine esaurito
+          loadData();
+        }}
       />
 
       {/* Fixed Bottom Stats Bar */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md shadow-lg"
-        style={{ 
-          backgroundColor: colors.bg.dark + 'f2',
-          borderTop: `1px solid ${colors.border.primary}`,
-          paddingBottom: 'env(safe-area-inset-bottom)'
-        }}
-      >
-        <div className="px-4 py-3">
-          <div className="flex justify-center">
-            <div className="flex items-center gap-6 text-sm">
-              {/* Occupied Tables */}
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4" style={{ color: colors.text.secondary }} />
-                <span style={{ color: colors.text.secondary }}>{occupiedTables} Occupati</span>
-              </div>
-              
-              {/* Orders Stats */}
-              <div className="flex items-center gap-2">
-                <ClipboardList className="w-4 h-4" style={{ color: colors.text.secondary }} />
-                <span style={{ color: colors.text.secondary }}>{ordersCount} Ordini</span>
-              </div>
-
-              {/* Free Tables */}
-              <div className="flex items-center gap-2">
-                <Square className="w-4 h-4" style={{ color: colors.text.secondary }} />
-                <span style={{ color: colors.text.secondary }}>{totalTables - occupiedTables} liberi</span>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatsBar 
+        occupiedTables={occupiedTables}
+        totalTables={totalTables}
+        ordersCount={ordersCount}
+      />
+      
+      {/* Fireworks or Hearts Animation based on customer */}
+      {showFireworks && (
+        lastCustomerName.toLowerCase() === 'giulio colaizzi' ? (
+          <HeartsAnimation
+            duration={1500}
+            showText={false}  // No text on transition page
+            onComplete={() => {
+              setShowFireworks(false);
+              setLastCustomerName('');
+            }}
+          />
+        ) : (
+          <FireworksAnimation
+            duration={500}
+            onComplete={() => {
+              setShowFireworks(false);
+              setLastCustomerName('');
+            }}
+          />
+        )
+      )}
     </div>
   );
 }

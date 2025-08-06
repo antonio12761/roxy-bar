@@ -15,6 +15,7 @@ export interface ConnectionHealth {
   latency: number;
   reconnectAttempts: number;
   lastEventTime?: number;
+  lastHeartbeat: Date | null;
 }
 
 export interface StationSSEConfig {
@@ -45,7 +46,8 @@ export function useStationSSE(config: StationSSEConfig) {
     status: 'disconnected',
     quality: 'poor',
     latency: 0,
-    reconnectAttempts: 0
+    reconnectAttempts: 0,
+    lastHeartbeat: null
   });
 
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, OptimisticUpdate>>(new Map());
@@ -181,7 +183,8 @@ export function useStationSSE(config: StationSSEConfig) {
         setConnectionHealth(prev => ({
           ...prev,
           latency,
-          quality: calculateConnectionQuality(latency)
+          quality: calculateConnectionQuality(latency),
+          lastHeartbeat: new Date()
         }));
         latencyCheckRef.current = null;
       }
