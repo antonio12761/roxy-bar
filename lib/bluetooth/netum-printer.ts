@@ -137,6 +137,7 @@ export class NetumPrinter {
   private service: BluetoothRemoteGATTService | null = null;
   private writeCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private isConnected = false;
+  public onLog?: (message: string) => void;
 
   constructor() {
     // Verifica supporto Web Bluetooth
@@ -163,15 +164,11 @@ export class NetumPrinter {
         throw new Error('Web Bluetooth non supportato in questo browser');
       }
 
-      console.log('🔍 Ricerca stampante Netum NT-1809...');
-      console.log('📝 UUID utilizzati:', {
-        service: PRINTER_SERVICE_UUID,
-        write: PRINTER_WRITE_UUID,
-        notify: PRINTER_NOTIFY_UUID
-      });
+      this.onLog?.('🔍 Ricerca stampante Netum NT-1809...');
+      this.onLog?.(`📝 UUID utilizzati: service=${PRINTER_SERVICE_UUID}, write=${PRINTER_WRITE_UUID}`);
       
       // Mostra TUTTI i dispositivi Bluetooth disponibili per debug
-      console.log('🔄 Mostrando TUTTI i dispositivi Bluetooth...');
+      this.onLog?.('🔄 Mostrando TUTTI i dispositivi Bluetooth...');
       this.device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [
@@ -185,22 +182,23 @@ export class NetumPrinter {
         ]
       });
 
-      console.log(`📱 Trovato dispositivo: ${this.device.name}`);
+      this.onLog?.(`📱 Trovato dispositivo: ${this.device.name}`);
 
       // Connetti al server GATT
+      this.onLog?.('🔗 Connessione al server GATT...');
       this.server = await this.device.gatt!.connect();
-      console.log('🔗 Connesso al server GATT');
+      this.onLog?.('✅ Connesso al server GATT');
 
       // Prova a elencare TUTTI i servizi disponibili
-      console.log('📋 Ricerca servizi disponibili...');
+      this.onLog?.('📋 Ricerca servizi disponibili...');
       try {
         const services = await this.server.getPrimaryServices();
-        console.log(`📦 Trovati ${services.length} servizi:`);
+        this.onLog?.(`📦 Trovati ${services.length} servizi:`);
         for (const service of services) {
-          console.log(`  - Service UUID: ${service.uuid}`);
+          this.onLog?.(`  - Service UUID: ${service.uuid}`);
         }
       } catch (err) {
-        console.warn('⚠️ Impossibile elencare servizi:', err);
+        this.onLog?.(`⚠️ Impossibile elencare servizi: ${err}`);
       }
 
       // Prova diversi UUID per il servizio
@@ -213,7 +211,7 @@ export class NetumPrinter {
 
       for (const uuid of serviceUUIDs) {
         try {
-          console.log(`🔍 Provo servizio UUID: ${uuid}`);
+          this.onLog?.(`🔍 Provo servizio UUID: ${uuid}`);
           this.service = await this.server.getPrimaryService(uuid);
           console.log(`✅ Servizio trovato con UUID: ${uuid}`);
           serviceFound = true;

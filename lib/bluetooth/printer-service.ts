@@ -45,6 +45,10 @@ export class PrinterService {
 
   constructor() {
     this.printer = netumPrinter;
+    // Collega il logging del printer al nostro sistema
+    this.printer.onLog = (message: string) => {
+      this.logDebug(message);
+    };
   }
 
   /**
@@ -84,32 +88,7 @@ export class PrinterService {
       this.logDebug('Inizio connessione stampante...');
       this.updateStatus({ error: undefined });
       
-      // Intercetta i log dalla stampante
-      const originalLog = console.log;
-      const originalWarn = console.warn;
-      const originalError = console.error;
-      
-      console.log = (...args) => {
-        originalLog(...args);
-        this.logDebug(args.join(' '));
-      };
-      
-      console.warn = (...args) => {
-        originalWarn(...args);
-        this.logDebug('⚠️ ' + args.join(' '));
-      };
-      
-      console.error = (...args) => {
-        originalError(...args);
-        this.logDebug('❌ ' + args.join(' '));
-      };
-      
       const connected = await this.printer.connect();
-      
-      // Ripristina console originale
-      console.log = originalLog;
-      console.warn = originalWarn;
-      console.error = originalError;
       
       if (connected) {
         const deviceInfo = this.printer.getDeviceInfo();

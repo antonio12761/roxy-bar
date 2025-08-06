@@ -38,6 +38,54 @@ export interface ProdottoConfigurabileFull {
 // Ottieni configurazione prodotto
 export async function getProdottoConfigurabile(prodottoId: number): Promise<ProdottoConfigurabileFull | null> {
   try {
+    // Prima controlla se è un prodotto miscelato
+    const prodotto = await db.prodotto.findUnique({
+      where: { id: prodottoId },
+      select: { isMiscelato: true, nome: true }
+    });
+
+    if (prodotto?.isMiscelato) {
+      // Per i prodotti miscelati, crea una configurazione virtuale
+      // con gli ingredienti disponibili dalla categoria MISCELATI
+      const ingredientiMiscelati = await db.prodotto.findMany({
+        where: {
+          categoria: 'MISCELATI',
+          disponibile: true,
+          terminato: false,
+          isMiscelato: false // Solo gli ingredienti, non altri prodotti miscelati
+        },
+        orderBy: { nome: 'asc' }
+      });
+
+      return {
+        id: `miscelato-${prodottoId}`,
+        prodottoId: prodottoId,
+        nome: prodotto.nome,
+        tipo: 'MISCELATO',
+        richiedeScelta: true,
+        sceltaMultipla: false,
+        gruppiIngredienti: [{
+          id: 'gruppo-miscelato',
+          nome: 'Scegli il gusto',
+          descrizione: 'Seleziona il gusto desiderato',
+          obbligatorio: true,
+          ordinamento: 0,
+          minimoSelezioni: 1,
+          massimoSelezioni: 1,
+          ingredienti: ingredientiMiscelati.map((ing, index) => ({
+            id: ing.id.toString(),
+            nome: ing.nome,
+            descrizione: undefined,
+            prezzoExtra: 0, // I miscelati non hanno sovrapprezzo
+            disponibile: ing.disponibile && !ing.terminato,
+            ordinamento: index,
+            prodottoRiferimentoId: ing.id
+          }))
+        }]
+      };
+    }
+
+    // Altrimenti cerca configurazione normale
     const prodottoConfig = await db.prodottoConfigurabile.findUnique({
       where: { prodottoId },
       include: {

@@ -46,6 +46,7 @@ interface Product {
   disponibile?: boolean;
   terminato?: boolean;
   ingredienti?: string | null;
+  isMiscelato?: boolean;
   partiallyUnavailable?: boolean;  // Indicates item has partial availability
   availableQuantity?: number;  // How many are available
   unavailableQuantity?: number;  // How many are not available

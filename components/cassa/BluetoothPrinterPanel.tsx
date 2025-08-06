@@ -86,7 +86,9 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
 
   if (!isOpen) return null;
 
-  const isSupported = (printerService.constructor as any).isBluetoothSupported();
+  // Check Bluetooth support safely
+  const isSupported = typeof window !== 'undefined' && 
+                      'bluetooth' in navigator;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
