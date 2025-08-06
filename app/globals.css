@@ -17,6 +17,33 @@
   }
 }
 
+/* PWA Android fullscreen - nasconde barre di sistema */
+@media all and (display-mode: fullscreen) {
+  html, body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  /* Nasconde elementi di sistema Android */
+  body {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* PWA Android standalone mode */
+@media all and (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 /* PWA e iPhone safe areas */
 @supports (padding: env(safe-area-inset-top)) {
   body {

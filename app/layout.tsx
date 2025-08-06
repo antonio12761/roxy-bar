@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Roxy Bar"
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "theme-color": "#000000",
+    "msapplication-navbutton-color": "#000000",
+    "apple-mobile-web-app-title": "Roxy Bar"
+  },
   formatDetection: {
     telephone: false,
     email: false,
