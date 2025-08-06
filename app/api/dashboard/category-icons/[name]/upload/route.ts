@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import db from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
@@ -57,7 +57,7 @@ export async function POST(
     const iconUrl = `/category-icons/${fileName}`
 
     // Upsert nel database
-    const result = await prisma.categoryIcon.upsert({
+    const result = await db.categoryIcon.upsert({
       where: { categoryName },
       update: {
         icon: iconUrl,

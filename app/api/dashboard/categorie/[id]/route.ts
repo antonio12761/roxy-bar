@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import db from '@/lib/db'
 
 export async function PUT(
   req: NextRequest,
@@ -10,7 +10,7 @@ export async function PUT(
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
 
-    const categoria = await prisma.categoriaMenu.update({
+    const categoria = await db.categoriaMenu.update({
       where: { id },
       data: {
         ...body,
@@ -36,7 +36,7 @@ export async function DELETE(
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
 
-    await prisma.categoriaMenu.delete({
+    await db.categoriaMenu.delete({
       where: { id }
     })
 

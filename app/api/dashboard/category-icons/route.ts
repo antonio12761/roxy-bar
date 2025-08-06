@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import db from '@/lib/db'
 
 export async function GET() {
   try {
     // Ottieni tutte le categorie dai prodotti
-    const prodotti = await prisma.prodotto.findMany({
+    const prodotti = await db.prodotto.findMany({
       where: { disponibile: true },
       select: { categoria: true },
       distinct: ['categoria']
@@ -13,7 +13,7 @@ export async function GET() {
     const categorieFromProducts = [...new Set(prodotti.map(p => p.categoria))].sort()
     
     // Ottieni le icone salvate
-    const savedIcons = await prisma.categoryIcon.findMany()
+    const savedIcons = await db.categoryIcon.findMany()
     const iconMap = new Map(savedIcons.map(icon => [icon.categoryName, icon]))
     
     // Combina le informazioni
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const { categoryName, icon, iconType, color } = body
     
     // Upsert: crea o aggiorna
-    const result = await prisma.categoryIcon.upsert({
+    const result = await db.categoryIcon.upsert({
       where: { categoryName },
       update: {
         icon,

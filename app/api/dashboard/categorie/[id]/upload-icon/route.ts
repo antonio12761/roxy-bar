@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import db from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
@@ -56,7 +56,7 @@ export async function POST(
     const iconUrl = `/category-icons/${fileName}`
 
     // Aggiorna il database con l'URL dell'icona
-    const categoria = await prisma.categoriaMenu.update({
+    const categoria = await db.categoriaMenu.update({
       where: { id },
       data: {
         emoji: iconUrl, // Salviamo l'URL nel campo emoji

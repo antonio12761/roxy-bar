@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import db from '@/lib/db'
 
 export async function GET() {
   try {
-    const categorie = await prisma.categoriaMenu.findMany({
+    const categorie = await db.categoriaMenu.findMany({
       orderBy: [
         { ordinamento: 'asc' },
         { nome: 'asc' }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { nome, nomeDisplay, emoji, coloreHex } = body
 
-    const categoria = await prisma.categoriaMenu.create({
+    const categoria = await db.categoriaMenu.create({
       data: {
         nome,
         nomeDisplay,
