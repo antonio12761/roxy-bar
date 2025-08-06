@@ -41,6 +41,7 @@ declare global {
     connect(): Promise<BluetoothRemoteGATTServer>;
     disconnect(): void;
     getPrimaryService(service: BluetoothServiceUUID): Promise<BluetoothRemoteGATTService>;
+    getPrimaryServices(service?: BluetoothServiceUUID): Promise<BluetoothRemoteGATTService[]>;
   }
   
   interface BluetoothRemoteGATTService {
@@ -163,40 +164,26 @@ export class NetumPrinter {
       }
 
       console.log('🔍 Ricerca stampante Netum NT-1809...');
+      console.log('📝 UUID utilizzati:', {
+        service: PRINTER_SERVICE_UUID,
+        write: PRINTER_WRITE_UUID,
+        notify: PRINTER_NOTIFY_UUID
+      });
       
-      try {
-        // Prima prova con filtri specifici
-        this.device = await navigator.bluetooth.requestDevice({
-          // Filtri più ampi per stampanti termiche
-          filters: [
-            { namePrefix: 'NT-' },
-            { namePrefix: 'NETUM' },
-            { namePrefix: 'Printer' },
-            { namePrefix: 'BT-' },
-            { namePrefix: 'Thermal' },
-            { namePrefix: 'POS' },
-            { namePrefix: '58' }, // Molte stampanti 58mm iniziano con "58"
-            { services: [PRINTER_SERVICE_UUID] }, // Cerca per Nordic UART Service
-          ],
-          optionalServices: [
-            PRINTER_SERVICE_UUID, // Nordic UART Service principale
-            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo generico
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // Service UUID alternativo Netum legacy
-          ]
-        });
-      } catch (filteredError) {
-        console.warn('⚠️ Filtri specifici falliti, mostro tutti i dispositivi:', filteredError);
-        
-        // Fallback: mostra tutti i dispositivi disponibili
-        this.device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [
-            PRINTER_SERVICE_UUID, // Nordic UART Service principale  
-            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo generico
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // Service UUID alternativo Netum legacy
-          ]
-        });
-      }
+      // Mostra TUTTI i dispositivi Bluetooth disponibili per debug
+      console.log('🔄 Mostrando TUTTI i dispositivi Bluetooth...');
+      this.device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          // Nordic UART Service (standard de facto)
+          '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+          // Altri UUID comuni per stampanti termiche
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+          '00001101-0000-1000-8000-00805f9b34fb', // SPP UUID
+        ]
+      });
 
       console.log(`📱 Trovato dispositivo: ${this.device.name}`);
 
@@ -204,13 +191,62 @@ export class NetumPrinter {
       this.server = await this.device.gatt!.connect();
       console.log('🔗 Connesso al server GATT');
 
-      // Ottieni servizio stampante
-      this.service = await this.server.getPrimaryService(PRINTER_SERVICE_UUID);
-      console.log('⚡ Servizio stampante ottenuto');
+      // Prova a elencare TUTTI i servizi disponibili
+      console.log('📋 Ricerca servizi disponibili...');
+      try {
+        const services = await this.server.getPrimaryServices();
+        console.log(`📦 Trovati ${services.length} servizi:`);
+        for (const service of services) {
+          console.log(`  - Service UUID: ${service.uuid}`);
+        }
+      } catch (err) {
+        console.warn('⚠️ Impossibile elencare servizi:', err);
+      }
 
-      // Ottieni caratteristica di scrittura
-      this.writeCharacteristic = await this.service.getCharacteristic(PRINTER_WRITE_UUID);
-      console.log('✍️ Caratteristica di scrittura ottenuta');
+      // Prova diversi UUID per il servizio
+      let serviceFound = false;
+      const serviceUUIDs = [
+        PRINTER_SERVICE_UUID, // Nordic UART
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Netum legacy
+        '000018f0-0000-1000-8000-00805f9b34fb', // Generico
+      ];
+
+      for (const uuid of serviceUUIDs) {
+        try {
+          console.log(`🔍 Provo servizio UUID: ${uuid}`);
+          this.service = await this.server.getPrimaryService(uuid);
+          console.log(`✅ Servizio trovato con UUID: ${uuid}`);
+          serviceFound = true;
+          
+          // Prova a ottenere caratteristica di scrittura
+          const writeUUIDs = [
+            PRINTER_WRITE_UUID, // Nordic UART RX
+            '49535343-8841-43f4-a8e7-9311c0cb7f06', // Netum legacy
+          ];
+          
+          for (const writeUuid of writeUUIDs) {
+            try {
+              console.log(`  🔍 Provo caratteristica write UUID: ${writeUuid}`);
+              this.writeCharacteristic = await this.service.getCharacteristic(writeUuid);
+              console.log(`  ✅ Caratteristica write trovata: ${writeUuid}`);
+              break;
+            } catch (err) {
+              console.log(`  ❌ Caratteristica ${writeUuid} non trovata`);
+            }
+          }
+          break;
+        } catch (err) {
+          console.log(`❌ Servizio ${uuid} non trovato`);
+        }
+      }
+
+      if (!serviceFound) {
+        throw new Error('Nessun servizio stampante compatibile trovato');
+      }
+
+      if (!this.writeCharacteristic) {
+        throw new Error('Nessuna caratteristica di scrittura trovata');
+      }
 
       // Gestisci disconnessione
       this.device.addEventListener('gattserverdisconnected', () => {
