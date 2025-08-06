@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  Shield
+  Shield,
+  Receipt
 } from 'lucide-react';
 
 const menuItems = [
@@ -31,6 +32,12 @@ const menuItems = [
     label: 'Tavoli',
     icon: LayoutGrid,
     href: '/admin/tavoli'
+  },
+  {
+    id: 'scontrino',
+    label: 'Scontrino',
+    icon: Receipt,
+    href: '/admin/scontrino'
   },
   {
     id: 'settings',

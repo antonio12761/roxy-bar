@@ -107,6 +107,8 @@ const ESC_POS = {
   
   // Codifica caratteri
   CHARSET_ITALIAN: new Uint8Array([0x1B, 0x52, 0x07]), // ESC R (Italia)
+  CHARSET_CP850: new Uint8Array([0x1B, 0x74, 0x02]), // ESC t - Codepage 850 (Europa occidentale)
+  CHARSET_CP437: new Uint8Array([0x1B, 0x74, 0x00]), // ESC t - Codepage 437 (USA)
 } as const;
 
 export interface OrderItem {
@@ -335,6 +337,46 @@ export class NetumPrinter {
   }
 
   /**
+   * Converte caratteri speciali per codifica CP437/CP850
+   */
+  private convertTextForPrinter(text: string): Uint8Array {
+    // Mappa caratteri speciali per stampanti termiche
+    const charMap: { [key: string]: number } = {
+      '€': 0xD5,  // Simbolo Euro in CP850
+      '£': 0x9C,  // Simbolo Sterlina
+      'à': 0x85,  // a con accento grave
+      'è': 0x8A,  // e con accento grave
+      'é': 0x82,  // e con accento acuto
+      'ì': 0x8D,  // i con accento grave
+      'ò': 0x95,  // o con accento grave
+      'ù': 0x97,  // u con accento grave
+      'À': 0xB7,  // A con accento grave
+      'È': 0xD4,  // E con accento grave
+      'É': 0x90,  // E con accento acuto
+      'Ì': 0xDE,  // I con accento grave
+      'Ò': 0xE3,  // O con accento grave
+      'Ù': 0xEB,  // U con accento grave
+    };
+
+    const bytes = [];
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (charMap[char]) {
+        bytes.push(charMap[char]);
+      } else {
+        const code = text.charCodeAt(i);
+        if (code < 128) {
+          bytes.push(code);
+        } else {
+          // Sostituisci caratteri non supportati con '?'
+          bytes.push(0x3F);
+        }
+      }
+    }
+    return new Uint8Array(bytes);
+  }
+
+  /**
    * Invia testo alla stampante
    */
   private async sendText(text: string): Promise<void> {
@@ -343,9 +385,8 @@ export class NetumPrinter {
     }
 
     try {
-      // Converte testo in bytes UTF-8
-      const encoder = new TextEncoder();
-      const data = encoder.encode(text);
+      // Converte testo con codifica corretta per stampante termica
+      const data = this.convertTextForPrinter(text);
       
       // Invia in chunks per evitare overflow (max 20 bytes per volta)
       const chunkSize = 20;
@@ -408,7 +449,8 @@ export class NetumPrinter {
    * Formatta prezzo per visualizzazione
    */
   private formatPrice(amount: number): string {
-    return `€${amount.toFixed(2)}`;
+    // Usa EUR invece del simbolo € per evitare problemi di codifica
+    return `EUR ${amount.toFixed(2)}`;
   }
 
   /**
@@ -438,7 +480,7 @@ export class NetumPrinter {
 
       // Inizializza stampante
       await this.sendCommand(ESC_POS.INIT);
-      await this.sendCommand(ESC_POS.CHARSET_ITALIAN);
+      await this.sendCommand(ESC_POS.CHARSET_CP850); // Usa CP850 per supporto simbolo Euro
       
       // Header - Nome bar/ristorante
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);

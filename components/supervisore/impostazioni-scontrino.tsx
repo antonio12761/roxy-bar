@@ -15,7 +15,8 @@ import {
   Share2,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  TestTube
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -194,18 +195,51 @@ export default function ImpostazioniScontrinoComponent() {
           <Settings className="h-6 w-6 text-purple-400" />
           <h2 className="text-xl font-bold">Configurazione Scontrino</h2>
         </div>
-        <button
-          onClick={saveImpostazioni}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
-        >
-          {isSaving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          Salva Impostazioni
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              try {
+                // Crea uno scontrino di test con le impostazioni attuali
+                const testData = {
+                  numero: "TEST-001",
+                  data: new Date().toISOString(),
+                  tavolo: "T1",
+                  cameriere: "Mario Rossi",
+                  nomeCliente: "Cliente Test",
+                  righe: [
+                    { quantita: 2, nome: "Caffè", prezzo: 1.20, totale: 2.40 },
+                    { quantita: 1, nome: "Cornetto", prezzo: 1.50, totale: 1.50 },
+                    { quantita: 1, nome: "Succo d'arancia", prezzo: 2.50, totale: 2.50 }
+                  ],
+                  totale: 6.40,
+                  pagamenti: [{ modalita: "CONTANTI", importo: 6.40 }]
+                };
+                
+                // Qui integreremo con il servizio di stampa quando disponibile
+                toast.info("Funzione di test stampa in sviluppo");
+                console.log("Test scontrino con impostazioni:", impostazioni);
+              } catch (error) {
+                toast.error("Errore durante il test di stampa");
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+          >
+            <TestTube className="h-4 w-4" />
+            Test Stampa
+          </button>
+          <button
+            onClick={saveImpostazioni}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Salva Impostazioni
+          </button>
+        </div>
       </div>
 
       {/* Intestazione */}
@@ -713,10 +747,10 @@ export default function ImpostazioniScontrinoComponent() {
       </div>
 
       {/* Note informative */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
+          <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5" />
+          <div className="text-sm text-blue-200">
             <p className="font-semibold mb-1">Note importanti:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Le modifiche verranno applicate agli scontrini futuri</li>
