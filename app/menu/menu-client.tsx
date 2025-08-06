@@ -739,7 +739,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       {/* Bottom Drawer - Order Summary */}
       <div className={cn(
         "fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 shadow-2xl",
-        drawerExpanded ? "h-[60vh]" : "h-20"
+        drawerExpanded ? "h-[60vh]" : order.length > 0 ? "h-32" : "h-20"
       )} style={{
         background: 'linear-gradient(to top, #ffffff, #fafafa)',
         borderTop: '1px solid #e5e7eb'
@@ -776,6 +776,30 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             </div>
           </div>
         </div>
+        
+        {/* Quick Generate Button - Always visible when there are items */}
+        {!drawerExpanded && order.length > 0 && (
+          <div className="px-4 pb-2">
+            <Button
+              onClick={generateOrderCode}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+              size="sm"
+              disabled={generatingCode}
+            >
+              {generatingCode ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generazione...
+                </>
+              ) : (
+                <>
+                  <Hash className="h-4 w-4 mr-2" />
+                  Genera Codice Ordine
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Drawer Content */}
         {drawerExpanded && (
