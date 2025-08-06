@@ -163,15 +163,40 @@ export class NetumPrinter {
 
       console.log('🔍 Ricerca stampante Netum NT-1809...');
       
-      // Richiedi dispositivo Bluetooth
-      this.device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'NT-' },
-          { namePrefix: 'NETUM' },
-          { namePrefix: 'Printer' }
-        ],
-        optionalServices: [PRINTER_SERVICE_UUID]
-      });
+      try {
+        // Prima prova con filtri specifici
+        this.device = await navigator.bluetooth.requestDevice({
+          // Filtri più ampi per stampanti termiche
+          filters: [
+            { namePrefix: 'NT-' },
+            { namePrefix: 'NETUM' },
+            { namePrefix: 'Printer' },
+            { namePrefix: 'BT-' },
+            { namePrefix: 'Thermal' },
+            { namePrefix: 'POS' },
+            { namePrefix: '58' }, // Molte stampanti 58mm iniziano con "58"
+          ],
+          optionalServices: [
+            PRINTER_SERVICE_UUID,
+            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Service UUID alternativo Netum
+            '6e400001-b5a3-f393-e0a9-e50e24dcca9e'  // Nordic UART service
+          ]
+        });
+      } catch (filteredError) {
+        console.warn('⚠️ Filtri specifici falliti, mostro tutti i dispositivi:', filteredError);
+        
+        // Fallback: mostra tutti i dispositivi disponibili
+        this.device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            PRINTER_SERVICE_UUID,
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+            '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
+          ]
+        });
+      }
 
       console.log(`📱 Trovato dispositivo: ${this.device.name}`);
 
