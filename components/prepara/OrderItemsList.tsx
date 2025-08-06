@@ -30,7 +30,13 @@ export default function OrderItemsList({
   console.log('[OrderItemsList] Component rendered with:', {
     orderStato: order.stato,
     itemsCount: items.length,
-    items: items.map(i => ({ id: i.id, stato: i.stato, prodotto: i.prodotto }))
+    items: items.map(i => ({ 
+      id: i.id, 
+      stato: i.stato, 
+      prodotto: i.prodotto,
+      note: i.note,
+      glassesCount: i.glassesCount
+    }))
   });
   
   return (
@@ -115,8 +121,8 @@ export default function OrderItemsList({
                   )}
                 </p>
                 {item.note && (
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>
-                    Note: {item.note}
+                  <p className="text-sm mt-1 italic" style={{ color: colors.text.secondary }}>
+                    📝 {item.note}
                   </p>
                 )}
               </div>

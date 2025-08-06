@@ -48,6 +48,7 @@ declare global {
     device: BluetoothDevice;
     uuid: string;
     getCharacteristic(characteristic: BluetoothCharacteristicUUID): Promise<BluetoothRemoteGATTCharacteristic>;
+    getCharacteristics(characteristic?: BluetoothCharacteristicUUID): Promise<BluetoothRemoteGATTCharacteristic[]>;
   }
   
   interface BluetoothRemoteGATTCharacteristic {
@@ -76,10 +77,10 @@ declare global {
   type BluetoothCharacteristicUUID = number | string;
 }
 
-// UUID per Nordic UART Service (NUS) - standard per stampanti termiche BLE
-const PRINTER_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"; // Nordic UART Service
-const PRINTER_WRITE_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";   // RX Characteristic (per scrivere alla stampante)
-const PRINTER_NOTIFY_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";  // TX Characteristic (per notifiche dalla stampante)
+// UUID per stampante Netum NT-1809 - usa UUID proprietari
+const PRINTER_SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455"; // Servizio principale Netum
+const PRINTER_WRITE_UUID = "49535343-8841-43f4-a8d4-ecbe34729bb3";   // Write Characteristic
+const PRINTER_NOTIFY_UUID = "49535343-1e4d-4bd9-ba61-23c647249616";  // Notify Characteristic
 
 // Comandi ESC/POS per Netum NT-1809
 const ESC_POS = {
@@ -204,37 +205,58 @@ export class NetumPrinter {
       // Prova diversi UUID per il servizio
       let serviceFound = false;
       const serviceUUIDs = [
-        PRINTER_SERVICE_UUID, // Nordic UART
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Netum legacy
+        PRINTER_SERVICE_UUID, // UUID principale Netum
         '000018f0-0000-1000-8000-00805f9b34fb', // Generico
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Altro servizio trovato
       ];
 
       for (const uuid of serviceUUIDs) {
         try {
           this.onLog?.(`🔍 Provo servizio UUID: ${uuid}`);
           this.service = await this.server.getPrimaryService(uuid);
-          console.log(`✅ Servizio trovato con UUID: ${uuid}`);
+          this.onLog?.(`✅ Servizio trovato con UUID: ${uuid}`);
           serviceFound = true;
+          
+          // Elenca tutte le caratteristiche del servizio per debug
+          try {
+            const characteristics = await this.service.getCharacteristics();
+            this.onLog?.(`  📋 Trovate ${characteristics.length} caratteristiche:`);
+            for (const char of characteristics) {
+              const props = [];
+              if (char.properties.read) props.push('read');
+              if (char.properties.write) props.push('write');
+              if (char.properties.writeWithoutResponse) props.push('writeWithoutResponse');
+              if (char.properties.notify) props.push('notify');
+              this.onLog?.(`    - ${char.uuid} [${props.join(', ')}]`);
+            }
+          } catch (err) {
+            this.onLog?.(`  ⚠️ Impossibile elencare caratteristiche: ${err}`);
+          }
           
           // Prova a ottenere caratteristica di scrittura
           const writeUUIDs = [
-            PRINTER_WRITE_UUID, // Nordic UART RX
-            '49535343-8841-43f4-a8e7-9311c0cb7f06', // Netum legacy
+            PRINTER_WRITE_UUID, // Write Characteristic Netum
+            '49535343-8841-43f4-a8d4-ecbe34729bb3', // Altro UUID write
+            '49535343-8841-43f4-a8e7-9311c0cb7f06', // Legacy write
           ];
           
           for (const writeUuid of writeUUIDs) {
             try {
-              console.log(`  🔍 Provo caratteristica write UUID: ${writeUuid}`);
+              this.onLog?.(`  🔍 Provo caratteristica write UUID: ${writeUuid}`);
               this.writeCharacteristic = await this.service.getCharacteristic(writeUuid);
-              console.log(`  ✅ Caratteristica write trovata: ${writeUuid}`);
+              this.onLog?.(`  ✅ Caratteristica write trovata: ${writeUuid}`);
               break;
             } catch (err) {
-              console.log(`  ❌ Caratteristica ${writeUuid} non trovata`);
+              this.onLog?.(`  ❌ Caratteristica ${writeUuid} non trovata`);
             }
           }
-          break;
+          
+          // Se abbiamo trovato la caratteristica di scrittura, esci
+          if (this.writeCharacteristic) {
+            break;
+          }
         } catch (err) {
-          console.log(`❌ Servizio ${uuid} non trovato`);
+          this.onLog?.(`❌ Servizio ${uuid} non trovato`);
         }
       }
 
