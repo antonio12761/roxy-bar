@@ -75,9 +75,10 @@ declare global {
   type BluetoothCharacteristicUUID = number | string;
 }
 
-// UUID standard per stampanti termiche Bluetooth
-const PRINTER_SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
-const PRINTER_WRITE_UUID = "49535343-8841-43f4-a8e7-9311c0cb7f06";
+// UUID per Nordic UART Service (NUS) - standard per stampanti termiche BLE
+const PRINTER_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"; // Nordic UART Service
+const PRINTER_WRITE_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";   // RX Characteristic (per scrivere alla stampante)
+const PRINTER_NOTIFY_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";  // TX Characteristic (per notifiche dalla stampante)
 
 // Comandi ESC/POS per Netum NT-1809
 const ESC_POS = {
@@ -175,12 +176,12 @@ export class NetumPrinter {
             { namePrefix: 'Thermal' },
             { namePrefix: 'POS' },
             { namePrefix: '58' }, // Molte stampanti 58mm iniziano con "58"
+            { services: [PRINTER_SERVICE_UUID] }, // Cerca per Nordic UART Service
           ],
           optionalServices: [
-            PRINTER_SERVICE_UUID,
-            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Service UUID alternativo Netum
-            '6e400001-b5a3-f393-e0a9-e50e24dcca9e'  // Nordic UART service
+            PRINTER_SERVICE_UUID, // Nordic UART Service principale
+            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo generico
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // Service UUID alternativo Netum legacy
           ]
         });
       } catch (filteredError) {
@@ -190,10 +191,9 @@ export class NetumPrinter {
         this.device = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: [
-            PRINTER_SERVICE_UUID,
-            '000018f0-0000-1000-8000-00805f9b34fb',
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-            '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
+            PRINTER_SERVICE_UUID, // Nordic UART Service principale  
+            '000018f0-0000-1000-8000-00805f9b34fb', // Service UUID alternativo generico
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // Service UUID alternativo Netum legacy
           ]
         });
       }
