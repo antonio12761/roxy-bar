@@ -5,7 +5,7 @@ import { Search, User, Phone, Plus, AlertCircle, Check } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { searchClientiAutocomplete, creaCliente } from "@/lib/actions/clienti";
 import { toast } from "sonner";
-import debounce from "lodash/debounce";
+import { useDebounceCallback } from "@/hooks/useDebounceCallback";
 
 interface Cliente {
   id: string;
@@ -52,35 +52,35 @@ export default function ClienteAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.length < 1) {
-        setSuggestions([]);
-        setShowCreateOption(false);
-        return;
-      }
+  // Funzione di ricerca
+  const searchFunction = useCallback(async (query: string) => {
+    if (query.length < 1) {
+      setSuggestions([]);
+      setShowCreateOption(false);
+      return;
+    }
 
-      setIsLoading(true);
-      try {
-        const result = await searchClientiAutocomplete(query);
-        if (result.success && result.clienti) {
-          setSuggestions(result.clienti);
-          // Mostra opzione crea nuovo se non ci sono risultati esatti
-          const exactMatch = result.clienti.some(c => 
-            c.nome.toLowerCase() === query.toLowerCase() ||
-            `${c.nome} ${c.cognome || ''}`.toLowerCase() === query.toLowerCase()
-          );
-          setShowCreateOption(allowCreate && !exactMatch && query.length > 2);
-        }
-      } catch (error) {
-        console.error("Errore ricerca clienti:", error);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const result = await searchClientiAutocomplete(query);
+      if (result.success && result.clienti) {
+        setSuggestions(result.clienti);
+        // Mostra opzione crea nuovo se non ci sono risultati esatti
+        const exactMatch = result.clienti.some(c => 
+          c.nome.toLowerCase() === query.toLowerCase() ||
+          `${c.nome} ${c.cognome || ''}`.toLowerCase() === query.toLowerCase()
+        );
+        setShowCreateOption(allowCreate && !exactMatch && query.length > 2);
       }
-    }, 300),
-    [allowCreate]
-  );
+    } catch (error) {
+      console.error("Errore ricerca clienti:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [allowCreate]);
+
+  // Debounced search function
+  const [debouncedSearch] = useDebounceCallback(searchFunction, { delay: 300 });
 
   useEffect(() => {
     debouncedSearch(searchQuery);
