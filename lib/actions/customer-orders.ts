@@ -48,6 +48,8 @@ function generateOrderCode(): string {
 
 export interface CustomerOrderData {
   timestamp: number
+  customerName?: string
+  customerSurname?: string
   items: {
     id: number
     nome: string

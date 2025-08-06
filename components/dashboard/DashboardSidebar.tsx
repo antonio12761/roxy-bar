@@ -22,7 +22,10 @@ import {
   ChefHat,
   Layers,
   TableProperties,
-  UserCheck
+  UserCheck,
+  Wine,
+  Beaker,
+  FileSpreadsheet
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -57,7 +60,8 @@ export default function DashboardSidebar() {
         { label: "Foglio Calcolo", href: "/dashboard/products-spreadsheet", icon: Sheet },
         { label: "Procedure Preparazione", href: "/dashboard/procedures", icon: ChefHat },
         { label: "Statistiche", href: "/dashboard/statistiche", icon: BarChart3 },
-        { label: "Menu Builder", href: "/dashboard/menu-builder", icon: Menu }
+        { label: "Menu Builder", href: "/dashboard/menu-builder", icon: Menu },
+        { label: "Import/Export Excel", href: "/dashboard/import-export", icon: FileSpreadsheet }
       ]
     },
     {
@@ -67,6 +71,16 @@ export default function DashboardSidebar() {
       subItems: [
         { label: "Gestione Utenti", href: "/dashboard/users", icon: Users },
         { label: "Gestione Ruoli", href: "/dashboard/roles", icon: Shield }
+      ]
+    },
+    {
+      id: "miscelati",
+      label: "Prodotti Miscelati",
+      icon: Wine,
+      subItems: [
+        { label: "Ingredienti", href: "/dashboard/miscelati/ingredienti", icon: Beaker },
+        { label: "Configurazione Prodotti", href: "/dashboard/miscelati/prodotti", icon: Wine },
+        { label: "Aggiungi al Menu", href: "/dashboard/miscelati/menu", icon: Menu }
       ]
     },
     {

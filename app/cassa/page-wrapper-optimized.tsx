@@ -29,6 +29,7 @@ import ScontrinoQueueManager from "@/components/cassa/scontrino-queue-manager";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ParticleEffect } from "@/components/ui/ParticleEffect";
 import { BrowserNotificationHelper } from "@/lib/utils/notification-helper";
+import { printerService } from "@/lib/bluetooth/printer-service";
 import dynamic from 'next/dynamic';
 
 // Componenti sempre visibili (non lazy)
@@ -72,6 +73,11 @@ const AddDebtModal = dynamic(
 
 const CameriereModal = dynamic(
   () => import("@/components/prepara/CameriereModal"),
+  { ssr: false }
+);
+
+const BluetoothPrinterPanel = dynamic(
+  () => import("@/components/cassa/BluetoothPrinterPanel").then(mod => ({ default: mod.BluetoothPrinterPanel })),
   { ssr: false }
 );
 
@@ -165,6 +171,8 @@ function CassaPageOptimized() {
   const [particleKey, setParticleKey] = useState(0);
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
   const [showCameriereModal, setShowCameriereModal] = useState(false);
+  const [showBluetoothPanel, setShowBluetoothPanel] = useState(false);
+  const [stampaScontrinoFlag, setStampaScontrinoFlag] = useState(true);
   
   // Validazione con Zod
   const paymentValidation = usePaymentValidation(CreatePaymentSchema);
@@ -420,7 +428,7 @@ function CassaPageOptimized() {
   }, [subscribe, isConnected, handleEvent, handleOrderDelivered, handleOrderPaid, handleOrderStatusChange, loadOrders, stopCleanup]);
 
   // Handle table payment (pay all orders in the table)
-  const handleTablePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
+  const handleTablePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO', stampaScontrino: boolean = true) => {
     if (!selectedTable || isProcessingPayment) return;
     
     setIsProcessingPayment(true);
@@ -441,8 +449,12 @@ function CassaPageOptimized() {
             return;
           }
           
-          // Generate receipt for each order
-          await generaScontrino(order.id);
+          // Generate receipt and print if requested
+          const receiptResult = await generaScontrino(order.id);
+          if (receiptResult.success && receiptResult.scontrino && stampaScontrino) {
+            // Stampa automatica via Bluetooth solo se richiesta
+            await printerService.printReceiptWithRetry(receiptResult.scontrino);
+          }
         }
       }
       
@@ -466,7 +478,7 @@ function CassaPageOptimized() {
   };
 
   // Handle payment by client (pay all orders from same client)
-  const handlePaymentByClient = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
+  const handlePaymentByClient = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO', stampaScontrino: boolean = true) => {
     if (!selectedTable || !selectedOrder || isProcessingPayment) return;
     
     setIsProcessingPayment(true);
@@ -497,8 +509,12 @@ function CassaPageOptimized() {
           
           totalePagato += order.rimanente;
           
-          // Generate receipt for each order
-          await generaScontrino(order.id);
+          // Generate receipt and print if requested
+          const receiptResult = await generaScontrino(order.id);
+          if (receiptResult.success && receiptResult.scontrino && stampaScontrino) {
+            // Stampa automatica via Bluetooth solo se richiesta
+            await printerService.printReceiptWithRetry(receiptResult.scontrino);
+          }
         }
       }
       
@@ -523,7 +539,7 @@ function CassaPageOptimized() {
   };
 
   // Process payment with optimistic updates
-  const handlePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO') => {
+  const handlePayment = async (clienteNome: string, modalita?: 'POS' | 'CONTANTI' | 'MISTO', stampaScontrino: boolean = true) => {
     if (!selectedOrder || isProcessingPayment) return;
     
     // Prevent payment if order is already paid or has no remaining balance
@@ -582,8 +598,12 @@ function CassaPageOptimized() {
         } else if (inDaPagare) {
           moveOrderBetweenStates(selectedOrder.id, 'tableGroupsDaPagare', 'tableGroupsPagate');
         }
-        // Generate receipt
-        await generaScontrino(selectedOrder.id);
+        // Generate receipt and print if requested
+        const receiptResult = await generaScontrino(selectedOrder.id);
+        if (receiptResult.success && receiptResult.scontrino && stampaScontrino) {
+          // Stampa automatica via Bluetooth solo se richiesta
+          await printerService.printReceiptWithRetry(receiptResult.scontrino);
+        }
         
         // Show success notification
         BrowserNotificationHelper.showWithSound(
@@ -757,6 +777,7 @@ function CassaPageOptimized() {
           setSelectedOrder(null);
           setShowMultiOrderPaymentModal(true);
         }}
+        onShowBluetoothPanel={() => setShowBluetoothPanel(true)}
         showHistory={showHistory}
         showScontrinoQueue={showScontrinoQueue}
           />
@@ -924,10 +945,13 @@ function CassaPageOptimized() {
         onSelectOrder={setSelectedOrder}
         onChangePaymentMethod={setPaymentMethod}
         onChangePaymentMode={setPaymentMode}
-        onPayTable={(clienteNome) => handleTablePayment(clienteNome, paymentMethod)}
-        onPayOrder={(clienteNome) => handlePayment(clienteNome, paymentMethod)}
-        onPayByClient={(clienteNome) => handlePaymentByClient(clienteNome, paymentMethod)}
-        onPayPartial={() => {
+        onPayTable={(clienteNome, stampaScontrino) => handleTablePayment(clienteNome, paymentMethod, stampaScontrino)}
+        onPayOrder={(clienteNome, stampaScontrino) => handlePayment(clienteNome, paymentMethod, stampaScontrino)}
+        onPayByClient={(clienteNome, stampaScontrino) => handlePaymentByClient(clienteNome, paymentMethod, stampaScontrino)}
+        onPayPartial={(stampaScontrino) => {
+          // Salva il flag stampa per i modal di pagamento parziale
+          setStampaScontrinoFlag(stampaScontrino ?? true);
+          
           // Se c'è un ordine selezionato, usa il modal singolo
           // Altrimenti usa il modal multi-ordine per il tavolo
           if (selectedOrder) {
@@ -1012,7 +1036,7 @@ function CassaPageOptimized() {
           return allOrders;
         })()}
         onClose={() => setShowMultiOrderPaymentModal(false)}
-        onConfirmPayment={async (payments, clienteNome, modalita) => {
+        onConfirmPayment={async (payments, clienteNome, modalita, stampaScontrino = true) => {
           // Validazione multi-ordine
           const multiOrderData = {
             payments,
@@ -1052,9 +1076,13 @@ function CassaPageOptimized() {
                 return;
               }
               
-              // Generate receipt if fully paid
+              // Generate receipt and print if fully paid and requested
               if (result.success && 'data' in result && result.data.statoPagamento === 'COMPLETAMENTE_PAGATO') {
-                await generaScontrino(payment.orderId);
+                const receiptResult = await generaScontrino(payment.orderId);
+                if (receiptResult.success && receiptResult.scontrino && stampaScontrino) {
+                  // Stampa automatica via Bluetooth solo se richiesta
+                  await printerService.printReceiptWithRetry(receiptResult.scontrino);
+                }
               }
             }
             
@@ -1086,7 +1114,7 @@ function CassaPageOptimized() {
         isOpen={showPartialPaymentModal}
         order={selectedOrder}
         onClose={() => setShowPartialPaymentModal(false)}
-        onConfirmPayment={async (selectedItems, clienteNome, modalita) => {
+        onConfirmPayment={async (selectedItems, clienteNome, modalita, stampaScontrino = true) => {
           if (!selectedOrder) return;
           
           setIsProcessingPayment(true);
@@ -1144,8 +1172,12 @@ function CassaPageOptimized() {
                   moveOrderBetweenStates(selectedOrder.id, 'tableGroupsDaPagare', 'tableGroupsPagate');
                 }
                 
-                // Generate receipt
-                await generaScontrino(selectedOrder.id);
+                // Generate receipt and print if requested
+                const receiptResult = await generaScontrino(selectedOrder.id);
+                if (receiptResult.success && receiptResult.scontrino && stampaScontrino) {
+                  // Stampa automatica via Bluetooth solo se richiesta
+                  await printerService.printReceiptWithRetry(receiptResult.scontrino);
+                }
                 setSelectedOrder(null);
                 setShowPartialPaymentModal(false);
               }
@@ -1186,6 +1218,14 @@ function CassaPageOptimized() {
           <CameriereModal 
         isOpen={showCameriereModal}
         onClose={() => setShowCameriereModal(false)}
+          />
+        </CassaErrorBoundary>
+
+        {/* Bluetooth Printer Panel */}
+        <CassaErrorBoundary level="component" isolate>
+          <BluetoothPrinterPanel 
+            isOpen={showBluetoothPanel}
+            onClose={() => setShowBluetoothPanel(false)}
           />
         </CassaErrorBoundary>
 

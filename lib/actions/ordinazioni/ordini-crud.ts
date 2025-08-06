@@ -13,6 +13,7 @@ import { nanoid } from "nanoid";
 import type { NuovaOrdinazione, ProdottoOrdine } from "./types";
 import { updateInventoryAfterOrder, restoreInventoryAfterCancellation } from "@/lib/actions/inventory-management";
 import { verificaERiservaQuantita, rilasciaQuantitaRiservate } from "@/lib/actions/inventario-esaurito";
+import { saveConfigurazioneRigaOrdine } from "@/lib/actions/prodotti-configurabili";
 
 export async function getOrdinazioniAttiveTavolo(tavoloId: number) {
   try {
@@ -341,11 +342,14 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
           RigaOrdinazione: {
             create: dati.prodotti.map(p => {
               const prodottoInfo = prodottiInfo.find(pi => pi.id === p.prodottoId);
+              const rigaId = nanoid();
+              // Usa il prezzo finale se è stato calcolato con le varianti, altrimenti usa il prezzo base
+              const prezzoRiga = p.prezzoFinale || p.prezzo;
               return {
-                id: nanoid(),
+                id: rigaId,
                 prodottoId: p.prodottoId,
                 quantita: p.quantita,
-                prezzo: p.prezzo,
+                prezzo: prezzoRiga,
                 note: p.note,
                 glassesCount: p.glassesCount,
                 stato: "INSERITO",
@@ -364,6 +368,22 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
           }
         }
       });
+
+      // Salva le configurazioni per i prodotti configurabili dopo la creazione dell'ordine
+      for (const prodotto of dati.prodotti) {
+        if (prodotto.configurazione && prodotto.prezzoFinale) {
+          const rigaOrdinazione = ordinazione.RigaOrdinazione.find(
+            r => r.prodottoId === prodotto.prodottoId
+          );
+          if (rigaOrdinazione) {
+            await saveConfigurazioneRigaOrdine(
+              rigaOrdinazione.id,
+              prodotto.configurazione,
+              prodotto.prezzoFinale
+            );
+          }
+        }
+      }
 
       return { success: true, ordinazione: serializeDecimalData(ordinazione) };
     }, {

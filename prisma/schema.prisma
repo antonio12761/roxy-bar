@@ -760,6 +760,8 @@ model Prodotto {
   ProdottiEsauriti        ProdottoEsaurito[]
   InventarioEsaurito      InventarioEsaurito?
   MenuItems               MenuItem[]
+  ProdottoConfigurabile   ProdottoConfigurabile?
+  IngredientiRiferimento  Ingrediente[] @relation("IngredienteToProdotto")
 
   @@index([categoriaMenuId])
   @@index([categoria])
@@ -972,6 +974,7 @@ model RigaOrdinazione {
   Product                                                Product?              @relation(fields: [newProductId], references: [id])
   Ordinazione                                            Ordinazione           @relation(fields: [ordinazioneId], references: [id], onDelete: Cascade)
   Prodotto                                               Prodotto              @relation(fields: [prodottoId], references: [id])
+  ConfigurazioneRigaOrdine                               ConfigurazioneRigaOrdine?
 
   @@index([clienteBeneficiarioId])
   @@index([clienteOrdinanteId])
@@ -2047,4 +2050,86 @@ enum NotificationStatus {
   ACKNOWLEDGED
   FAILED
   EXPIRED
+}
+
+// ============================================
+// SISTEMA PRODOTTI CONFIGURABILI
+// ============================================
+
+// Tabella per i prodotti configurabili (cocktails, etc.)
+model ProdottoConfigurabile {
+  id                String   @id @default(cuid())
+  prodottoId        Int      @unique
+  nome              String
+  tipo              TipoProdottoConfigurabile @default(COCKTAIL)
+  richiedeScelta    Boolean  @default(true)
+  sceltaMultipla    Boolean  @default(false) // Se può scegliere più ingredienti
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  Prodotto          Prodotto @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+  GruppiIngredienti GruppoIngredienti[]
+  
+  @@index([prodottoId])
+  @@index([tipo])
+}
+
+// Gruppi di ingredienti (es. "Gin", "Tonica", "Vodka", etc.)
+model GruppoIngredienti {
+  id                      String   @id @default(cuid())
+  prodottoConfigurableId  String
+  nome                    String   // es. "Scelta Gin", "Scelta Tonica"
+  descrizione             String?
+  obbligatorio            Boolean  @default(true)
+  ordinamento             Int      @default(0)
+  minimoSelezioni         Int      @default(1)
+  massimoSelezioni        Int      @default(1)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  ProdottoConfigurabile   ProdottoConfigurabile @relation(fields: [prodottoConfigurableId], references: [id], onDelete: Cascade)
+  Ingredienti             Ingrediente[]
+  
+  @@index([prodottoConfigurableId, ordinamento])
+}
+
+// Singoli ingredienti selezionabili
+model Ingrediente {
+  id                  String   @id @default(cuid())
+  gruppoIngredientiId String
+  nome                String   // es. "Bombay Sapphire", "Hendrick's"
+  descrizione         String?
+  prezzoExtra         Decimal  @default(0) @db.Decimal(10, 2) // Sovrapprezzo rispetto al base
+  disponibile         Boolean  @default(true)
+  ordinamento         Int      @default(0)
+  prodottoRiferimentoId Int?   // Riferimento al prodotto originale se esiste
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  GruppoIngredienti   GruppoIngredienti @relation(fields: [gruppoIngredientiId], references: [id], onDelete: Cascade)
+  Prodotto            Prodotto? @relation("IngredienteToProdotto", fields: [prodottoRiferimentoId], references: [id], onDelete: SetNull)
+  
+  @@index([gruppoIngredientiId, ordinamento])
+  @@index([prodottoRiferimentoId])
+  @@index([disponibile])
+}
+
+// Configurazioni salvate per le righe ordine
+model ConfigurazioneRigaOrdine {
+  id                String   @id @default(cuid())
+  rigaOrdinazioneId String   @unique
+  configurazione    Json     // Salvare la configurazione completa
+  prezzoFinale      Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+  
+  RigaOrdinazione   RigaOrdinazione @relation(fields: [rigaOrdinazioneId], references: [id], onDelete: Cascade)
+  
+  @@index([rigaOrdinazioneId])
+}
+
+enum TipoProdottoConfigurabile {
+  COCKTAIL
+  BEVANDA
+  PANINO
+  ALTRO
 }

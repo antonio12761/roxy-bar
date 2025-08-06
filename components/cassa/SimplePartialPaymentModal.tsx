@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Euro, Check, CreditCard, Banknote, Coins, Plus, Minus, User, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Euro, Check, CreditCard, Banknote, Coins, Plus, Minus, User, Maximize2, Minimize2, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { searchClienti, getRecentClienti } from '@/lib/actions/clienti-autocomplete';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 interface OrderItem {
   id: string;
@@ -34,7 +35,7 @@ interface SimplePartialPaymentModalProps {
   isOpen: boolean;
   order: Order | null;
   onClose: () => void;
-  onConfirmPayment: (selectedItems: SelectedItem[], clienteNome: string, modalita: 'POS' | 'CONTANTI' | 'MISTO') => Promise<void>;
+  onConfirmPayment: (selectedItems: SelectedItem[], clienteNome: string, modalita: 'POS' | 'CONTANTI' | 'MISTO', stampaScontrino?: boolean) => Promise<void>;
 }
 
 export function SimplePartialPaymentModal({
@@ -45,6 +46,7 @@ export function SimplePartialPaymentModal({
 }: SimplePartialPaymentModalProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  const { settings: printerSettings, updateSettings: updatePrinterSettings } = usePrinterSettings();
   
   const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
   const [clienteNome, setClienteNome] = useState('');
@@ -54,6 +56,7 @@ export function SimplePartialPaymentModal({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentClienti, setRecentClienti] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [stampaScontrino, setStampaScontrino] = useState(true);
 
   useEffect(() => {
     if (isOpen && order) {
@@ -61,13 +64,20 @@ export function SimplePartialPaymentModal({
       setSelectedItems(new Map());
       setClienteNome('');
       setModalitaPagamento('POS');
+      
+      // Inizializza checkbox stampa con impostazioni utente
+      if (printerSettings.autoprint) {
+        setStampaScontrino(true);
+      } else {
+        setStampaScontrino(printerSettings.defaultEnabled);
+      }
       setSuggestions([]);
       setShowSuggestions(false);
       
       // Carica clienti recenti
       getRecentClienti().then(setRecentClienti);
     }
-  }, [isOpen, order]);
+  }, [isOpen, order, printerSettings]);
 
   // Gestione ricerca clienti con debounce
   const handleClienteSearch = useCallback(async (value: string) => {
@@ -244,7 +254,7 @@ export function SimplePartialPaymentModal({
         }
       });
       
-      await onConfirmPayment(itemsToPayForUnique, clienteNome, modalitaPagamento);
+      await onConfirmPayment(itemsToPayForUnique, clienteNome, modalitaPagamento, stampaScontrino);
       // Chiudi il modal dopo il pagamento
       onClose();
     } catch (error) {
@@ -735,6 +745,53 @@ export function SimplePartialPaymentModal({
                 </button>
               </div>
             </div>
+
+            {/* Opzione Stampa Scontrino */}
+            {printerSettings.showConfirmDialog && !printerSettings.autoprint && (
+              <div className="mt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={stampaScontrino}
+                    onChange={(e) => {
+                      setStampaScontrino(e.target.checked);
+                      // Salva la preferenza dell'utente
+                      updatePrinterSettings({ defaultEnabled: e.target.checked });
+                    }}
+                    className="w-4 h-4 rounded border-2 transition-colors"
+                    style={{
+                      accentColor: colors.button.primary,
+                      borderColor: colors.border.primary
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Printer className="h-4 w-4" style={{ color: colors.text.secondary }} />
+                    <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                      Stampa scontrino automaticamente
+                    </span>
+                  </div>
+                </label>
+                <p className="text-xs mt-1 ml-7" style={{ color: colors.text.muted }}>
+                  Stampa su Netum NT-1809 via Bluetooth
+                </p>
+              </div>
+            )}
+            
+            {/* Messaggio autoprint attivo */}
+            {printerSettings.autoprint && (
+              <div 
+                className="mt-4 p-3 rounded-lg border flex items-center gap-2"
+                style={{ 
+                  backgroundColor: (colors.status?.success || '#10b981') + '10',
+                  borderColor: (colors.status?.success || '#10b981') + '30'
+                }}
+              >
+                <Printer className="h-4 w-4" style={{ color: colors.status?.success || '#10b981' }} />
+                <span className="text-sm" style={{ color: colors.status?.success || '#10b981' }}>
+                  Stampa automatica sempre attiva
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

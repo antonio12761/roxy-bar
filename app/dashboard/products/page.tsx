@@ -794,6 +794,57 @@ export default function ProductsPage() {
             </button>
           </div>
         )}
+
+        {/* Modals */}
+        {showProductModal && (
+          <ProductModal
+            isOpen={showProductModal}
+            onClose={() => {
+              setShowProductModal(false);
+              setEditingProduct(null);
+            }}
+            product={editingProduct}
+            categories={categories}
+            onSuccess={loadData}
+          />
+        )}
+
+        {showCategoryModal && (
+          <CategoryModal
+            isOpen={showCategoryModal}
+            onClose={() => setShowCategoryModal(false)}
+            onSuccess={loadData}
+          />
+        )}
+
+        {showSubcategoryModal && (
+          <SubcategoryModal
+            isOpen={showSubcategoryModal}
+            onClose={() => setShowSubcategoryModal(false)}
+            categories={categories}
+            onSuccess={loadData}
+          />
+        )}
+
+        {showImportModal && (
+          <ImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onSuccess={loadData}
+          />
+        )}
+
+        {showProcedureModal && procedureProduct && (
+          <ProcedureModal
+            isOpen={showProcedureModal}
+            onClose={() => {
+              setShowProcedureModal(false);
+              setProcedureProduct(null);
+            }}
+            product={procedureProduct}
+          />
+        )}
+
       </div>
     </AuthGuard>
   );

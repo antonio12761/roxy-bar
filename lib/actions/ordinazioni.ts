@@ -33,6 +33,8 @@ interface ProdottoOrdine {
   prezzo: number;
   note?: string;
   glassesCount?: number;
+  configurazione?: any; // Configurazione per prodotti configurabili
+  prezzoFinale?: number; // Prezzo finale con varianti
 }
 
 interface NuovaOrdinazione {

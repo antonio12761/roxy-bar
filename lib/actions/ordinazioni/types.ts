@@ -4,6 +4,8 @@ export interface ProdottoOrdine {
   prezzo: number;
   note?: string;
   glassesCount?: number;
+  prezzoFinale?: number;
+  configurazione?: any;
 }
 
 export interface NuovaOrdinazione {

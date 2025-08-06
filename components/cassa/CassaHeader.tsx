@@ -6,7 +6,8 @@ import {
   Users,
   RefreshCw,
   Receipt,
-  Layers
+  Layers,
+  Bluetooth
 } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
@@ -23,6 +24,7 @@ interface CassaHeaderProps {
   onShowHistory: () => void;
   onShowScontrinoQueue: () => void;
   onShowMultiPayment?: () => void;
+  onShowBluetoothPanel?: () => void;
   showHistory: boolean;
   showScontrinoQueue: boolean;
 }
@@ -33,6 +35,7 @@ export default function CassaHeader({
   onShowHistory, 
   onShowScontrinoQueue,
   onShowMultiPayment,
+  onShowBluetoothPanel,
   showHistory,
   showScontrinoQueue
 }: CassaHeaderProps) {
@@ -105,6 +108,22 @@ export default function CassaHeader({
           >
             <Layers className="h-4 w-4" />
             Pagamento Multi-Tavolo
+          </button>
+        )}
+
+        {onShowBluetoothPanel && (
+          <button
+            onClick={onShowBluetoothPanel}
+            className="px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+            style={{ 
+              backgroundColor: colors.button?.secondary || '#f3f4f6',
+              color: colors.button?.secondaryText || '#374151'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button?.secondaryHover || colors.button?.secondary || '#e5e7eb'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button?.secondary || '#f3f4f6'}
+          >
+            <Bluetooth className="h-4 w-4" />
+            Stampante
           </button>
         )}
         

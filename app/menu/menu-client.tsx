@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Search, Plus, Minus, ShoppingCart, X, Hash, Clock, Check, ChevronUp, ChevronDown, Loader2, Copy, Edit2, Wine, NotebookPen } from 'lucide-react'
+import { Search, Plus, Minus, ShoppingCart, X, Hash, Clock, Check, ChevronUp, ChevronDown, Loader2, Copy, Edit2, Wine, NotebookPen, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -74,6 +74,13 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   const [drawerExpanded, setDrawerExpanded] = useState(false)
   const [showOrderCodeModal, setShowOrderCodeModal] = useState(false)
   const [generatedOrderCode, setGeneratedOrderCode] = useState<string | null>(null)
+  const [hasCompletedOrder, setHasCompletedOrder] = useState(false)
+  const [completedOrderData, setCompletedOrderData] = useState<OrderItem[]>([])
+  const [completedOrderTotal, setCompletedOrderTotal] = useState(0)
+  const [orderModified, setOrderModified] = useState(false)
+  const [orderExpiryTimer, setOrderExpiryTimer] = useState<NodeJS.Timeout | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [codeUsedByWaiter, setCodeUsedByWaiter] = useState(false)
   const [generatingCode, setGeneratingCode] = useState(false)
   const [selectedQuantities, setSelectedQuantities] = useState<{[key: number]: number}>({})
   const [showNotesModal, setShowNotesModal] = useState(false)
@@ -86,6 +93,9 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   const [addedProductName, setAddedProductName] = useState('')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null)
+  const [showCustomerNameModal, setShowCustomerNameModal] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [customerSurname, setCustomerSurname] = useState('')
   const [categoryEmojis, setCategoryEmojis] = useState<{[key: string]: {emoji: string | null, color: string | null, iconType?: string}}>({})
   
   // Load category emojis on mount
@@ -153,6 +163,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
     
     const searchTerm = query.toLowerCase().trim()
     const results = products
+      .filter((p: Product) => p.disponibile !== false && !p.terminato) // Only show available products
       .map((p: Product) => {
         const productName = p.nome.toLowerCase()
         let score = 0
@@ -240,12 +251,24 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
     }, 0)
   }, [order])
 
-  // Generate Order Code
+  // Start order code generation (show customer name modal first)
+  const startOrderCodeGeneration = useCallback(() => {
+    setShowCustomerNameModal(true)
+  }, [])
+
+  // Generate Order Code (after customer name is provided)
   const generateOrderCode = useCallback(async () => {
+    if (!customerName.trim() || !customerSurname.trim()) {
+      toast.error('Nome e cognome sono obbligatori')
+      return
+    }
+
     setGeneratingCode(true)
     try {
       const orderData = {
         timestamp: Date.now(),
+        customerName: customerName.trim(),
+        customerSurname: customerSurname.trim(),
         items: order.map(item => ({
           id: item.prodotto.id,
           nome: item.prodotto.nome,
@@ -262,6 +285,11 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       
       if (result.success && result.orderCode) {
         setGeneratedOrderCode(result.orderCode)
+        setCompletedOrderData([...order])
+        setCompletedOrderTotal(getTotalOrder())
+        setHasCompletedOrder(true)
+        setOrderModified(false)
+        setShowCustomerNameModal(false)
         setShowOrderCodeModal(true)
         toast.success('Codice ordine generato con successo!')
       } else {
@@ -273,7 +301,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
     } finally {
       setGeneratingCode(false)
     }
-  }, [order, getTotalOrder])
+  }, [order, getTotalOrder, customerName, customerSurname])
   
   // Copy code to clipboard
   const copyCodeToClipboard = useCallback(() => {
@@ -282,6 +310,182 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       toast.success('Codice copiato negli appunti!')
     }
   }, [generatedOrderCode])
+  
+  // Reopen order modal
+  const reopenOrderModal = useCallback(() => {
+    if (generatedOrderCode && hasCompletedOrder) {
+      setShowOrderCodeModal(true)
+    }
+  }, [generatedOrderCode, hasCompletedOrder])
+  
+  // Update completed order quantity
+  const updateCompletedOrderQuantity = useCallback((productId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      // Remove item from completed order
+      setCompletedOrderData(prev => prev.filter(item => item.prodotto.id !== productId))
+    } else {
+      // Update quantity
+      setCompletedOrderData(prev => prev.map(item =>
+        item.prodotto.id === productId
+          ? { ...item, quantita: newQuantity }
+          : item
+      ))
+    }
+    // Recalculate total
+    const newTotal = completedOrderData.reduce((total, item) => {
+      if (item.prodotto.id === productId) {
+        if (newQuantity <= 0) return total // Item will be removed
+        const price = typeof item.prodotto.prezzo === 'string' 
+          ? parseFloat(item.prodotto.prezzo) 
+          : item.prodotto.prezzo
+        return total + (price * newQuantity)
+      }
+      const price = typeof item.prodotto.prezzo === 'string' 
+        ? parseFloat(item.prodotto.prezzo) 
+        : item.prodotto.prezzo
+      return total + (price * item.quantita)
+    }, 0)
+    setCompletedOrderTotal(newTotal)
+    setOrderModified(true)
+  }, [completedOrderData])
+  
+  // Remove item from completed order
+  const removeFromCompletedOrder = useCallback((productId: number) => {
+    setCompletedOrderData(prev => prev.filter(item => item.prodotto.id !== productId))
+    // Recalculate total
+    const newTotal = completedOrderData.reduce((total, item) => {
+      if (item.prodotto.id === productId) return total // Item will be removed
+      const price = typeof item.prodotto.prezzo === 'string' 
+        ? parseFloat(item.prodotto.prezzo) 
+        : item.prodotto.prezzo
+      return total + (price * item.quantita)
+    }, 0)
+    setCompletedOrderTotal(newTotal)
+    setOrderModified(true)
+  }, [completedOrderData])
+  
+  // Regenerate order code for modified order
+  const regenerateOrderCode = useCallback(async () => {
+    setGeneratingCode(true)
+    try {
+      const orderData = {
+        timestamp: Date.now(),
+        items: completedOrderData.map(item => ({
+          id: item.prodotto.id,
+          nome: item.prodotto.nome,
+          quantita: item.quantita,
+          prezzo: item.prodotto.prezzo,
+          note: item.note,
+          glassesCount: item.glassesCount
+        })),
+        totale: completedOrderTotal
+      }
+      
+      const result = await createCustomerOrder(orderData)
+      
+      if (result.success && result.orderCode) {
+        setGeneratedOrderCode(result.orderCode)
+        setOrderModified(false)
+        toast.success('Nuovo codice ordine generato!')
+      } else {
+        toast.error(result.error || 'Errore nella generazione del codice')
+      }
+    } catch (error) {
+      console.error('Error regenerating order code:', error)
+      toast.error('Errore nella generazione del nuovo codice')
+    } finally {
+      setGeneratingCode(false)
+    }
+  }, [completedOrderData, completedOrderTotal])
+  
+  // Clear completed order data
+  const clearCompletedOrder = useCallback(() => {
+    setHasCompletedOrder(false)
+    setCompletedOrderData([])
+    setCompletedOrderTotal(0)
+    setGeneratedOrderCode(null)
+    setOrderModified(false)
+    setTimeRemaining(null)
+    setCodeUsedByWaiter(false)
+    setCustomerName('')
+    setCustomerSurname('')
+    if (orderExpiryTimer) {
+      clearTimeout(orderExpiryTimer)
+      setOrderExpiryTimer(null)
+    }
+    toast.info('Ordine processato dal cameriere e rimosso')
+  }, [orderExpiryTimer])
+  
+  // Start cleanup timer after waiter uses code (1 minute = 60000 ms)
+  const startCleanupTimer = useCallback(() => {
+    // Clear any existing timer
+    if (orderExpiryTimer) {
+      clearTimeout(orderExpiryTimer)
+    }
+    
+    // Set initial time remaining (1 minute = 60 seconds)
+    setTimeRemaining(60)
+    setCodeUsedByWaiter(true)
+    
+    // Update countdown every second
+    const countdownInterval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(countdownInterval)
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    // Set main cleanup timer (1 minute)
+    const timer = setTimeout(() => {
+      clearInterval(countdownInterval)
+      clearCompletedOrder()
+    }, 60000) // 1 minute
+    
+    setOrderExpiryTimer(timer)
+    
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(countdownInterval)
+      if (timer) clearTimeout(timer)
+    }
+  }, [orderExpiryTimer, clearCompletedOrder])
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (orderExpiryTimer) {
+        clearTimeout(orderExpiryTimer)
+      }
+    }
+  }, [orderExpiryTimer])
+  
+  // Check if order code was used by waiter (polling every 5 seconds)
+  useEffect(() => {
+    if (!generatedOrderCode || codeUsedByWaiter) return
+    
+    const checkCodeStatus = async () => {
+      try {
+        // TODO: Replace with actual API call to check if code was used
+        const response = await fetch(`/api/orders/check-code-status/${generatedOrderCode}`)
+        const data = await response.json()
+        
+        if (data.used) {
+          startCleanupTimer()
+          toast.success('Ordine ricevuto dal cameriere!')
+        }
+      } catch (error) {
+        // Silently fail - code checking is not critical
+        console.log('Code status check failed:', error)
+      }
+    }
+    
+    const pollInterval = setInterval(checkCodeStatus, 5000) // Check every 5 seconds
+    
+    return () => clearInterval(pollInterval)
+  }, [generatedOrderCode, codeUsedByWaiter, startCleanupTimer])
   
   // Handle product add with options
   const handleProductAdd = useCallback((product: Product, quantity: number) => {
@@ -410,7 +614,8 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   const categoriesData = useMemo(() => {
     const categoryMap = new Map<string, Set<string>>()
     
-    products.forEach(product => {
+    // Only include available products
+    products.filter(p => p.disponibile !== false && !p.terminato).forEach(product => {
       const parts = product.categoria.split('>')
       if (parts.length === 2) {
         // Has subcategory
@@ -442,8 +647,10 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   
   // Get products for current selection
   const getFilteredProducts = () => {
+    const baseFilter = (p: Product) => p.disponibile !== false && !p.terminato // Only available products
+    
     if (selectedSubcategory && selectedCategory) {
-      return products.filter(p => p.categoria === `${selectedCategory}>${selectedSubcategory}`)
+      return products.filter(p => p.categoria === `${selectedCategory}>${selectedSubcategory}` && baseFilter(p))
     } else if (selectedCategory) {
       // Check if category has subcategories
       const subcats = getSubcategories(selectedCategory)
@@ -452,7 +659,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
         return []
       }
       // Show products for category without subcategories
-      return products.filter(p => p.categoria === selectedCategory)
+      return products.filter(p => p.categoria === selectedCategory && baseFilter(p))
     }
     return []
   }
@@ -469,6 +676,27 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             <h1 className="text-xl font-bold" style={{ color: colors.primary }}>
               Menu Bar Roxy
             </h1>
+            
+            {/* Order History Icon */}
+            {hasCompletedOrder && generatedOrderCode && (
+              <button
+                onClick={reopenOrderModal}
+                className="relative p-2 rounded-lg transition-colors hover:bg-orange-50 flex items-center gap-2"
+                title="Visualizza ultimo ordine"
+              >
+                <Receipt className="h-6 w-6" style={{ color: colors.primary }} />
+                {timeRemaining !== null && codeUsedByWaiter && (
+                  <span className="text-xs font-bold px-2 py-1 bg-red-100 text-red-600 rounded-full">
+                    {timeRemaining}s
+                  </span>
+                )}
+                <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center ${
+                  codeUsedByWaiter ? 'bg-green-500' : 'bg-orange-500'
+                }`}>
+                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -539,7 +767,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                     className="bg-gradient-to-r from-orange-500 to-orange-600 text-white"
                     onClick={() => handleProductAdd(product, selectedQuantities[product.id] || 1)}
                   >
-                    <Plus className="h-4 w-4" />
+                    Aggiungi
                   </Button>
                 </div>
               </div>
@@ -576,8 +804,11 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {getSubcategories(selectedCategory).map((subcategory) => {
                 const productCount = products.filter(p => 
-                  p.categoria === `${selectedCategory}>${subcategory}`
+                  p.categoria === `${selectedCategory}>${subcategory}` && p.disponibile !== false && !p.terminato
                 ).length
+                
+                // Don't show subcategory if no available products
+                if (productCount === 0) return null
                 
                 return (
                   <button
@@ -612,8 +843,11 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                 
                 const subcats = getSubcategories(category)
                 const productCount = products.filter(p => 
-                  p.categoria === category || p.categoria.startsWith(`${category}>`)
+                  (p.categoria === category || p.categoria.startsWith(`${category}>`)) && p.disponibile !== false && !p.terminato
                 ).length
+                
+                // Don't show category if no available products
+                if (productCount === 0) return null
                 
                 return (
                   <button
@@ -726,7 +960,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                         className="bg-gradient-to-r from-orange-500 to-orange-600 text-white"
                         onClick={() => handleProductAdd(product, selectedQuantities[product.id] || 1)}
                       >
-                        <Plus className="h-4 w-4" />
+                        Aggiungi
                       </Button>
                     </div>
                   </div>
@@ -781,7 +1015,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
         {!drawerExpanded && order.length > 0 && (
           <div className="px-4 pb-2">
             <Button
-              onClick={generateOrderCode}
+              onClick={startOrderCodeGeneration}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white"
               size="sm"
               disabled={generatingCode}
@@ -797,6 +1031,20 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                   Genera Codice Ordine
                 </>
               )}
+            </Button>
+          </div>
+        )}
+
+        {/* Show Completed Order Button */}
+        {!drawerExpanded && order.length === 0 && hasCompletedOrder && generatedOrderCode && (
+          <div className="px-4 pb-2">
+            <Button
+              onClick={reopenOrderModal}
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white"
+              size="sm"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Mostra Ultimo Ordine
             </Button>
           </div>
         )}
@@ -829,7 +1077,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                           €{typeof item.prodotto.prezzo === 'string' ? item.prodotto.prezzo : item.prodotto.prezzo.toFixed(2)} x {item.quantita}
                         </div>
                         {item.note && (
-                          <div className="text-xs text-gray-600 mt-1 italic">
+                          <div className="text-xs text-gray-800 mt-1 italic">
                             📝 {item.note}
                           </div>
                         )}
@@ -847,7 +1095,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                               e.stopPropagation()
                               updateOrderQuantity(item.prodotto.id, item.quantita - 1)
                             }}
-                            className="p-1 rounded bg-white hover:bg-gray-100 transition-colors border border-gray-300"
+                            className="p-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors text-white"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
@@ -859,7 +1107,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                               e.stopPropagation()
                               updateOrderQuantity(item.prodotto.id, item.quantita + 1)
                             }}
-                            className="p-1 rounded bg-white hover:bg-gray-100 transition-colors border border-gray-300"
+                            className="p-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors text-white"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
@@ -885,7 +1133,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             {order.length > 0 && (
               <div className="p-4 border-t" style={{ borderColor: colors.border.primary }}>
                 <Button
-                  onClick={generateOrderCode}
+                  onClick={startOrderCodeGeneration}
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white"
                   size="lg"
                   disabled={generatingCode}
@@ -901,6 +1149,20 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                       Genera Codice Ordine
                     </>
                   )}
+                </Button>
+              </div>
+            )}
+            
+            {/* Show Completed Order Button in expanded drawer */}
+            {order.length === 0 && hasCompletedOrder && generatedOrderCode && (
+              <div className="p-4 border-t" style={{ borderColor: colors.border.primary }}>
+                <Button
+                  onClick={reopenOrderModal}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white"
+                  size="lg"
+                >
+                  <Clock className="h-5 w-5 mr-2" />
+                  Mostra Ultimo Ordine ({generatedOrderCode.slice(0, 3)}-{generatedOrderCode.slice(3)})
                 </Button>
               </div>
             )}
@@ -922,7 +1184,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       {showGlassesModal && pendingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4 text-center">
+            <h2 className="text-xl font-bold mb-4 text-center text-black">
               Numero di Bicchieri
             </h2>
             
@@ -934,18 +1196,18 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             <div className="flex items-center justify-center gap-4 mb-6">
               <button
                 onClick={() => setGlassesCount(Math.max(1, glassesCount - 1))}
-                className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white"
               >
                 <Minus className="h-5 w-5" />
               </button>
               
-              <span className="text-3xl font-bold w-16 text-center">
+              <span className="text-3xl font-bold w-16 text-center" style={{ color: colors.primary }}>
                 {glassesCount}
               </span>
               
               <button
                 onClick={() => setGlassesCount(glassesCount + 1)}
-                className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white"
               >
                 <Plus className="h-5 w-5" />
               </button>
@@ -1014,13 +1276,95 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
         </div>
       )}
 
+      {/* Customer Name Modal */}
+      {showCustomerNameModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4 text-center text-black">
+              Dati Cliente
+            </h2>
+            
+            <p className="text-sm text-gray-600 mb-4 text-center">
+              Inserisci i tuoi dati per generare il codice ordine
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome *
+                </label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Inserisci il tuo nome"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+                  maxLength={50}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cognome *
+                </label>
+                <input
+                  type="text"
+                  value={customerSurname}
+                  onChange={(e) => setCustomerSurname(e.target.value)}
+                  placeholder="Inserisci il tuo cognome"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+                  maxLength={50}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowCustomerNameModal(false)
+                  setCustomerName('')
+                  setCustomerSurname('')
+                }}
+              >
+                Annulla
+              </Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+                onClick={generateOrderCode}
+                disabled={!customerName.trim() || !customerSurname.trim() || generatingCode}
+              >
+                {generatingCode ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generazione...
+                  </>
+                ) : (
+                  <>
+                    <Hash className="h-4 w-4 mr-2" />
+                    Genera Codice
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Order Code Modal */}
       {showOrderCodeModal && generatedOrderCode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4 text-center" style={{ color: colors.text.primary }}>
+            <h2 className="text-xl font-bold mb-2 text-center" style={{ color: colors.text.primary }}>
               Il tuo codice ordine
             </h2>
+            
+            {customerName && customerSurname && (
+              <p className="text-sm text-center mb-4" style={{ color: colors.text.secondary }}>
+                Cliente: <span className="font-medium">{customerName} {customerSurname}</span>
+              </p>
+            )}
             
             <div className="bg-gradient-to-r from-orange-100 to-orange-50 p-8 rounded-lg mb-4">
               <div className="text-5xl font-bold text-center tracking-wider" style={{ color: colors.primary }}>
@@ -1030,7 +1374,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             
             <button
               onClick={copyCodeToClipboard}
-              className="w-full mb-4 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              className="w-full mb-4 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center gap-2 transition-colors text-black"
             >
               <Copy className="h-4 w-4" />
               <span className="text-sm font-medium">Copia codice</span>
@@ -1041,30 +1385,101 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             </p>
             
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
-              <p className="text-xs text-center" style={{ color: colors.text.muted }}>
-                ⏱️ Il codice è valido per 15 minuti
-              </p>
+              {!codeUsedByWaiter ? (
+                <p className="text-xs text-center" style={{ color: colors.text.muted }}>
+                  ⏱️ Il codice è valido per 15 minuti
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-center text-green-600 font-medium mb-2">
+                    ✅ Ordine ricevuto dal cameriere!
+                  </p>
+                  {timeRemaining !== null && (
+                    <div className="text-center">
+                      <span className="text-xs font-bold px-3 py-1 bg-red-100 text-red-600 rounded-full">
+                        Rimozione automatica tra {timeRemaining} secondi
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             
             <div className="space-y-2">
-              <div className="text-sm" style={{ color: colors.text.muted }}>
+              <div className="text-sm" style={{ color: colors.text.primary }}>
                 Riepilogo ordine:
               </div>
-              <div className="text-sm space-y-1">
-                {order.map((item) => (
-                  <div key={item.prodotto.id} className="flex justify-between">
-                    <span>{item.quantita}x {item.prodotto.nome}</span>
+              <div className="text-sm space-y-2" style={{ color: colors.text.primary }}>
+                {(hasCompletedOrder ? completedOrderData : order).map((item) => (
+                  <div key={item.prodotto.id} className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span>{item.quantita}x {item.prodotto.nome}</span>
+                        {hasCompletedOrder && !codeUsedByWaiter && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita - 1)}
+                              className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita + 1)}
+                              className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => removeFromCompletedOrder(item.prodotto.id)}
+                              className="p-0.5 rounded text-red-500 hover:bg-red-50"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {item.note && (
+                        <div className="text-xs text-gray-600 italic mt-1">
+                          📝 {item.note}
+                        </div>
+                      )}
+                    </div>
                     <span>€{(typeof item.prodotto.prezzo === 'string' 
-                      ? parseFloat(item.prodotto.prezzo) 
+                      ? parseFloat(item.prodotto.prezzo) * item.quantita
                       : item.prodotto.prezzo * item.quantita).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
-              <div className="pt-2 border-t font-bold flex justify-between">
+              <div className="pt-2 border-t font-bold flex justify-between" style={{ color: colors.text.primary }}>
                 <span>Totale:</span>
-                <span style={{ color: colors.primary }}>€{getTotalOrder().toFixed(2)}</span>
+                <span style={{ color: colors.primary }}>€{(hasCompletedOrder ? completedOrderTotal : getTotalOrder()).toFixed(2)}</span>
               </div>
             </div>
+            
+            {hasCompletedOrder && orderModified && !codeUsedByWaiter && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-700 text-center mb-3">
+                  ⚠️ Ordine modificato - genera un nuovo codice
+                </p>
+                <Button
+                  onClick={regenerateOrderCode}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+                  disabled={generatingCode}
+                >
+                  {generatingCode ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generazione...
+                    </>
+                  ) : (
+                    <>
+                      <Hash className="h-4 w-4 mr-2" />
+                      Genera Nuovo Codice
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
             
             <Button
               onClick={() => setShowOrderCodeModal(false)}

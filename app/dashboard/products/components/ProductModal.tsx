@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, X } from "lucide-react";
+import { Save, X, Settings } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { createProduct, updateProduct } from "@/lib/actions/products";
+import ConfigurableProductModal from "@/components/dashboard/ConfigurableProductModal";
 
 interface Category {
   id: number;
@@ -41,6 +42,7 @@ interface ProductModalProps {
 export function ProductModal({ isOpen, onClose, product, categories, onSuccess }: ProductModalProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode === 'system' ? 'dark' : themeMode];
+  const [showConfigurableModal, setShowConfigurableModal] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -307,6 +309,30 @@ export function ProductModal({ isOpen, onClose, product, categories, onSuccess }
             </label>
           </div>
 
+          {/* Bottone Configurazione Varianti - solo se il prodotto esiste già */}
+          {product ? (
+            <div className="border-t pt-4 mt-4" style={{ borderColor: colors.border.primary || '#e5e7eb' }}>
+              <button
+                type="button"
+                onClick={() => setShowConfigurableModal(true)}
+                className="w-full px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                style={{ 
+                  backgroundColor: colors.button.secondary || '#6B7280', 
+                  color: colors.button.secondaryText || '#FFFFFF'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.secondaryHover || '#4B5563'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.secondary || '#6B7280'}
+              >
+                <Settings className="h-4 w-4" />
+                Configura Varianti (Cocktails, etc.)
+              </button>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 mt-4">
+              Salva prima il prodotto per configurare le varianti
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -337,6 +363,19 @@ export function ProductModal({ isOpen, onClose, product, categories, onSuccess }
           </div>
         </form>
       </div>
+      
+      {/* Modal Configurazione Prodotto */}
+      {product && showConfigurableModal && (
+        <ConfigurableProductModal
+          isOpen={showConfigurableModal}
+          onClose={() => setShowConfigurableModal(false)}
+          prodotto={{
+            id: product.id,
+            nome: product.name,
+            prezzo: product.price || 0
+          }}
+        />
+      )}
     </div>
   );
 }

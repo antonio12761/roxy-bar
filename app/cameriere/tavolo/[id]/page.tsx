@@ -32,6 +32,8 @@ import { useSSE } from "@/contexts/sse-context";
 import { FireworksAnimation } from "@/components/ui/FireworksAnimation";
 import { HeartsAnimation } from "@/components/ui/HeartsAnimation";
 import { QRScannerModal } from "@/components/cameriere/QRScannerModal";
+import ProductVariantModal from "@/components/cameriere/ProductVariantModal";
+import { getProdottoConfigurabile } from "@/lib/actions/prodotti-configurabili";
 
 interface Product {
   id: number;
@@ -57,6 +59,8 @@ interface OrderItem {
   isExhausted?: boolean;
   quantitaDisponibile?: number;  // Available quantity for partially out of stock items
   quantitaNonDisponibile?: number;  // Unavailable quantity for partially out of stock items
+  configurazione?: any;  // Configurazione per prodotti configurabili
+  prezzoFinale?: number;  // Prezzo finale con varianti
 }
 
 interface Table {
@@ -347,6 +351,11 @@ export default function TavoloPage() {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
   const [isSubmittingFromModal, setIsSubmittingFromModal] = useState(false);
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
+  const [pendingQuantity, setPendingQuantity] = useState<number>(1);
+  const [pendingGlasses, setPendingGlasses] = useState<number | undefined>(undefined);
+  const [pendingNote, setPendingNote] = useState<string | undefined>(undefined);
   const orderListRef = useRef<HTMLDivElement>(null);
   const drawerHeaderRef = useRef<HTMLDivElement>(null);
   
@@ -846,11 +855,25 @@ export default function TavoloPage() {
     ? products.filter(p => p.categoria === selectedCategory)
     : [];
 
-  const addToOrder = (product: Product, quantity: number = 1, glasses?: number, note?: string) => {
+  const addToOrder = async (product: Product, quantity: number = 1, glasses?: number, note?: string, configurazione?: any, prezzoFinale?: number) => {
     // Non permettere l'aggiunta di prodotti non disponibili o terminati
     if (product.disponibile === false || product.terminato === true) {
       notifyWarning("Questo prodotto non è disponibile");
       return;
+    }
+    
+    // Controlla se il prodotto è configurabile
+    if (!configurazione && !prezzoFinale) {
+      const prodottoConfig = await getProdottoConfigurabile(product.id);
+      if (prodottoConfig && prodottoConfig.richiedeScelta) {
+        // Salva i parametri pendenti e apri il modal
+        setSelectedProductForVariant(product);
+        setPendingQuantity(quantity);
+        setPendingGlasses(glasses);
+        setPendingNote(note);
+        setShowVariantModal(true);
+        return;
+      }
     }
     
     // Controlla l'inventario limitato
@@ -886,10 +909,22 @@ export default function TavoloPage() {
     }
 
     setOrder(prev => {
-      const existing = prev.find(item => item.prodotto.id === product.id && item.note === note);
+      // Per prodotti configurabili, non raggruppiamo automaticamente
+      if (configurazione) {
+        return [...prev, { 
+          prodotto: product, 
+          quantita: quantity,
+          glassesCount: product.requiresGlasses ? glasses : undefined,
+          note: note,
+          configurazione: configurazione,
+          prezzoFinale: prezzoFinale
+        }];
+      }
+      
+      const existing = prev.find(item => item.prodotto.id === product.id && item.note === note && !item.configurazione);
       if (existing) {
         return prev.map(item => 
-          item.prodotto.id === product.id && item.note === note
+          item.prodotto.id === product.id && item.note === note && !item.configurazione
             ? { 
                 ...item, 
                 quantita: item.quantita + quantity,
@@ -1079,9 +1114,33 @@ export default function TavoloPage() {
   };
 
   const getTotalOrder = () => {
-    return order.reduce((total, item) => total + (Number(item.prodotto.prezzo) * item.quantita), 0);
+    return order.reduce((total, item) => {
+      const prezzo = item.prezzoFinale || Number(item.prodotto.prezzo);
+      return total + (prezzo * item.quantita);
+    }, 0);
   };
 
+
+  const handleVariantConfirm = (configurazione: any, prezzoFinale: number) => {
+    if (selectedProductForVariant) {
+      // Aggiungi il prodotto con la configurazione
+      addToOrder(
+        selectedProductForVariant, 
+        pendingQuantity, 
+        pendingGlasses, 
+        pendingNote, 
+        configurazione, 
+        prezzoFinale
+      );
+      
+      // Reset stati
+      setShowVariantModal(false);
+      setSelectedProductForVariant(null);
+      setPendingQuantity(1);
+      setPendingGlasses(undefined);
+      setPendingNote(undefined);
+    }
+  };
 
   const handleGlassesConfirm = () => {
     if (pendingProduct) {
@@ -1263,9 +1322,11 @@ export default function TavoloPage() {
           prodotti: order.map((item: OrderItem) => ({
             prodottoId: item.prodotto.id,
             quantita: item.quantita,
-            prezzo: item.prodotto.prezzo,
+            prezzo: item.prezzoFinale || item.prodotto.prezzo,
             glassesCount: item.glassesCount,
-            note: item.note
+            note: item.note,
+            configurazione: item.configurazione,
+            prezzoFinale: item.prezzoFinale
           })),
           note: `Cliente: ${customerName} - Posti: ${customerSeats}${orderNotes ? ` - ${orderNotes}` : ''}`
         });
@@ -2320,6 +2381,26 @@ export default function TavoloPage() {
         onClose={() => setShowQRScannerModal(false)}
         onOrderImported={handleQROrderImport}
       />
+
+      {/* Product Variant Modal */}
+      {selectedProductForVariant && (
+        <ProductVariantModal
+          isOpen={showVariantModal}
+          onClose={() => {
+            setShowVariantModal(false);
+            setSelectedProductForVariant(null);
+            setPendingQuantity(1);
+            setPendingGlasses(undefined);
+            setPendingNote(undefined);
+          }}
+          prodotto={{
+            id: selectedProductForVariant.id,
+            nome: selectedProductForVariant.nome,
+            prezzo: selectedProductForVariant.prezzo
+          }}
+          onConfirm={handleVariantConfirm}
+        />
+      )}
       
       {/* Fireworks or Hearts Animation based on customer */}
       {showFireworks && (

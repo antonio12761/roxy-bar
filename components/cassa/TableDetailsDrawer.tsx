@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Package, Users, CheckCircle, Clock, Loader2, AlertCircle, RotateCcw, Euro, User, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Package, Users, CheckCircle, Clock, Loader2, AlertCircle, RotateCcw, Euro, User, Maximize2, Minimize2, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import OrderCard from './OrderCard';
 import PaymentMethodSelector from './PaymentMethodSelector';
 import { searchClienti, getRecentClienti } from '@/lib/actions/clienti-autocomplete';
 import { annullaPagamentoOrdine } from '@/lib/actions/annulla-pagamento';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 interface Order {
   id: string;
@@ -53,10 +54,10 @@ interface TableDetailsDrawerProps {
   onSelectOrder: (order: Order) => void;
   onChangePaymentMethod: (method: 'POS' | 'CONTANTI' | 'MISTO') => void;
   onChangePaymentMode: (mode: 'table' | 'order' | 'partial' | 'client') => void;
-  onPayTable: (clienteNome: string) => void;
-  onPayOrder: (clienteNome: string) => void;
-  onPayPartial: () => void;
-  onPayByClient: (clienteNome: string) => void;
+  onPayTable: (clienteNome: string, stampaScontrino?: boolean) => void;
+  onPayOrder: (clienteNome: string, stampaScontrino?: boolean) => void;
+  onPayPartial: (stampaScontrino?: boolean) => void;
+  onPayByClient: (clienteNome: string, stampaScontrino?: boolean) => void;
   onCreateDebt: () => void;
   onTriggerParticles: (element: HTMLElement | null) => void;
   onRefreshData?: () => void; // Nuovo prop per refresh incrementale
@@ -91,6 +92,8 @@ export default function TableDetailsDrawer({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentClienti, setRecentClienti] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { settings: printerSettings, updateSettings: updatePrinterSettings } = usePrinterSettings();
+  const [stampaScontrino, setStampaScontrino] = useState(true); // Default: stampa abilitata
 
   useEffect(() => {
     if (isOpen) {
@@ -99,10 +102,19 @@ export default function TableDetailsDrawer({
       setSuggestions([]);
       setShowSuggestions(false);
       
+      // Inizializza checkbox stampa con impostazioni utente
+      if (printerSettings.autoprint) {
+        // Se autoprint è attivo, stampa sempre
+        setStampaScontrino(true);
+      } else {
+        // Altrimenti usa il default dell'utente
+        setStampaScontrino(printerSettings.defaultEnabled);
+      }
+      
       // Carica clienti recenti
       getRecentClienti().then(setRecentClienti);
     }
-  }, [isOpen]);
+  }, [isOpen, printerSettings]);
 
   // Gestione ricerca clienti con debounce
   const handleClienteSearch = useCallback(async (value: string) => {
@@ -695,6 +707,53 @@ export default function TableDetailsDrawer({
                       </div>
                     )}
 
+                    {/* Opzione Stampa Scontrino - Mostra solo se non è autoprint */}
+                    {printerSettings.showConfirmDialog && !printerSettings.autoprint && (
+                      <div className="px-4 py-3">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={stampaScontrino}
+                            onChange={(e) => {
+                              setStampaScontrino(e.target.checked);
+                              // Salva la preferenza dell'utente
+                              updatePrinterSettings({ defaultEnabled: e.target.checked });
+                            }}
+                            className="w-4 h-4 rounded border-2 transition-colors"
+                            style={{
+                              accentColor: colors.button.primary,
+                              borderColor: colors.border.primary
+                            }}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Printer className="h-4 w-4" style={{ color: colors.text.secondary }} />
+                            <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                              Stampa scontrino automaticamente
+                            </span>
+                          </div>
+                        </label>
+                        <p className="text-xs mt-1 ml-7" style={{ color: colors.text.muted }}>
+                          Stampa su Netum NT-1809 via Bluetooth
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Messaggio autoprint attivo */}
+                    {printerSettings.autoprint && (
+                      <div 
+                        className="px-4 py-3 mx-4 rounded-lg border flex items-center gap-2"
+                        style={{ 
+                          backgroundColor: (colors.status?.success || '#10b981') + '10',
+                          borderColor: (colors.status?.success || '#10b981') + '30'
+                        }}
+                      >
+                        <Printer className="h-4 w-4" style={{ color: colors.status?.success || '#10b981' }} />
+                        <span className="text-sm" style={{ color: colors.status?.success || '#10b981' }}>
+                          Stampa automatica sempre attiva
+                        </span>
+                      </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="flex gap-3">
                       <button
@@ -706,13 +765,13 @@ export default function TableDetailsDrawer({
                           }
                           
                           if (paymentMode === 'table') {
-                            onPayTable(clienteNome);
+                            onPayTable(clienteNome, stampaScontrino);
                           } else if (paymentMode === 'client') {
-                            onPayByClient(clienteNome);
+                            onPayByClient(clienteNome, stampaScontrino);
                           } else if (paymentMode === 'partial') {
-                            onPayPartial();
+                            onPayPartial(stampaScontrino);
                           } else {
-                            onPayOrder(clienteNome);
+                            onPayOrder(clienteNome, stampaScontrino);
                           }
                           onTriggerParticles(e.currentTarget);
                         }}

@@ -581,14 +581,15 @@ export async function generaScontrino(orderId: string) {
       return { success: false, error: "Ordinazione non trovata" };
     }
 
-    // Simula la generazione dello scontrino
+    // Genera dati scontrino per stampante Bluetooth
     const scontrino = {
       numero: `SCO-${Date.now()}`,
       data: new Date().toISOString(),
       tavolo: ordinazione.Tavolo?.numero,
       cameriere: ordinazione.User?.nome,
+      nomeCliente: ordinazione.nomeCliente,
       righe: ordinazione.RigaOrdinazione.map(riga => ({
-        prodotto: riga.Prodotto.nome,
+        nome: riga.Prodotto.nome,
         quantita: riga.quantita,
         prezzo: riga.prezzo.toNumber(),
         totale: riga.prezzo.toNumber() * riga.quantita
@@ -600,8 +601,7 @@ export async function generaScontrino(orderId: string) {
       }))
     };
 
-    // In un sistema reale, qui si invierebbe lo scontrino alla stampante fiscale
-    console.log("📄 Scontrino generato:", scontrino);
+    console.log("📄 Scontrino generato per stampante:", scontrino);
 
     return {
       success: true,
