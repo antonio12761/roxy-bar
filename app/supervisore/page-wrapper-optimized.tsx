@@ -20,7 +20,8 @@ import {
   Loader2,
   Wifi,
   WifiOff,
-  Palette
+  Palette,
+  Settings
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -35,6 +36,7 @@ import { StationType } from "@/lib/sse/station-filters";
 import UserDisplay from "@/components/UserDisplay";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { useTheme } from "@/contexts/ThemeContext";
+import ImpostazioniScontrinoComponent from "@/components/supervisore/impostazioni-scontrino";
 
 interface SupervisoreStats {
   ordiniAttivi: number;
@@ -114,6 +116,7 @@ export default function SupervisorePageOptimized() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [expandedPaidOrders, setExpandedPaidOrders] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showImpostazioniScontrino, setShowImpostazioniScontrino] = useState(false);
 
   // Use optimized SSE hook
   const {
@@ -662,10 +665,35 @@ export default function SupervisorePageOptimized() {
               )}
             </div>
             
+            {/* Settings Button */}
+            <button
+              onClick={() => setShowImpostazioniScontrino(!showImpostazioniScontrino)}
+              className="p-2 rounded-lg transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = colors.bg.hover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              title="Impostazioni Scontrino"
+            >
+              <Settings className="h-5 w-5" style={{ color: colors.text.secondary }} />
+            </button>
+            
             <UserDisplay />
           </div>
         </div>
       </div>
+
+      {/* Impostazioni Scontrino Modal/Section */}
+      {showImpostazioniScontrino && (
+        <div className="mb-4">
+          <div className="bg-card border border-border rounded-lg p-4">
+            <ImpostazioniScontrinoComponent />
+          </div>
+        </div>
+      )}
 
       {/* Panoramic Overview - Key Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">

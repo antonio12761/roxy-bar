@@ -18,7 +18,8 @@ export async function getProdotti() {
         codice: true,
         requiresGlasses: true,
         disponibile: true,
-        terminato: true
+        terminato: true,
+        isMiscelato: true
       },
       orderBy: {
         categoria: 'asc'
@@ -48,7 +49,8 @@ export async function getAllProdotti() {
         requiresGlasses: true,
         disponibile: true,
         terminato: true,
-        ingredienti: true
+        ingredienti: true,
+        isMiscelato: true
       },
       orderBy: {
         categoria: 'asc'

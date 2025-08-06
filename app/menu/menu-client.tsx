@@ -9,6 +9,8 @@ import { useCart } from '@/contexts/cart-context'
 import { cn } from '@/lib/utils'
 import { createCustomerOrder } from '@/lib/actions/customer-orders'
 import { getCategoryEmojis } from '@/lib/actions/get-category-emojis'
+import { getProdottoConfigurabile } from '@/lib/actions/prodotti-configurabili'
+import ProductVariantModal from '@/components/cameriere/ProductVariantModal'
 import { toast } from 'sonner'
 
 interface Product {
@@ -20,6 +22,7 @@ interface Product {
   terminato?: boolean
   postazione?: string | null
   requiresGlasses?: boolean
+  isMiscelato?: boolean
 }
 
 interface MenuGroup {
@@ -97,6 +100,9 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   const [customerName, setCustomerName] = useState('')
   const [customerSurname, setCustomerSurname] = useState('')
   const [categoryEmojis, setCategoryEmojis] = useState<{[key: string]: {emoji: string | null, color: string | null, iconType?: string}}>({})
+  const [showVariantModal, setShowVariantModal] = useState(false)
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null)
+  const [pendingQuantityForVariant, setPendingQuantityForVariant] = useState(1)
   
   // Load category emojis on mount
   useEffect(() => {
@@ -488,7 +494,18 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   }, [generatedOrderCode, codeUsedByWaiter, startCleanupTimer])
   
   // Handle product add with options
-  const handleProductAdd = useCallback((product: Product, quantity: number) => {
+  const handleProductAdd = useCallback(async (product: Product, quantity: number) => {
+    // Check if product is miscelato or has configuration
+    if (product.isMiscelato) {
+      const config = await getProdottoConfigurabile(product.id)
+      if (config && config.richiedeScelta) {
+        setSelectedProductForVariant(product)
+        setPendingQuantityForVariant(quantity)
+        setShowVariantModal(true)
+        return
+      }
+    }
+    
     // Check if product requires glasses
     if (product.requiresGlasses) {
       setPendingProduct({ product, quantity })
@@ -556,6 +573,46 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       setSelectedQuantities(prev => ({ ...prev, [pendingProduct.product.id]: 1 }))
     }
   }, [pendingProduct, glassesCount, addToOrder])
+  
+  // Handle variant confirmation
+  const handleVariantConfirm = useCallback((configurazione: any, prezzoFinale: number) => {
+    if (selectedProductForVariant) {
+      // Find the selected ingredient name for display
+      let ingredientName = ''
+      if (configurazione && configurazione.gruppi && configurazione.gruppi.length > 0) {
+        const firstGroup = configurazione.gruppi[0]
+        if (firstGroup.ingredienti && firstGroup.ingredienti.length > 0) {
+          ingredientName = firstGroup.ingredienti[0].nome
+        }
+      }
+      
+      // Add to order with configuration
+      addToOrder(
+        selectedProductForVariant,
+        pendingQuantityForVariant,
+        undefined,
+        ingredientName ? `Gusto: ${ingredientName}` : undefined
+      )
+      
+      // Show confirmation
+      const displayName = ingredientName 
+        ? `${pendingQuantityForVariant}x ${selectedProductForVariant.nome} (${ingredientName})`
+        : `${pendingQuantityForVariant}x ${selectedProductForVariant.nome}`
+      setAddedProductName(displayName)
+      setShowAddedConfirm(true)
+      setTimeout(() => setShowAddedConfirm(false), 2000)
+      
+      // Reset states
+      setShowVariantModal(false)
+      setSelectedProductForVariant(null)
+      setPendingQuantityForVariant(1)
+      // Reset quantity selector
+      setSelectedQuantities(prev => ({ 
+        ...prev, 
+        [selectedProductForVariant.id]: 1 
+      }))
+    }
+  }, [selectedProductForVariant, pendingQuantityForVariant, addToOrder])
   
   // Handle edit item click
   const handleEditItemClick = useCallback((item: OrderItem) => {
@@ -1553,6 +1610,26 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Product Variant Modal */}
+      {selectedProductForVariant && (
+        <ProductVariantModal
+          isOpen={showVariantModal}
+          onClose={() => {
+            setShowVariantModal(false)
+            setSelectedProductForVariant(null)
+            setPendingQuantityForVariant(1)
+          }}
+          prodotto={{
+            id: selectedProductForVariant.id,
+            nome: selectedProductForVariant.nome,
+            prezzo: typeof selectedProductForVariant.prezzo === 'string' 
+              ? parseFloat(selectedProductForVariant.prezzo) 
+              : selectedProductForVariant.prezzo
+          }}
+          onConfirm={handleVariantConfirm}
+        />
       )}
     </div>
   )

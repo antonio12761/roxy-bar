@@ -746,6 +746,7 @@ model Prodotto {
   categoryId              Int?
   subcategoryId           Int?
   requiresGlasses         Boolean                   @default(false)
+  isMiscelato             Boolean                   @default(false)
   Inventario              Inventario?
   CategoriaMenu           CategoriaMenu?            @relation(fields: [categoriaMenuId], references: [id])
   Category                Category?                 @relation(fields: [categoryId], references: [id])
@@ -2132,4 +2133,72 @@ enum TipoProdottoConfigurabile {
   BEVANDA
   PANINO
   ALTRO
+}
+
+// ============================================
+// SISTEMA IMPOSTAZIONI SCONTRINO
+// ============================================
+
+model ImpostazioniScontrino {
+  id                String   @id @default(cuid())
+  
+  // Intestazione
+  logoUrl           String?  // URL del logo da stampare
+  nomeAttivita      String   @default("Bar Roxy")
+  indirizzo         String?
+  telefono          String?
+  partitaIva        String?
+  codiceFiscale     String?
+  
+  // Layout e grafica
+  larghezzaCarta    Int      @default(48) // Caratteri per riga
+  allineamentoTitolo String  @default("center") // left, center, right
+  carattereSeparatore String @default("-")
+  mostraData        Boolean  @default(true)
+  mostraOra         Boolean  @default(true)
+  mostraOperatore   Boolean  @default(true)
+  mostraTavolo      Boolean  @default(true)
+  mostraNumeroOrdine Boolean @default(true)
+  
+  // Messaggi personalizzati
+  messaggioIntestazione String? // Messaggio sotto l'intestazione
+  messaggioRingraziamento String @default("Grazie per la visita!")
+  messaggioPromozionale String? // Messaggio promozionale
+  messaggioPiePagina String?    // Messaggio finale
+  
+  // Formattazione prezzi
+  mostraDettagliProdotti Boolean @default(true)
+  mostraQuantita    Boolean  @default(true)
+  mostraPrezzoUnitario Boolean @default(true)
+  mostraTotaleRiga  Boolean  @default(true)
+  separatoreDecimale String  @default(",")
+  simboloValuta     String   @default("€")
+  posizioneValuta   String   @default("suffix") // prefix o suffix
+  
+  // Footer
+  mostraBarcode     Boolean  @default(false)
+  mostraQRCode      Boolean  @default(false)
+  urlQRCode         String?  // URL per il QR code
+  mostraSocial      Boolean  @default(false)
+  socialFacebook    String?
+  socialInstagram   String?
+  
+  // Scontrino fiscale
+  mostraInfoFiscali Boolean  @default(false)
+  numeroRegistratore String?
+  matricolaFiscale  String?
+  
+  // Impostazioni avanzate
+  taglioAutomatico  Boolean  @default(true)
+  numeroCopieScontrino Int   @default(1)
+  ritardoTaglio     Int      @default(100) // millisecondi
+  densitaStampa     Int      @default(2) // 1-3 livelli di densità
+  
+  // Metadati
+  attivo            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  modificatoDa      String?  // ID utente che ha modificato
+  
+  @@index([attivo])
 }

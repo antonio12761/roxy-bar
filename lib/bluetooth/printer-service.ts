@@ -194,6 +194,98 @@ export class PrinterService {
   }
 
   /**
+   * Carica impostazioni scontrino dal database
+   */
+  async loadReceiptSettings(): Promise<any> {
+    try {
+      const response = await fetch('/api/impostazioni-scontrino');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        this.logDebug('Impostazioni scontrino caricate');
+        return result.data;
+      }
+    } catch (error) {
+      this.logDebug('Errore caricamento impostazioni: ' + error);
+    }
+    return null;
+  }
+
+  /**
+   * Formatta dati scontrino con impostazioni personalizzate
+   */
+  formatReceiptWithSettings(data: ReceiptData, settings: any): ReceiptData {
+    if (!settings) return data;
+    
+    const formattedData: any = { ...data };
+    
+    // Applica impostazioni intestazione
+    formattedData.header = {
+      businessName: settings.nomeAttivita || 'Bar Roxy',
+      address: settings.indirizzo,
+      phone: settings.telefono,
+      vatNumber: settings.partitaIva,
+      fiscalCode: settings.codiceFiscale
+    };
+    
+    // Messaggi personalizzati
+    if (settings.messaggioIntestazione) {
+      formattedData.headerMessage = settings.messaggioIntestazione;
+    }
+    
+    // Footer
+    formattedData.footer = {
+      message: settings.messaggioRingraziamento || 'Grazie per la visita!',
+      promotionalMessage: settings.messaggioPromozionale,
+      footerNote: settings.messaggioPiePagina
+    };
+    
+    // QR Code e Social
+    if (settings.mostraQRCode && settings.urlQRCode) {
+      formattedData.qrCode = settings.urlQRCode;
+    }
+    
+    if (settings.mostraSocial) {
+      formattedData.social = {
+        facebook: settings.socialFacebook,
+        instagram: settings.socialInstagram
+      };
+    }
+    
+    // Impostazioni di stampa
+    formattedData.printSettings = {
+      paperWidth: settings.larghezzaCarta || 48,
+      alignment: settings.allineamentoTitolo || 'center',
+      separator: settings.carattereSeparatore || '-',
+      autoCut: settings.taglioAutomatico !== false,
+      copies: settings.numeroCopieScontrino || 1,
+      density: settings.densitaStampa || 2
+    };
+    
+    // Opzioni di visualizzazione
+    formattedData.displayOptions = {
+      showDate: settings.mostraData !== false,
+      showTime: settings.mostraOra !== false,
+      showOperator: settings.mostraOperatore !== false,
+      showTable: settings.mostraTavolo !== false,
+      showOrderNumber: settings.mostraNumeroOrdine !== false,
+      showProductDetails: settings.mostraDettagliProdotti !== false,
+      showQuantity: settings.mostraQuantita !== false,
+      showUnitPrice: settings.mostraPrezzoUnitario !== false,
+      showLineTotal: settings.mostraTotaleRiga !== false
+    };
+    
+    // Formattazione valuta
+    formattedData.currencyFormat = {
+      symbol: settings.simboloValuta || '€',
+      position: settings.posizioneValuta || 'suffix',
+      decimalSeparator: settings.separatoreDecimale || ','
+    };
+    
+    return formattedData;
+  }
+
+  /**
    * Stampa scontrino automaticamente
    * Integrato con i dati del sistema cassa
    */
@@ -204,8 +296,11 @@ export class PrinterService {
         return false;
       }
 
+      // Carica impostazioni personalizzate
+      const settings = await this.loadReceiptSettings();
+      
       // Converti i dati dal formato server al formato stampante
-      const formattedReceipt: ReceiptData = {
+      const baseReceipt: ReceiptData = {
         numero: receiptData.numero || `SCO-${Date.now()}`,
         data: receiptData.data || new Date().toISOString(),
         tavolo: receiptData.tavolo,
@@ -215,10 +310,23 @@ export class PrinterService {
         totale: receiptData.totale || 0,
         pagamenti: receiptData.pagamenti || []
       };
+      
+      // Applica impostazioni personalizzate
+      const formattedReceipt = this.formatReceiptWithSettings(baseReceipt, settings);
 
       console.log('🖨️ Stampa scontrino automatica:', formattedReceipt.numero);
       
       const success = await this.printer.printReceipt(formattedReceipt);
+      
+      // Se ci sono copie multiple, stampa le copie aggiuntive
+      const copies = (formattedReceipt as any).printSettings?.copies || 1;
+      if (success && copies > 1) {
+        for (let i = 1; i < copies; i++) {
+          console.log(`🖨️ Stampa copia ${i + 1} di ${copies}`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Pausa tra copie
+          await this.printer.printReceipt(formattedReceipt);
+        }
+      }
       
       if (success) {
         this.updateStatus({ 
