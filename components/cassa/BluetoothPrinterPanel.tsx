@@ -89,33 +89,38 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
   const isSupported = (printerService.constructor as any).isBluetoothSupported();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
       <div 
-        className="relative w-full max-w-md rounded-xl shadow-xl border"
+        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl shadow-xl border"
         style={{ 
           backgroundColor: colors.bg.card,
           borderColor: colors.border.primary 
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: colors.border.primary }}>
-          <div className="flex items-center gap-3">
-            <Bluetooth className="h-6 w-6" style={{ color: colors.button.primary }} />
-            <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>
+        <div className="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b" 
+          style={{ 
+            borderColor: colors.border.primary,
+            backgroundColor: colors.bg.card 
+          }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Bluetooth className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: colors.button.primary }} />
+            <h2 className="text-lg sm:text-xl font-semibold" style={{ color: colors.text.primary }}>
               Stampante Bluetooth
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors hover:bg-opacity-80"
+            className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-opacity-80"
             style={{ backgroundColor: colors.bg.hover }}
           >
-            <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
+            <X className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: colors.text.secondary }} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Supporto Bluetooth */}
           {!isSupported && (
             <div 
@@ -212,7 +217,7 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
               <button
                 onClick={handleConnect}
                 disabled={!isSupported || isConnecting}
-                className="w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 style={{
                   backgroundColor: colors.button.primary,
                   color: colors.button.primaryText
@@ -239,11 +244,11 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
                 )}
               </button>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                   onClick={handleTest}
                   disabled={isTesting}
-                  className="py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm sm:text-base"
                   style={{
                     backgroundColor: colors.button.secondary,
                     color: colors.button.secondaryText
@@ -265,7 +270,7 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
                 <button
                   onClick={handleDisconnect}
                   disabled={isDisconnecting}
-                  className="py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm sm:text-base"
                   style={{
                     backgroundColor: colors.status?.error || '#ef4444',
                     color: colors.button.primaryText
@@ -348,10 +353,10 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
           {/* Debug Logs */}
           {debugLogs.length > 0 && (
             <div 
-              className="p-4 rounded-lg text-xs space-y-1"
+              className="p-3 sm:p-4 rounded-lg text-xs space-y-1"
               style={{ 
                 backgroundColor: colors.bg.hover,
-                maxHeight: '200px',
+                maxHeight: '150px',
                 overflowY: 'auto'
               }}
             >
