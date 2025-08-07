@@ -10,7 +10,8 @@ import {
   Bluetooth,
   Info,
   Menu,
-  X
+  X,
+  ShoppingBag
 } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
@@ -28,6 +29,7 @@ interface CassaHeaderProps {
   onShowScontrinoQueue: () => void;
   onShowMultiPayment?: () => void;
   onShowBluetoothPanel?: () => void;
+  onShowDirectReceipt?: () => void;
   showHistory: boolean;
   showScontrinoQueue: boolean;
 }
@@ -39,6 +41,7 @@ export default function CassaHeader({
   onShowScontrinoQueue,
   onShowMultiPayment,
   onShowBluetoothPanel,
+  onShowDirectReceipt,
   showHistory,
   showScontrinoQueue
 }: CassaHeaderProps) {
@@ -180,6 +183,23 @@ export default function CassaHeader({
           <ThemeSelector />
               
           {/* Actions */}
+          {onShowDirectReceipt && (
+            <button
+              onClick={onShowDirectReceipt}
+              className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
+              style={{ 
+                backgroundColor: colors.button.primary,
+                color: colors.button.primaryText
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
+              title="Scontrino Diretto"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              <span className="hidden lg:inline">Scontrino Diretto</span>
+            </button>
+          )}
+
           {onShowMultiPayment && (
             <button
               onClick={onShowMultiPayment}
@@ -282,6 +302,23 @@ export default function CassaHeader({
           />
           
           <ThemeSelector />
+          
+          {onShowDirectReceipt && (
+            <button
+              onClick={() => {
+                onShowDirectReceipt();
+                setShowMobileMenu(false);
+              }}
+              className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
+              style={{ 
+                backgroundColor: colors.button.primary,
+                color: colors.button.primaryText
+              }}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Scontrino Diretto
+            </button>
+          )}
           
           {onShowMultiPayment && (
             <button

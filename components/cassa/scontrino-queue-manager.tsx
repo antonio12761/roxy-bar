@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Trash2,
   Eye,
-  Play
+  Play,
+  Bluetooth
 } from "lucide-react";
 import { 
   getProssimiScontrini, 
@@ -19,6 +20,7 @@ import {
   getStatisticheScontrini 
 } from "@/lib/services/scontrino-queue";
 import { useTheme } from "@/contexts/ThemeContext";
+import { netumPrinter, type ReceiptData } from "@/lib/bluetooth/netum-printer";
 
 interface ScontrinoQueue {
   id: string;
@@ -53,6 +55,9 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
   const [selectedScontrino, setSelectedScontrino] = useState<ScontrinoQueue | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [printerConnected, setPrinterConnected] = useState(false);
+  const [printerStatus, setPrinterStatus] = useState<string>("Non connesso");
+  const [autoStampa, setAutoStampa] = useState(false);
 
   // Carica scontrini dalla queue
   const loadScontrini = async () => {
@@ -101,19 +106,87 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
     }
   }, [isOpen, autoRefresh]);
 
-  // Simula stampa (in un sistema reale, interfacciarsi con la stampante)
+  // Auto stampa scontrini in coda
+  useEffect(() => {
+    if (!autoStampa || !printerConnected || scontrini.length === 0) return;
+
+    // Trova il primo scontrino in coda
+    const scontrinoDaStampare = scontrini.find(s => s.stato === "IN_CODA");
+    if (scontrinoDaStampare) {
+      handleStampa(scontrinoDaStampare);
+    }
+  }, [scontrini, autoStampa, printerConnected]);
+
+  // Connetti stampante Bluetooth
+  const connectPrinter = async () => {
+    try {
+      setPrinterStatus("Connessione in corso...");
+      const connected = await netumPrinter.connect();
+      if (connected) {
+        setPrinterConnected(true);
+        setPrinterStatus("Connesso");
+        console.log("Stampante Bluetooth connessa");
+      } else {
+        setPrinterConnected(false);
+        setPrinterStatus("Connessione fallita");
+      }
+    } catch (error) {
+      console.error("Errore connessione stampante:", error);
+      setPrinterConnected(false);
+      setPrinterStatus("Errore connessione");
+    }
+  };
+
+  // Disconnetti stampante
+  const disconnectPrinter = async () => {
+    try {
+      await netumPrinter.disconnect();
+      setPrinterConnected(false);
+      setPrinterStatus("Non connesso");
+    } catch (error) {
+      console.error("Errore disconnessione:", error);
+    }
+  };
+
+  // Stampa scontrino reale via Bluetooth
   const handleStampa = async (scontrino: ScontrinoQueue) => {
     try {
-      // Simula tempo di stampa
+      // Aggiorna stato a IN_STAMPA
       setScontrini(prev => prev.map(s => 
         s.id === scontrino.id ? { ...s, stato: "IN_STAMPA" as const } : s
       ));
 
-      // Simula delay stampa
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Se non connesso, prova a connettersi
+      if (!printerConnected) {
+        const connected = await netumPrinter.connect();
+        if (!connected) {
+          throw new Error("Impossibile connettersi alla stampante");
+        }
+        setPrinterConnected(true);
+      }
 
-      // Simula risultato (95% successo)
-      const successo = Math.random() > 0.05;
+      // Prepara dati per la stampa
+      const receiptData: ReceiptData = {
+        numero: scontrino.id.substring(0, 8),
+        data: scontrino.timestampCreazione,
+        tavolo: scontrino.tavoloNumero,
+        cameriere: scontrino.cameriereNome,
+        righe: scontrino.righe.map(r => ({
+          nome: r.prodotto,
+          quantita: r.quantita,
+          prezzo: r.prezzoUnitario,
+          totale: r.totaleRiga
+        })),
+        totale: scontrino.totale,
+        pagamenti: scontrino.modalitaPagamento ? [{
+          metodo: scontrino.modalitaPagamento,
+          importo: scontrino.totale
+        }] : [],
+        nomeCliente: scontrino.clienteNome
+      };
+
+      // Stampa scontrino
+      const successo = await netumPrinter.printReceipt(receiptData);
       
       if (successo) {
         await marcaScontrinoStampato(scontrino.id);
@@ -121,20 +194,23 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
           s.id === scontrino.id ? { ...s, stato: "STAMPATO" as const } : s
         ));
       } else {
-        await marcaScontrinoErrore(scontrino.id, "Errore connessione stampante");
-        setScontrini(prev => prev.map(s => 
-          s.id === scontrino.id ? { 
-            ...s, 
-            stato: "ERRORE" as const,
-            messaggioErrore: "Errore connessione stampante",
-            tentativiStampa: s.tentativiStampa + 1
-          } : s
-        ));
+        throw new Error("Stampa fallita");
       }
 
       loadScontrini(); // Refresh dopo operazione
     } catch (error) {
       console.error("Errore stampa:", error);
+      const errorMessage = error instanceof Error ? error.message : "Errore sconosciuto";
+      
+      await marcaScontrinoErrore(scontrino.id, errorMessage);
+      setScontrini(prev => prev.map(s => 
+        s.id === scontrino.id ? { 
+          ...s, 
+          stato: "ERRORE" as const,
+          messaggioErrore: errorMessage,
+          tentativiStampa: s.tentativiStampa + 1
+        } : s
+      ));
     }
   };
 
@@ -203,6 +279,42 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Stato stampante Bluetooth */}
+            <div className="flex items-center gap-2 px-3 py-1 rounded text-sm" 
+              style={{ 
+                backgroundColor: printerConnected ? colors.button.success : colors.bg.hover,
+                color: printerConnected ? colors.button.successText : colors.text.secondary
+              }}>
+              <Bluetooth className="h-4 w-4" />
+              <span>{printerStatus}</span>
+            </div>
+            
+            {/* Pulsante connetti/disconnetti stampante */}
+            <button
+              onClick={printerConnected ? disconnectPrinter : connectPrinter}
+              className="px-3 py-1 rounded text-sm transition-colors duration-200"
+              style={{ 
+                backgroundColor: colors.button.primary,
+                color: colors.button.primaryText
+              }}
+            >
+              {printerConnected ? 'Disconnetti' : 'Connetti Stampante'}
+            </button>
+            
+            {/* Auto stampa toggle */}
+            {printerConnected && (
+              <button
+                onClick={() => setAutoStampa(!autoStampa)}
+                className="px-3 py-1 rounded text-sm transition-colors duration-200"
+                style={{ 
+                  backgroundColor: autoStampa ? colors.button.success : colors.bg.hover,
+                  color: autoStampa ? colors.button.successText : colors.text.primary
+                }}
+              >
+                Auto-stampa {autoStampa ? 'ON' : 'OFF'}
+              </button>
+            )}
+            
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className="px-3 py-1 rounded text-sm transition-colors duration-200"

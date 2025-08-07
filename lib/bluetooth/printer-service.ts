@@ -269,6 +269,7 @@ export class PrinterService {
       showOperator: settings.mostraOperatore !== false,
       showTable: settings.mostraTavolo !== false,
       showOrderNumber: settings.mostraNumeroOrdine !== false,
+      showCustomer: settings.mostraCliente !== false,
       showProductDetails: settings.mostraDettagliProdotti !== false,
       showQuantity: settings.mostraQuantita !== false,
       showUnitPrice: settings.mostraPrezzoUnitario !== false,

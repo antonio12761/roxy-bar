@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
+    "dev:https": "node server.js",
     "dev:quiet": "node scripts/dev-quiet.js",
     "build": "prisma generate && next build",
     "start": "next start",

@@ -81,6 +81,11 @@ const BluetoothPrinterPanel = dynamic(
   { ssr: false }
 );
 
+const DirectReceiptModal = dynamic(
+  () => import("@/components/cassa/DirectReceiptModal").then(mod => ({ default: mod.DirectReceiptModal })),
+  { ssr: false }
+);
+
 interface OrderItem {
   id: string;
   prodotto: {
@@ -172,6 +177,7 @@ function CassaPageOptimized() {
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
   const [showCameriereModal, setShowCameriereModal] = useState(false);
   const [showBluetoothPanel, setShowBluetoothPanel] = useState(false);
+  const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [stampaScontrinoFlag, setStampaScontrinoFlag] = useState(true);
   
   // Validazione con Zod
@@ -778,6 +784,7 @@ function CassaPageOptimized() {
           setShowMultiOrderPaymentModal(true);
         }}
         onShowBluetoothPanel={() => setShowBluetoothPanel(true)}
+        onShowDirectReceipt={() => setShowDirectReceiptModal(true)}
         showHistory={showHistory}
         showScontrinoQueue={showScontrinoQueue}
           />
@@ -1226,6 +1233,18 @@ function CassaPageOptimized() {
           <BluetoothPrinterPanel 
             isOpen={showBluetoothPanel}
             onClose={() => setShowBluetoothPanel(false)}
+          />
+        </CassaErrorBoundary>
+
+        {/* Direct Receipt Modal */}
+        <CassaErrorBoundary level="component" isolate>
+          <DirectReceiptModal 
+            isOpen={showDirectReceiptModal}
+            onClose={() => setShowDirectReceiptModal(false)}
+            onSuccess={() => {
+              loadOrders();
+              setShowDirectReceiptModal(false);
+            }}
           />
         </CassaErrorBoundary>
 

@@ -16,9 +16,12 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  TestTube
+  TestTube,
+  Eye
 } from "lucide-react";
 import { toast } from "sonner";
+import ScontrinoPreviewV2 from "./scontrino-preview-v2";
+import LogoUploadGuide from "./logo-upload-guide";
 
 interface ImpostazioniScontrino {
   id?: string;
@@ -34,11 +37,13 @@ interface ImpostazioniScontrino {
   larghezzaCarta: number;
   allineamentoTitolo: string;
   carattereSeparatore: string;
+  fontScontrino?: string;
   mostraData: boolean;
   mostraOra: boolean;
   mostraOperatore: boolean;
   mostraTavolo: boolean;
   mostraNumeroOrdine: boolean;
+  mostraCliente: boolean;
   
   // Messaggi personalizzati
   messaggioIntestazione?: string;
@@ -81,11 +86,13 @@ export default function ImpostazioniScontrinoComponent() {
     larghezzaCarta: 48,
     allineamentoTitolo: "center",
     carattereSeparatore: "-",
+    fontScontrino: "mono",
     mostraData: true,
     mostraOra: true,
     mostraOperatore: true,
     mostraTavolo: true,
     mostraNumeroOrdine: true,
+    mostraCliente: true,
     messaggioRingraziamento: "Grazie per la visita!",
     mostraDettagliProdotti: true,
     mostraQuantita: true,
@@ -188,8 +195,10 @@ export default function ImpostazioniScontrinoComponent() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Colonna sinistra - Impostazioni */}
+      <div className="space-y-4">
+        {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Settings className="h-6 w-6 text-purple-400" />
@@ -269,7 +278,10 @@ export default function ImpostazioniScontrinoComponent() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Logo URL</label>
+                <label className="block text-sm font-medium mb-2">
+                  Logo URL
+                  <LogoUploadGuide />
+                </label>
                 <input
                   type="text"
                   value={impostazioni.logoUrl || ""}
@@ -277,6 +289,50 @@ export default function ImpostazioniScontrinoComponent() {
                   placeholder="https://esempio.com/logo.png"
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    Usa un URL diretto all'immagine (PNG, JPG)
+                  </p>
+                  {impostazioni.logoUrl?.includes('drive.google.com') && (
+                    <div className="bg-amber-900/20 border border-amber-700 rounded p-2">
+                      <p className="text-xs text-amber-400 font-semibold">
+                        ⚠️ Google Drive ha limitazioni CORS
+                      </p>
+                      <p className="text-xs text-amber-300 mt-1">
+                        Alternative consigliate:
+                      </p>
+                      <ul className="text-xs text-amber-200 mt-1 ml-3 space-y-0.5">
+                        <li>• Imgur.com (gratuito, facile)</li>
+                        <li>• Imgbb.com (gratuito)</li>
+                        <li>• Cloudinary (gratuito con limiti)</li>
+                        <li>• Hosting del sito web</li>
+                      </ul>
+                    </div>
+                  )}
+                  {(impostazioni.logoUrl?.includes('imgur.com/a/') || impostazioni.logoUrl?.includes('imgur.com/gallery/')) && (
+                    <div className="bg-red-900/20 border border-red-700 rounded p-2">
+                      <p className="text-xs text-red-400 font-semibold">
+                        ❌ Link Imgur non corretto
+                      </p>
+                      <p className="text-xs text-red-300 mt-1">
+                        Hai copiato il link della pagina, non dell'immagine!
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-red-200 font-semibold">Per ottenere il link corretto:</p>
+                        <ol className="text-xs text-red-200 ml-3 space-y-0.5">
+                          <li>1. Vai al tuo link</li>
+                          <li>2. <strong>Fai clic destro sull'immagine</strong></li>
+                          <li>3. Scegli <strong>"Copia indirizzo immagine"</strong></li>
+                        </ol>
+                        <div className="mt-2 p-1 bg-green-900/30 border border-green-700 rounded">
+                          <p className="text-xs text-green-300">
+                            ✅ Link corretto: <code>https://i.imgur.com/xxxxx.png</code>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div>
@@ -376,7 +432,22 @@ export default function ImpostazioniScontrinoComponent() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Font Scontrino</label>
+              <select
+                value={impostazioni.fontScontrino || "mono"}
+                onChange={(e) => handleInputChange("fontScontrino", e.target.value)}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="mono">Monospace (Default)</option>
+                <option value="poppins">Poppins</option>
+                <option value="inter">Inter</option>
+                <option value="system">System UI</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">Il font selezionato verrà visualizzato nella preview</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -425,6 +496,16 @@ export default function ImpostazioniScontrinoComponent() {
                   className="rounded border-border"
                 />
                 <span className="text-sm">Mostra N° Ordine</span>
+              </label>
+              
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={impostazioni.mostraCliente}
+                  onChange={(e) => handleInputChange("mostraCliente", e.target.checked)}
+                  className="rounded border-border"
+                />
+                <span className="text-sm">Mostra Cliente</span>
               </label>
             </div>
           </div>
@@ -759,6 +840,18 @@ export default function ImpostazioniScontrinoComponent() {
               <li>Testare sempre le impostazioni con una stampa di prova</li>
             </ul>
           </div>
+        </div>
+      </div>
+      </div>
+      
+      {/* Colonna destra - Preview */}
+      <div className="space-y-4">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Eye className="h-5 w-5 text-purple-400" />
+            Preview Scontrino
+          </h3>
+          <ScontrinoPreviewV2 impostazioni={impostazioni} isVisible={true} />
         </div>
       </div>
     </div>
