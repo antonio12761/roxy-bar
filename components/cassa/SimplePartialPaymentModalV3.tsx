@@ -207,10 +207,10 @@ export function SimplePartialPaymentModal({
               }}
               onFocus={() => setShowDropdown(true)}
               onBlur={() => {
-                // Delay per permettere al click di essere registrato
+                // Delay maggiore per Android PWA
                 setTimeout(() => {
                   setShowDropdown(false);
-                }, 200);
+                }, 300);
               }}
               placeholder="Inserisci il nome del cliente"
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -227,18 +227,21 @@ export function SimplePartialPaymentModal({
                     key={index}
                     type="button"
                     className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onMouseDown={(e) => {
+                    onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setClienteNome(cliente);
                       clienteNomeRef.current = cliente;
                       setShowDropdown(false);
-                      // Non fare blur immediato per evitare problemi su Android
-                      setTimeout(() => {
-                        if (inputRef.current) {
-                          inputRef.current.blur();
-                        }
-                      }, 100);
+                      // Blur immediato per chiudere la tastiera
+                      if (inputRef.current) {
+                        inputRef.current.blur();
+                      }
+                    }}
+                    onTouchEnd={(e) => {
+                      // Per Android, previeni comportamenti default del touch
+                      e.preventDefault();
+                      e.stopPropagation();
                     }}
                   >
                     {cliente}
