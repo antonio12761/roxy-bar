@@ -83,7 +83,7 @@ export function AndroidPWAFix() {
             break;
           }
           
-          clickableElement = clickableElement.parentElement;
+          clickableElement = clickableElement.parentElement as HTMLElement;
           maxDepth--;
         }
       }, { passive: false });
