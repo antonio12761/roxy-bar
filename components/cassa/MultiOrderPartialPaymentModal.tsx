@@ -756,7 +756,7 @@ export function MultiOrderPartialPaymentModal({
             <input
               type="text"
               value={clienteNome}
-              onChange={(e) => handleClienteSearch(e.target.value)}
+              onChange={(e) => handleClienteNomeChange(e.target.value)}
               placeholder="Nome cliente *"
               className="w-full px-3 py-2 rounded-lg text-sm"
               style={{

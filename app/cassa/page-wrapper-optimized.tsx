@@ -763,7 +763,7 @@ function CassaPageOptimized() {
 
   return (
     <CassaErrorBoundary level="page">
-      <div className="min-h-screen pb-96" style={{ backgroundColor: colors.bg.dark }}>
+      <div className="min-h-screen pb-20 sm:pb-96" style={{ backgroundColor: colors.bg.dark }}>
         <ToastContainer />
         {/* Header */}
         <CassaErrorBoundary level="section" isolate>
@@ -792,7 +792,7 @@ function CassaPageOptimized() {
 
         {/* Main Content */}
         <CassaErrorBoundary level="section" isolate>
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
         {showHistory ? (
           <PaymentHistory isOpen={showHistory} onClose={() => setShowHistory(false)} />
         ) : showScontrinoQueue ? (
@@ -818,14 +818,14 @@ function CassaPageOptimized() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {(() => {
                   // Usa i dati pre-aggregati dal server per evitare duplicazioni
                   const allTables = [...tableGroupsRitirate, ...tableGroupsDaPagare];
                   
                   if (allTables.length === 0) {
                     return (
-                      <div className="col-span-3 text-center py-12 rounded-lg" 
+                      <div className="col-span-full text-center py-8 sm:py-12 rounded-lg" 
                         style={{ 
                           backgroundColor: colors.bg.card, 
                           borderColor: colors.border.primary, 
@@ -857,9 +857,9 @@ function CassaPageOptimized() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Pagato</h2>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {tableGroupsPagate.length === 0 ? (
-                  <div className="col-span-3 text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                  <div className="col-span-full text-center py-8 sm:py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
                     <CheckCircle className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.success }} />
                     <p style={{ color: colors.text.secondary }}>Nessun ordine pagato recentemente</p>
                   </div>
@@ -902,9 +902,9 @@ function CassaPageOptimized() {
                 </button>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {debiti.length === 0 ? (
-                  <div className="col-span-3 text-center py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                  <div className="col-span-full text-center py-8 sm:py-12 rounded-lg" style={{ backgroundColor: colors.bg.card, borderColor: colors.border.primary, borderWidth: '1px', borderStyle: 'solid' }}>
                     <CreditCard className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.muted }} />
                     <p style={{ color: colors.text.secondary }}>Nessun debito aperto</p>
                   </div>
@@ -1251,13 +1251,13 @@ function CassaPageOptimized() {
         {/* Floating Action Button for Cameriere */}
         <button
         onClick={() => setShowCameriereModal(true)}
-        className="fixed bottom-6 right-6 z-40 shadow-lg rounded-full p-4 transition-all hover:scale-110"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 shadow-lg rounded-full p-3 sm:p-4 transition-all hover:scale-110"
         style={{
           backgroundColor: colors.button.primary,
           color: colors.button.primaryText,
         }}
       >
-        <ShoppingBag className="w-6 h-6" />
+        <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
     </CassaErrorBoundary>

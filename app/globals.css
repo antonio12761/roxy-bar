@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile and PWA specific styles */
+@import "./mobile-pwa.css";
+
 /* Previeni zoom su iOS */
 @supports (-webkit-touch-callout: none) {
   input[type="text"],

@@ -11,6 +11,7 @@ import { createCustomerOrder } from '@/lib/actions/customer-orders'
 import { getCategoryEmojis } from '@/lib/actions/get-category-emojis'
 import { getProdottoConfigurabile } from '@/lib/actions/prodotti-configurabili'
 import ProductVariantModal from '@/components/cameriere/ProductVariantModal'
+import { MixedProductModal } from '@/components/cameriere/MixedProductModal'
 import { toast } from 'sonner'
 
 interface Product {
@@ -103,6 +104,9 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   const [showVariantModal, setShowVariantModal] = useState(false)
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null)
   const [pendingQuantityForVariant, setPendingQuantityForVariant] = useState(1)
+  const [showMixedModal, setShowMixedModal] = useState(false)
+  const [selectedProductForMixed, setSelectedProductForMixed] = useState<Product | null>(null)
+  const [pendingQuantityForMixed, setPendingQuantityForMixed] = useState(1)
   
   // Load category emojis on mount
   useEffect(() => {
@@ -495,15 +499,21 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
   
   // Handle product add with options
   const handleProductAdd = useCallback(async (product: Product, quantity: number) => {
-    // Check if product is miscelato or has configuration
+    // Check if product is miscelato (cocktail/mixed drink)
     if (product.isMiscelato) {
-      const config = await getProdottoConfigurabile(product.id)
-      if (config && config.richiedeScelta) {
-        setSelectedProductForVariant(product)
-        setPendingQuantityForVariant(quantity)
-        setShowVariantModal(true)
-        return
-      }
+      setSelectedProductForMixed(product)
+      setPendingQuantityForMixed(quantity)
+      setShowMixedModal(true)
+      return
+    }
+    
+    // Check if product has configuration
+    const config = await getProdottoConfigurabile(product.id)
+    if (config && config.richiedeScelta) {
+      setSelectedProductForVariant(product)
+      setPendingQuantityForVariant(quantity)
+      setShowVariantModal(true)
+      return
     }
     
     // Check if product requires glasses
@@ -613,6 +623,45 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
       }))
     }
   }, [selectedProductForVariant, pendingQuantityForVariant, addToOrder])
+  
+  // Handle mixed product confirmation
+  const handleMixedProductConfirm = useCallback((selections: { ricettaId: string, selezioni: any[], prezzoTotale: number }) => {
+    if (selectedProductForMixed) {
+      // Extract ingredient names for display
+      const ingredientNames = selections.selezioni
+        .map(sel => sel.bottiglia?.nome || sel.nome || '')
+        .filter(name => name)
+        .join(', ')
+      
+      // Add to order with configuration
+      addToOrder(
+        { ...selectedProductForMixed, prezzo: selections.prezzoTotale },
+        pendingQuantityForMixed,
+        undefined,
+        ingredientNames ? `Ingredienti: ${ingredientNames}` : undefined
+      )
+      
+      // Show confirmation
+      const displayName = ingredientNames 
+        ? `${pendingQuantityForMixed}x ${selectedProductForMixed.nome} (${ingredientNames})`
+        : `${pendingQuantityForMixed}x ${selectedProductForMixed.nome}`
+      setAddedProductName(displayName)
+      setShowAddedConfirm(true)
+      setTimeout(() => setShowAddedConfirm(false), 2000)
+      
+      // Reset states
+      setShowMixedModal(false)
+      setSelectedProductForMixed(null)
+      setPendingQuantityForMixed(1)
+      // Reset quantity selector
+      if (selectedProductForMixed) {
+        setSelectedQuantities(prev => ({ 
+          ...prev, 
+          [selectedProductForMixed.id]: 1 
+        }))
+      }
+    }
+  }, [selectedProductForMixed, pendingQuantityForMixed, addToOrder])
   
   // Handle edit item click
   const handleEditItemClick = useCallback((item: OrderItem) => {
@@ -1629,6 +1678,26 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
               : selectedProductForVariant.prezzo
           }}
           onConfirm={handleVariantConfirm}
+        />
+      )}
+      
+      {/* Mixed Product Modal */}
+      {selectedProductForMixed && (
+        <MixedProductModal
+          isOpen={showMixedModal}
+          onClose={() => {
+            setShowMixedModal(false)
+            setSelectedProductForMixed(null)
+            setPendingQuantityForMixed(1)
+          }}
+          product={{
+            id: selectedProductForMixed.id,
+            nome: selectedProductForMixed.nome,
+            prezzo: typeof selectedProductForMixed.prezzo === 'string' 
+              ? parseFloat(selectedProductForMixed.prezzo) 
+              : selectedProductForMixed.prezzo
+          }}
+          onConfirm={handleMixedProductConfirm}
         />
       )}
     </div>
