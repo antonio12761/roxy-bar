@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Euro, Check, CreditCard, Banknote, Coins, Plus, Minus, User, Maximize2, Minimize2, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { searchClienti, getRecentClienti } from '@/lib/actions/clienti-autocomplete';
@@ -60,6 +60,8 @@ export function SimplePartialPaymentModal({
   const [recentClienti, setRecentClienti] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stampaScontrino, setStampaScontrino] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isSelectingRef = useRef(false);
 
   useEffect(() => {
     if (isOpen && order) {
@@ -99,11 +101,19 @@ export function SimplePartialPaymentModal({
     }
   }, [recentClienti]);
 
-  const handleSelectSuggestion = (suggestion: string) => {
+  const handleSelectSuggestion = useCallback((suggestion: string) => {
+    isSelectingRef.current = true;
     setClienteNome(suggestion);
     setShowSuggestions(false);
     setSuggestions([]);
-  };
+    // Rimuovi il focus dall'input per chiudere la tastiera
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+    setTimeout(() => {
+      isSelectingRef.current = false;
+    }, 100);
+  }, []);
 
   if (!isOpen || !order) return null;
 
@@ -666,18 +676,33 @@ export function SimplePartialPaymentModal({
                     style={{ color: colors.text.secondary }}
                   />
                   <input
+                    ref={inputRef}
                     type="text"
                     value={clienteNome}
-                    onChange={(e) => handleClienteSearch(e.target.value)}
+                    onChange={(e) => {
+                      if (!isSelectingRef.current) {
+                        handleClienteSearch(e.target.value);
+                      }
+                    }}
                     onFocus={() => {
                       if (clienteNome.length === 0 && recentClienti.length > 0) {
                         setSuggestions(recentClienti);
                         setShowSuggestions(true);
                       }
                     }}
-                    onBlur={() => {
-                      // Ritarda la chiusura per permettere il click sui suggerimenti
-                      setTimeout(() => setShowSuggestions(false), 300);
+                    onBlur={(e) => {
+                      // Solo se non stiamo selezionando un suggerimento
+                      if (!isSelectingRef.current) {
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        if (!relatedTarget || !relatedTarget.closest('.suggestion-item')) {
+                          // Ritarda la chiusura per permettere il click sui suggerimenti
+                          setTimeout(() => {
+                            if (!isSelectingRef.current) {
+                              setShowSuggestions(false);
+                            }
+                          }, 400);
+                        }
+                      }
                     }}
                     placeholder="Inserisci o seleziona il nome del cliente"
                     className="w-full pl-10 pr-4 py-2 rounded-lg border"
@@ -727,7 +752,7 @@ export function SimplePartialPaymentModal({
                             e.stopPropagation();
                             handleSelectSuggestion(suggestion);
                           }}
-                          className="px-3 py-3 cursor-pointer hover:bg-opacity-10 transition-colors flex items-center gap-2"
+                          className="suggestion-item px-3 py-3 cursor-pointer hover:bg-opacity-10 transition-colors flex items-center gap-2"
                           style={{
                             backgroundColor: 'transparent',
                             color: colors.text.primary,
@@ -808,16 +833,10 @@ export function SimplePartialPaymentModal({
                     type="checkbox"
                     checked={stampaScontrino}
                     onChange={(e) => {
-                      setStampaScontrino(e.target.checked);
+                      const isChecked = e.target.checked;
+                      setStampaScontrino(isChecked);
                       // Salva la preferenza dell'utente
-                      updatePrinterSettings({ defaultEnabled: e.target.checked });
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const checkbox = e.currentTarget;
-                      checkbox.checked = !checkbox.checked;
-                      setStampaScontrino(checkbox.checked);
-                      updatePrinterSettings({ defaultEnabled: checkbox.checked });
+                      updatePrinterSettings({ defaultEnabled: isChecked });
                     }}
                     className="w-5 h-5 rounded border-2 transition-colors"
                     style={{

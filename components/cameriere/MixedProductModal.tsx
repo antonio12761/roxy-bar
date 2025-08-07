@@ -371,79 +371,167 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                       </div>
                     </div>
 
-                    {/* Bottiglie Grid */}
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                      {bottiglie.map(bottiglia => {
-                        const isSelected = selezioniComponente.includes(bottiglia.id);
-                        // Per selezione singola (radio), non disabilitare le altre opzioni
-                        // Per selezione multipla (checkbox), disabilita solo se hai raggiunto il massimo E non è già selezionata
-                        const isDisabled = !bottiglia.disponibile || 
-                          (componente.maxSelezioni > 1 && !isSelected && selezioniComponente.length >= componente.maxSelezioni);
+                    {/* Bottiglie Grid con Separatori */}
+                    <div className="space-y-3">
+                      {(() => {
+                        // Raggruppa le bottiglie per marca o per disponibilità
+                        const disponibili = bottiglie.filter(b => b.disponibile);
+                        const nonDisponibili = bottiglie.filter(b => !b.disponibile);
+                        
+                        // Raggruppa le disponibili per marca
+                        const bottigliePerMarca = disponibili.reduce((acc, bottiglia) => {
+                          const key = bottiglia.marca || 'Altre';
+                          if (!acc[key]) acc[key] = [];
+                          acc[key].push(bottiglia);
+                          return acc;
+                        }, {} as Record<string, typeof bottiglie>);
+                        
+                        // Ordina le marche alfabeticamente
+                        const marche = Object.keys(bottigliePerMarca).sort((a, b) => {
+                          if (a === 'Altre') return 1;
+                          if (b === 'Altre') return -1;
+                          return a.localeCompare(b);
+                        });
                         
                         return (
-                          <button
-                            key={bottiglia.id}
-                            onClick={() => !isDisabled && handleSelezione(componente.categoriaId, bottiglia.id, componente)}
-                            disabled={isDisabled}
-                            className={`
-                              relative p-2 rounded-lg border transition-all duration-200
-                              ${isDisabled ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:shadow-lg hover:scale-105 active:scale-95'}
-                              ${isSelected ? 'shadow-md transform scale-105' : 'hover:border-orange-300'}
-                            `}
-                            style={{
-                              backgroundColor: isSelected 
-                                ? `linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)` 
-                                : 'white',
-                              borderColor: isSelected ? colors.primary : '#E5E5E5',
-                              borderWidth: isSelected ? '2px' : '1px',
-                              background: isSelected 
-                                ? 'linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)'
-                                : 'white'
-                            }}
-                          >
-                            {/* Selected Badge */}
-                            {isSelected && (
-                              <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5 shadow-sm">
-                                <Check className="w-3 h-3" />
-                              </div>
-                            )}
-                            
-                            {/* Content */}
-                            <div className="space-y-1">
-                              <div className="text-xs font-bold leading-tight line-clamp-2" style={{ color: colors.text.primary }}>
-                                {bottiglia.nome}
-                              </div>
-                              
-                              {bottiglia.marca && (
-                                <div className="text-[10px] leading-tight line-clamp-1" style={{ color: colors.text.muted }}>
-                                  {bottiglia.marca}
-                                </div>
-                              )}
-                              
-                              <div className="pt-1 space-y-0.5">
-                                <div className="text-xs font-bold" style={{ color: isSelected ? colors.primary : '#D97B34' }}>
-                                  €{bottiglia.costoPorzione.toFixed(2)}
-                                </div>
-                                
-                                {bottiglia.gradazioneAlcolica && (
-                                  <div className="text-[10px]" style={{ color: colors.text.muted }}>
-                                    {bottiglia.gradazioneAlcolica}°
-                                  </div>
+                          <>
+                            {marche.map((marca, marcaIndex) => (
+                              <div key={marca}>
+                                {/* Separator con nome marca */}
+                                {bottigliePerMarca[marca].length > 0 && (
+                                  <>
+                                    {marcaIndex > 0 && (
+                                      <div className="h-px bg-gray-200 my-2" />
+                                    )}
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                                      <span className="text-[10px] font-semibold px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full">
+                                        {marca}
+                                      </span>
+                                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                                    </div>
+                                  </>
                                 )}
+                                
+                                {/* Grid delle bottiglie per questa marca */}
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                  {bottigliePerMarca[marca]
+                                    .sort((a, b) => {
+                                      // Ordina per gradazione alcolica (se presente) poi per nome
+                                      if (a.gradazioneAlcolica && b.gradazioneAlcolica) {
+                                        return a.gradazioneAlcolica - b.gradazioneAlcolica;
+                                      }
+                                      return a.nome.localeCompare(b.nome);
+                                    })
+                                    .map(bottiglia => {
+                                      const isSelected = selezioniComponente.includes(bottiglia.id);
+                                      const isDisabled = !bottiglia.disponibile || 
+                                        (componente.maxSelezioni > 1 && !isSelected && selezioniComponente.length >= componente.maxSelezioni);
+                                      
+                                      return (
+                                        <button
+                                          key={bottiglia.id}
+                                          onClick={() => !isDisabled && handleSelezione(componente.categoriaId, bottiglia.id, componente)}
+                                          disabled={isDisabled}
+                                          className={`
+                                            relative p-2 rounded-lg border transition-all duration-200
+                                            ${isDisabled ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:shadow-lg hover:scale-105 active:scale-95'}
+                                            ${isSelected ? 'shadow-md transform scale-105' : 'hover:border-orange-300'}
+                                          `}
+                                          style={{
+                                            backgroundColor: isSelected 
+                                              ? `linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)` 
+                                              : 'white',
+                                            borderColor: isSelected ? colors.primary : '#E5E5E5',
+                                            borderWidth: isSelected ? '2px' : '1px',
+                                            background: isSelected 
+                                              ? 'linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)'
+                                              : 'white'
+                                          }}
+                                        >
+                                          {/* Selected Badge */}
+                                          {isSelected && (
+                                            <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                                              <Check className="w-3 h-3" />
+                                            </div>
+                                          )}
+                                          
+                                          {/* Content */}
+                                          <div className="space-y-1">
+                                            <div className="text-xs font-bold leading-tight line-clamp-2" style={{ color: colors.text.primary }}>
+                                              {bottiglia.nome}
+                                            </div>
+                                            
+                                            <div className="pt-1 space-y-0.5">
+                                              <div className="text-xs font-bold" style={{ color: isSelected ? colors.primary : '#D97B34' }}>
+                                                €{bottiglia.costoPorzione.toFixed(2)}
+                                              </div>
+                                              
+                                              {bottiglia.gradazioneAlcolica && (
+                                                <div className="text-[10px]" style={{ color: colors.text.muted }}>
+                                                  {bottiglia.gradazioneAlcolica}°
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Non disponibile overlay */}
-                            {!bottiglia.disponibile && (
-                              <div className="absolute inset-0 bg-gray-100 bg-opacity-60 rounded-lg flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-red-600 bg-white px-1 py-0.5 rounded">
-                                  ESAURITO
-                                </span>
+                            ))}
+                            
+                            {/* Sezione prodotti non disponibili */}
+                            {nonDisponibili.length > 0 && (
+                              <div>
+                                {disponibili.length > 0 && (
+                                  <>
+                                    <div className="h-px bg-gray-200 my-2" />
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-200 to-transparent" />
+                                      <span className="text-[10px] font-semibold px-2 py-0.5 bg-red-50 text-red-600 rounded-full">
+                                        NON DISPONIBILI
+                                      </span>
+                                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-200 to-transparent" />
+                                    </div>
+                                  </>
+                                )}
+                                
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 opacity-50">
+                                  {nonDisponibili.map(bottiglia => (
+                                    <button
+                                      key={bottiglia.id}
+                                      disabled
+                                      className="relative p-2 rounded-lg border bg-gray-50 cursor-not-allowed"
+                                      style={{
+                                        borderColor: '#E5E5E5'
+                                      }}
+                                    >
+                                      <div className="space-y-1">
+                                        <div className="text-xs font-bold leading-tight line-clamp-2 text-gray-400">
+                                          {bottiglia.nome}
+                                        </div>
+                                        
+                                        {bottiglia.marca && (
+                                          <div className="text-[10px] leading-tight line-clamp-1 text-gray-400">
+                                            {bottiglia.marca}
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="absolute inset-0 bg-gray-100 bg-opacity-60 rounded-lg flex items-center justify-center">
+                                        <span className="text-[10px] font-bold text-red-600 bg-white px-1 py-0.5 rounded">
+                                          ESAURITO
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             )}
-                          </button>
+                          </>
                         );
-                      })}
+                      })()}
                     </div>
                   </div>
                 );
