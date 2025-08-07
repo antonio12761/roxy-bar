@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { X, Wine, Droplet, Coffee, Check, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getRicettaByProdottoId, getBottigliePerCategoria } from '@/lib/actions/sistema-miscelati-semplificato';
-import { ModalPortal } from '@/components/ui/ModalPortal';
 
 interface MixedProductModalProps {
   isOpen: boolean;
@@ -234,27 +233,35 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
-    <ModalPortal isOpen={isOpen}>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ 
+        pointerEvents: 'auto',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+      }}
+    >
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        data-modal="true"
-        style={{ pointerEvents: 'auto' }}
+        className="absolute inset-0"
+        onClick={onClose}
+        style={{ 
+          pointerEvents: 'auto',
+          cursor: 'pointer'
+        }}
+      />
+      
+      <div 
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl"
+        style={{ 
+          backgroundColor: colors.bg.card,
+          pointerEvents: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          cursor: 'default'
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div 
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm modal-backdrop"
-          onClick={onClose}
-          style={{ pointerEvents: 'auto' }}
-        />
-        
-        <div 
-          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl modal-container"
-          style={{ 
-            backgroundColor: colors.bg.card,
-            pointerEvents: 'auto',
-            WebkitOverflowScrolling: 'touch'
-          }}
-        >
         {/* Header */}
         <div 
           className="sticky top-0 z-10 flex items-center justify-between p-4 border-b"
@@ -429,6 +436,5 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
         )}
       </div>
     </div>
-    </ModalPortal>
   );
 }

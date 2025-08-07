@@ -47,13 +47,44 @@ export function AndroidPWAFix() {
         }, 0);
       };
 
-      // Aggiungi listener solo per elementi con onClick o role="button"
+      // Fix più aggressivo per Android PWA
       document.addEventListener('touchend', (e) => {
         const target = e.target as HTMLElement;
-        const isClickable = target.matches('button, a, [role="button"], [onclick], .cursor-pointer, .clickable, [class*="onClick"]');
         
-        if (isClickable) {
-          handleGlobalTouchEnd(e);
+        // Controlla se l'elemento o un suo parent ha onClick
+        let clickableElement = target;
+        let maxDepth = 5; // Cerca fino a 5 livelli di parent
+        
+        while (clickableElement && maxDepth > 0) {
+          const hasOnClick = clickableElement.onclick || 
+                            clickableElement.hasAttribute('onclick') ||
+                            clickableElement.matches('button, a, [role="button"], .cursor-pointer, .clickable') ||
+                            (clickableElement.className && clickableElement.className.toString().includes('onClick')) ||
+                            (clickableElement.className && clickableElement.className.toString().includes('cursor-pointer'));
+          
+          if (hasOnClick) {
+            // Previeni doppi eventi
+            if (e.cancelable) {
+              e.preventDefault();
+            }
+            
+            // Trigger click con un piccolo delay
+            setTimeout(() => {
+              const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: e.changedTouches[0].clientX,
+                clientY: e.changedTouches[0].clientY
+              });
+              clickableElement.dispatchEvent(clickEvent);
+            }, 10);
+            
+            break;
+          }
+          
+          clickableElement = clickableElement.parentElement;
+          maxDepth--;
         }
       }, { passive: false });
 

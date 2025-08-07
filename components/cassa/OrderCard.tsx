@@ -87,7 +87,8 @@ export default function OrderCard({ order, isSelected, onClick, isSelectable }: 
         backgroundColor: colors.bg.darker,
         borderColor: isSelected ? colors.border.primary : colors.border.secondary,
         borderWidth: isSelected ? '2px' : '1px',
-        borderStyle: 'solid'
+        borderStyle: 'solid',
+        cursor: isSelectable ? 'pointer' : 'default'
       }}
     >
       <span className="text-xs uppercase tracking-wider block mb-1" style={{ color: colors.text.muted }}>
