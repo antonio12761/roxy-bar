@@ -198,15 +198,28 @@ export class PrinterService {
    */
   async loadReceiptSettings(): Promise<any> {
     try {
+      this.logDebug('Chiamata API impostazioni-scontrino...');
       const response = await fetch('/api/impostazioni-scontrino');
+      
+      if (!response.ok) {
+        this.logDebug(`API risposta non OK: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      
       const result = await response.json();
+      this.logDebug('Risposta API: ' + JSON.stringify(result));
       
       if (result.success && result.data) {
-        this.logDebug('Impostazioni scontrino caricate');
+        this.logDebug('Impostazioni caricate con successo');
+        this.logDebug('Nome attività: ' + result.data.nomeAttivita);
+        this.logDebug('Indirizzo: ' + result.data.indirizzo);
         return result.data;
+      } else {
+        this.logDebug('Nessuna impostazione trovata nella risposta');
       }
     } catch (error) {
-      this.logDebug('Errore caricamento impostazioni: ' + error);
+      this.logDebug('ERRORE caricamento impostazioni: ' + error);
+      console.error('Errore dettagliato:', error);
     }
     return null;
   }
@@ -298,9 +311,18 @@ export class PrinterService {
       }
 
       // Carica impostazioni personalizzate
-      this.logDebug('Caricamento impostazioni scontrino...');
+      this.logDebug('=== INIZIO CARICAMENTO IMPOSTAZIONI ===');
       const settings = await this.loadReceiptSettings();
-      this.logDebug('Impostazioni caricate: ' + JSON.stringify(settings ? 'OK' : 'Non trovate'));
+      
+      if (settings) {
+        this.logDebug('Impostazioni trovate:');
+        this.logDebug('- Nome: ' + settings.nomeAttivita);
+        this.logDebug('- Indirizzo: ' + settings.indirizzo);
+        this.logDebug('- Messaggio: ' + settings.messaggioRingraziamento);
+      } else {
+        this.logDebug('ATTENZIONE: Nessuna impostazione caricata!');
+      }
+      this.logDebug('=== FINE CARICAMENTO IMPOSTAZIONI ===');
       
       // Converti i dati dal formato server al formato stampante
       const baseReceipt: ReceiptData = {
@@ -315,7 +337,14 @@ export class PrinterService {
       };
       
       // Applica impostazioni personalizzate
+      this.logDebug('Applicazione impostazioni al receipt...');
       const formattedReceipt = this.formatReceiptWithSettings(baseReceipt, settings);
+      
+      // Log dettagliato di cosa stiamo passando
+      this.logDebug('Dati formattati per stampa:');
+      this.logDebug('- Header business: ' + formattedReceipt.header?.businessName);
+      this.logDebug('- Header address: ' + formattedReceipt.header?.address);
+      this.logDebug('- Footer message: ' + formattedReceipt.footer?.message);
 
       console.log('🖨️ Stampa scontrino automatica:', formattedReceipt.numero);
       

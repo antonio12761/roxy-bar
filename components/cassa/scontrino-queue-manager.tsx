@@ -186,6 +186,7 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
       };
 
       // Stampa scontrino con impostazioni personalizzate
+      console.log('📨 Invio a printerService.printReceipt con dati:', receiptData);
       const successo = await printerService.printReceipt(receiptData);
       
       if (successo) {
