@@ -68,17 +68,15 @@ export function AndroidPWAFix() {
               e.preventDefault();
             }
             
-            // Trigger click con un piccolo delay
-            setTimeout(() => {
-              const clickEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                clientX: e.changedTouches[0].clientX,
-                clientY: e.changedTouches[0].clientY
-              });
-              clickableElement.dispatchEvent(clickEvent);
-            }, 10);
+            // Trigger click immediatamente
+            const clickEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window,
+              clientX: e.changedTouches[0].clientX,
+              clientY: e.changedTouches[0].clientY
+            });
+            clickableElement.dispatchEvent(clickEvent);
             
             break;
           }

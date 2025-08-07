@@ -266,10 +266,10 @@ export function MultiOrderPartialPaymentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" 
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" 
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
-      <div className="rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden" 
+      <div className="rounded-t-2xl sm:rounded-lg w-full sm:max-w-5xl h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col" 
         style={{ 
           backgroundColor: colors.bg.card, 
           borderColor: colors.border.primary, 
@@ -278,18 +278,18 @@ export function MultiOrderPartialPaymentModal({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b" 
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b gap-2" 
           style={{ borderColor: colors.border.primary }}
         >
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold" style={{ color: colors.text.primary }}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
+            <h2 className="text-lg sm:text-xl font-semibold" style={{ color: colors.text.primary }}>
               Pagamento Multi-Tavolo
             </h2>
             {tavoliUnici.length > 1 && (
               <select
                 value={tavoloFilter}
                 onChange={(e) => setTavoloFilter(e.target.value)}
-                className="px-3 py-1 rounded-lg text-sm"
+                className="px-3 py-1 rounded-lg text-sm w-full sm:w-auto"
                 style={{
                   backgroundColor: colors.bg.darker,
                   color: colors.text.primary,
@@ -318,9 +318,9 @@ export function MultiOrderPartialPaymentModal({
           </button>
         </div>
 
-        <div className="flex h-[calc(90vh-200px)]">
+        <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
           {/* Left: Orders List */}
-          <div className="w-1/3 border-r overflow-y-auto p-4" 
+          <div className="w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r overflow-y-auto p-3 sm:p-4 max-h-[30vh] sm:max-h-none" 
             style={{ borderColor: colors.border.primary }}
           >
             <h3 className="text-sm font-medium mb-3" style={{ color: colors.text.secondary }}>
@@ -373,7 +373,7 @@ export function MultiOrderPartialPaymentModal({
           </div>
 
           {/* Center: Items List */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4">
             <h3 className="text-sm font-medium mb-3" style={{ color: colors.text.secondary }}>
               Seleziona Prodotti e Quantità
             </h3>
@@ -477,8 +477,8 @@ export function MultiOrderPartialPaymentModal({
             )}
           </div>
 
-          {/* Right: Summary */}
-          <div className="w-80 border-l p-4 flex flex-col" 
+          {/* Right: Summary - Hidden on mobile, shown as footer */}
+          <div className="hidden sm:flex w-80 border-l p-4 flex-col" 
             style={{ borderColor: colors.border.primary }}
           >
             <h3 className="text-sm font-medium mb-3" style={{ color: colors.text.secondary }}>
@@ -732,6 +732,66 @@ export function MultiOrderPartialPaymentModal({
                 )}
               </button>
             </div>
+          </div>
+        </div>
+        
+        {/* Mobile Footer Summary */}
+        <div className="sm:hidden border-t p-3 bg-opacity-95" 
+          style={{ 
+            borderColor: colors.border.primary,
+            backgroundColor: colors.bg.card 
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm" style={{ color: colors.text.secondary }}>
+              Selezionati: {selectedItems.size} prodotti
+            </span>
+            <span className="text-lg font-bold" style={{ color: colors.text.primary }}>
+              €{totale.toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Cliente input mobile */}
+          <div className="mb-2">
+            <input
+              type="text"
+              value={clienteNome}
+              onChange={(e) => handleClienteSearch(e.target.value)}
+              placeholder="Nome cliente *"
+              className="w-full px-3 py-2 rounded-lg text-sm"
+              style={{
+                backgroundColor: colors.bg.darker,
+                color: colors.text.primary,
+                borderColor: colors.border.primary,
+                borderWidth: '1px',
+                borderStyle: 'solid'
+              }}
+            />
+          </div>
+          
+          {/* Payment buttons mobile */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleClose}
+              className="py-2 px-3 rounded-lg text-sm"
+              style={{
+                backgroundColor: colors.button.secondary || colors.bg.hover,
+                color: colors.button.secondaryText || colors.text.primary
+              }}
+            >
+              Annulla
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={!clienteNome.trim() || selectedItems.size === 0 || isProcessing}
+              className="py-2 px-3 rounded-lg text-sm disabled:opacity-50"
+              style={{
+                backgroundColor: colors.button.success,
+                color: colors.button.successText
+              }}
+            >
+              Paga €{totale.toFixed(2)}
+            </button>
           </div>
         </div>
       </div>
