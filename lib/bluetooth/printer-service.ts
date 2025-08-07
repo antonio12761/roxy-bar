@@ -262,6 +262,11 @@ export class PrinterService {
       fiscalCode: settings.codiceFiscale
     };
     
+    // Logo URL se configurato
+    if (settings.logoUrl) {
+      formattedData.logoUrl = settings.logoUrl;
+    }
+    
     // Messaggi personalizzati
     if (settings.messaggioIntestazione) {
       formattedData.headerMessage = settings.messaggioIntestazione;

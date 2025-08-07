@@ -538,6 +538,15 @@ export class NetumPrinter {
       await this.sendCommand(ESC_POS.INIT);
       await this.sendCommand(ESC_POS.CHARSET_CP850);
       
+      // LOGO (se configurato) - NOTA: stampanti termiche Bluetooth non supportano immagini
+      if ((receiptData as any).logoUrl) {
+        console.log('🖼️ Logo configurato:', (receiptData as any).logoUrl);
+        console.log('⚠️ NOTA: Stampanti termiche Bluetooth non supportano immagini');
+        // Potresti stampare un placeholder testuale
+        await this.printCentered('===[ LOGO ]===');
+        await this.sendCommand(ESC_POS.NEW_LINE);
+      }
+      
       // USA SOLO DATI DA ADMIN - STAMPA IN GRANDE!
       const businessName = receiptData.header.businessName;
       console.log('🏪 Nome da admin:', businessName);
@@ -583,28 +592,29 @@ export class NetumPrinter {
       
       // Informazioni ordine SOLO SE ABILITATO IN ADMIN
       const opts = receiptData.displayOptions || {};
+      console.log('📋 DisplayOptions ricevute:', JSON.stringify(opts));
       
-      if (opts.showOrderNumber === true) {
+      if (opts.showOrderNumber) {
         await this.sendText(`Scontrino: ${receiptData.numero}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (opts.showDate === true) {
+      if (opts.showDate) {
         await this.sendText(`Data: ${this.formatDate(receiptData.data)}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.tavolo && opts.showTable === true) {
+      if (receiptData.tavolo && opts.showTable) {
         await this.sendText(`Tavolo: ${receiptData.tavolo}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.cameriere && opts.showOperator === true) {
+      if (receiptData.cameriere && opts.showOperator) {
         await this.sendText(`Cameriere: ${receiptData.cameriere}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.nomeCliente && opts.showCustomer === true) {
+      if (receiptData.nomeCliente && opts.showCustomer) {
         await this.sendText(`Cliente: ${receiptData.nomeCliente}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
@@ -613,18 +623,34 @@ export class NetumPrinter {
       await this.printSeparatorLine('-');
       
       // Righe ordine
-      for (const riga of receiptData.righe) {
-        // Nome prodotto e quantità
-        const itemLine = riga.quantita > 1 
-          ? `${riga.nome} x${riga.quantita}`
-          : riga.nome;
+      if (!receiptData.righe || receiptData.righe.length === 0) {
+        console.error('⚠️ ATTENZIONE: Nessun prodotto da stampare!');
+        await this.sendText('(Nessun prodotto)');
+        await this.sendCommand(ESC_POS.NEW_LINE);
+      } else {
+        console.log(`📦 Stampa ${receiptData.righe.length} prodotti...`);
         
-        await this.printLineItem(itemLine, this.formatPrice(riga.totale));
-        
-        // Se quantità > 1, mostra prezzo unitario
-        if (riga.quantita > 1) {
-          await this.sendText(`  ${this.formatPrice(riga.prezzo)} cad.`);
-          await this.sendCommand(ESC_POS.NEW_LINE);
+        try {
+          for (const riga of receiptData.righe) {
+            console.log(`  - ${riga.nome} x${riga.quantita} = ${riga.totale}`);
+            
+            // Nome prodotto e quantità
+            const itemLine = riga.quantita > 1 
+              ? `${riga.nome} x${riga.quantita}`
+              : riga.nome;
+            
+            await this.printLineItem(itemLine, this.formatPrice(riga.totale));
+            
+            // Se quantità > 1, mostra prezzo unitario
+            if (riga.quantita > 1) {
+              await this.sendText(`  ${this.formatPrice(riga.prezzo)} cad.`);
+              await this.sendCommand(ESC_POS.NEW_LINE);
+            }
+          }
+          console.log('✅ Prodotti stampati');
+        } catch (error) {
+          console.error('❌ Errore durante stampa prodotti:', error);
+          // Continua comunque con il resto dello scontrino
         }
       }
       
