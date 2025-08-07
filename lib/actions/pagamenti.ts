@@ -334,7 +334,8 @@ export async function creaPagamento(
           data: {
             stato: "PAGATO",
             statoPagamento: "COMPLETAMENTE_PAGATO",
-            dataChiusura: new Date()
+            dataChiusura: new Date(),
+            nomeCliente: clienteNome || ordinazione.nomeCliente // Salva il nome del cliente
           }
         });
 
@@ -410,6 +411,7 @@ export async function creaPagamento(
             statoPagamento: "PARZIALMENTE_PAGATO",
             // NON cambiare lo stato principale se parzialmente pagato
             // stato rimane CONSEGNATO/RICHIESTA_CONTO/etc
+            nomeCliente: clienteNome || ordinazione.nomeCliente // Salva il nome del cliente anche per pagamenti parziali
           }
         });
         
@@ -791,7 +793,8 @@ export async function creaPagamentoRigheSpecifiche(
             statoPagamento: nuovoStatoPagamento,
             ...(nuovoStatoPagamento === "COMPLETAMENTE_PAGATO" && {
               stato: "PAGATO"
-            })
+            }),
+            nomeCliente: clienteNome || undefined // Salva il nome del cliente
           }
         });
 
