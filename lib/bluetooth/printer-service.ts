@@ -298,7 +298,9 @@ export class PrinterService {
       }
 
       // Carica impostazioni personalizzate
+      this.logDebug('Caricamento impostazioni scontrino...');
       const settings = await this.loadReceiptSettings();
+      this.logDebug('Impostazioni caricate: ' + JSON.stringify(settings ? 'OK' : 'Non trovate'));
       
       // Converti i dati dal formato server al formato stampante
       const baseReceipt: ReceiptData = {

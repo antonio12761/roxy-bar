@@ -197,19 +197,40 @@ export class NetumPrinter {
       this.onLog?.('🔍 Ricerca stampante Netum NT-1809...');
       this.onLog?.(`📝 UUID utilizzati: service=${PRINTER_SERVICE_UUID}, write=${PRINTER_WRITE_UUID}`);
       
-      // Accetta tutti i dispositivi per non escludere nessuna stampante
-      this.onLog?.('🔄 Mostrando dispositivi Bluetooth disponibili...');
-      this.device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [
-          // UUID principale Netum
-          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-          // Altri UUID comuni per stampanti termiche
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-          '00001101-0000-1000-8000-00805f9b34fb', // SPP UUID
-        ]
-      });
+      try {
+        // Prima prova con filtri specifici (come funzionava ieri)
+        this.onLog?.('🔄 Ricerca con filtri specifici...');
+        this.device = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'NT-' },
+            { namePrefix: 'NETUM' },
+            { namePrefix: 'Printer' },
+            { namePrefix: 'BT-' },
+            { namePrefix: 'Thermal' },
+            { namePrefix: 'POS' },
+            { namePrefix: '58' },
+            { services: ['49535343-fe7d-4ae5-8fa9-9fafd205e455'] },
+          ],
+          optionalServices: [
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+            '00001101-0000-1000-8000-00805f9b34fb',
+          ]
+        });
+      } catch (filteredError) {
+        // Se i filtri falliscono, mostra tutti i dispositivi
+        this.onLog?.('⚠️ Filtri specifici falliti, mostro tutti i dispositivi...');
+        this.device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+            '00001101-0000-1000-8000-00805f9b34fb',
+          ]
+        });
+      }
 
       this.onLog?.(`📱 Trovato dispositivo: ${this.device.name}`);
 
@@ -503,6 +524,8 @@ export class NetumPrinter {
       }
 
       console.log('🖨️ Inizio stampa scontrino:', receiptData.numero);
+      console.log('📋 Dati header ricevuti:', JSON.stringify(receiptData.header));
+      console.log('📋 Dati footer ricevuti:', JSON.stringify(receiptData.footer));
 
       // Inizializza stampante
       await this.sendCommand(ESC_POS.INIT);
@@ -510,6 +533,7 @@ export class NetumPrinter {
       
       // Header personalizzato da impostazioni
       const businessName = receiptData.header?.businessName || 'BAR ROXY';
+      console.log('🏪 Nome attività:', businessName);
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.printCentered(businessName, true);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);

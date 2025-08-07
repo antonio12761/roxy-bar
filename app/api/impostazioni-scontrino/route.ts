@@ -6,7 +6,8 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     
-    if (!user || (user.ruolo !== "SUPERVISORE" && user.ruolo !== "ADMIN")) {
+    // Permetti lettura a CASSA per stampare con le impostazioni corrette
+    if (!user || !["SUPERVISORE", "ADMIN", "CASSA", "CAMERIERE"].includes(user.ruolo)) {
       return NextResponse.json(
         { error: "Non autorizzato" },
         { status: 401 }
