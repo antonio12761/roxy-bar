@@ -268,7 +268,17 @@ export default function GestioneContiPage() {
       if (b.tableNumber === 'ASPORTO') return -1;
       if (a.tableNumber === 'BANCONE') return 1;
       if (b.tableNumber === 'BANCONE') return -1;
-      return parseInt(a.tableNumber) - parseInt(b.tableNumber);
+      // Handle alphanumeric table numbers (e.g., "M1", "M2", etc.)
+      const aNum = parseInt(a.tableNumber);
+      const bNum = parseInt(b.tableNumber);
+      
+      // If both are numbers, sort numerically
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      
+      // If one is NaN, use string comparison
+      return a.tableNumber.localeCompare(b.tableNumber);
     });
   };
 

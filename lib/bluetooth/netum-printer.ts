@@ -458,17 +458,51 @@ export class NetumPrinter {
   }
 
   /**
-   * Stampa testo centrato
+   * Stampa testo centrato con wrap automatico per testi lunghi
    */
-  private async printCentered(text: string, bold: boolean = false): Promise<void> {
-    await this.sendCommand(ESC_POS.CENTER);
-    if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
-    
-    await this.sendText(text);
-    await this.sendCommand(ESC_POS.NEW_LINE);
-    
-    if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
-    await this.sendCommand(ESC_POS.LEFT);
+  private async printCentered(text: string, bold: boolean = false, maxWidth: number = 32): Promise<void> {
+    // Se il testo è troppo lungo, spezzalo su più righe
+    if (text.length > maxWidth) {
+      const words = text.split(' ');
+      let currentLine = '';
+      const lines: string[] = [];
+      
+      for (const word of words) {
+        if ((currentLine + ' ' + word).trim().length > maxWidth) {
+          if (currentLine) {
+            lines.push(currentLine.trim());
+          }
+          currentLine = word;
+        } else {
+          currentLine = currentLine ? currentLine + ' ' + word : word;
+        }
+      }
+      if (currentLine) {
+        lines.push(currentLine.trim());
+      }
+      
+      // Stampa ogni riga
+      await this.sendCommand(ESC_POS.CENTER);
+      if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
+      
+      for (const line of lines) {
+        await this.sendText(line);
+        await this.sendCommand(ESC_POS.NEW_LINE);
+      }
+      
+      if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
+      await this.sendCommand(ESC_POS.LEFT);
+    } else {
+      // Testo corto, stampa normale
+      await this.sendCommand(ESC_POS.CENTER);
+      if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
+      
+      await this.sendText(text);
+      await this.sendCommand(ESC_POS.NEW_LINE);
+      
+      if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
+      await this.sendCommand(ESC_POS.LEFT);
+    }
   }
 
   /**
@@ -538,23 +572,23 @@ export class NetumPrinter {
       await this.sendCommand(ESC_POS.INIT);
       await this.sendCommand(ESC_POS.CHARSET_CP850);
       
-      // LOGO (se configurato) - NOTA: stampanti termiche Bluetooth non supportano immagini
-      if ((receiptData as any).logoUrl) {
-        console.log('🖼️ Logo configurato:', (receiptData as any).logoUrl);
-        console.log('⚠️ NOTA: Stampanti termiche Bluetooth non supportano immagini');
-        // Potresti stampare un placeholder testuale
-        await this.printCentered('===[ LOGO ]===');
-        await this.sendCommand(ESC_POS.NEW_LINE);
-      }
-      
-      // USA SOLO DATI DA ADMIN - STAMPA IN GRANDE!
+      // NOME ATTIVITÀ RESPONSIVE
       const businessName = receiptData.header.businessName;
-      console.log('🏪 Nome da admin:', businessName);
+      const paperWidth = receiptData.printSettings?.paperWidth || 58;
+      console.log('🏪 Nome attività:', businessName);
+      console.log('📏 Larghezza carta:', paperWidth + 'mm');
       
-      // TITOLO MOLTO GRANDE E BOLD
+      // Calcola caratteri per riga basato su larghezza carta
+      // 58mm = ~32 caratteri, 80mm = ~48 caratteri
+      const charsPerLine = paperWidth === 80 ? 48 : 32;
+      
+      // Stampa nome attività in grande con wrap automatico
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.sendCommand(ESC_POS.BOLD_ON);
-      await this.printCentered(businessName.toUpperCase(), true);
+      
+      // Per testo DOUBLE_SIZE, usa metà larghezza
+      await this.printCentered(businessName.toUpperCase(), false, charsPerLine / 2);
+      
       await this.sendCommand(ESC_POS.BOLD_OFF);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
       

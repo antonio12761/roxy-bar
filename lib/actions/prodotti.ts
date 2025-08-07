@@ -75,7 +75,7 @@ export async function toggleProductAvailability(productId: number, available: bo
         sseService.emit('order:esaurito:alert', {
           orderId: order.id,
           orderNumber: order.numero,
-          tableNumber: order.Tavolo?.numero || 0,
+          tableNumber: order.Tavolo?.numero || 'Asporto',
           outOfStockItems: items.map((item: any) => ({
             id: item.id,
             productName: item.Prodotto.nome,

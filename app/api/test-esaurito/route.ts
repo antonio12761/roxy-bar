@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const eventData = {
       orderId: order.id,
       orderNumber: order.numero,
-      tableNumber: order.Tavolo?.numero || 0,
+      tableNumber: order.Tavolo?.numero || 'Asporto',
       outOfStockItems: order.RigaOrdinazione.slice(0, 1).map(item => ({
         id: item.id,
         productName: item.Prodotto?.nome || 'Test Product',

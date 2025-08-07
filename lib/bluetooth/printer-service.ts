@@ -262,10 +262,7 @@ export class PrinterService {
       fiscalCode: settings.codiceFiscale
     };
     
-    // Logo URL se configurato
-    if (settings.logoUrl) {
-      formattedData.logoUrl = settings.logoUrl;
-    }
+    // Logo rimosso - stampanti termiche Bluetooth non supportano immagini
     
     // Messaggi personalizzati
     if (settings.messaggioIntestazione) {
