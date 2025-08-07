@@ -75,11 +75,12 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Aggiorna le impostazioni
+    // IMPORTANTE: Assicurati che rimanga attivo!
     const impostazioniAggiornate = await prisma.impostazioniScontrino.update({
       where: { id },
       data: {
         ...updateData,
+        attivo: true, // FORZA sempre attivo quando si aggiorna
         modificatoDa: user.id,
         updatedAt: new Date()
       }

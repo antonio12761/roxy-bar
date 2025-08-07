@@ -127,7 +127,11 @@ export default function ImpostazioniScontrinoComponent() {
       const result = await response.json();
       
       if (result.success && result.data) {
+        console.log("✅ Impostazioni caricate con ID:", result.data.id);
+        console.log("   Nome:", result.data.nomeAttivita);
         setImpostazioni(result.data);
+      } else {
+        console.error("❌ Nessuna impostazione trovata");
       }
     } catch (error) {
       console.error("Errore caricamento impostazioni:", error);
@@ -161,11 +165,22 @@ export default function ImpostazioniScontrinoComponent() {
       const result = await response.json();
       
       if (result.success) {
-        toast.success("Impostazioni salvate con successo");
         if (result.data) {
           setImpostazioni(result.data);
+          console.log("✅ SALVATO CON SUCCESSO! ID:", result.data.id);
+          
+          // Mostra toast con dettagli
+          toast.success(
+            <div>
+              <div className="font-bold">Impostazioni salvate!</div>
+              <div className="text-sm mt-1">
+                {result.data.nomeAttivita} - {result.data.indirizzo}
+              </div>
+            </div>
+          );
         }
       } else {
+        console.error("❌ Errore salvataggio:", result.error);
         toast.error(result.error || "Errore nel salvataggio");
       }
     } catch (error) {
