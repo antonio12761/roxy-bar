@@ -441,18 +441,7 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
         .filter((ord: any) => ord.righe.some((item: any) => 
           item.postazione === 'PREPARA' || item.postazione === 'BANCO'
         ))
-        .map((ord: any) => {
-          // DEBUG: Log tavolo data
-          console.log('[DEBUG Prepara] Mapping order from DB:', {
-            orderId: ord.id,
-            tavoloId: ord.tavoloId,
-            tavoloNumero: ord.Tavolo?.numero,
-            tavoloNumeroType: typeof ord.Tavolo?.numero,
-            tipo: ord.tipo,
-            tavoloObject: ord.Tavolo
-          });
-          
-          return {
+        .map((ord: any) => ({
             id: ord.id,
             tavolo: ord.Tavolo?.numero || ord.tipo,
             nomeCliente: ord.nomeCliente || ord.note?.split('Cliente: ')[1]?.split(' - ')[0],
@@ -472,11 +461,11 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
               note: item.note,
               glassesCount: item.glassesCount
             })),
-          totaleCosto: ord.totale,
-          stato: ord.stato === 'ORDINATO_ESAURITO' ? 'ORDINATO_ESAURITO' : ord.stato,
-          hasKitchenItems: ord.righe.some((item: any) => item.postazione === 'CUCINA'),
-          cameriere: ord.cameriere?.nome,
-          note: ord.note
+            totaleCosto: ord.totale,
+            stato: ord.stato === 'ORDINATO_ESAURITO' ? 'ORDINATO_ESAURITO' : ord.stato,
+            hasKitchenItems: ord.righe.some((item: any) => item.postazione === 'CUCINA'),
+            cameriere: ord.cameriere?.nome,
+            note: ord.note
         }))  
         .filter(ord => ord.items.length > 0);
 
@@ -550,14 +539,6 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
 
   // Handle new order event - Memoized to prevent re-creation
   const handleNewOrder = useCallback((data: any) => {
-    
-    // DEBUG: Log received data
-    console.log('[DEBUG Prepara] New order SSE data:', {
-      orderId: data.orderId,
-      tableNumber: data.tableNumber,
-      tableNumberType: typeof data.tableNumber,
-      fullData: data
-    });
     
     // Check if we already have this order
     const orderExists = orders.some(order => order.id === data.orderId);

@@ -552,15 +552,6 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
       
       // Emetti evento SSE direttamente
       // Emitting SSE event
-      
-      // DEBUG: Log tavolo info
-      console.log('[DEBUG] Tavolo info:', {
-        tavoloId: result.ordinazione.tavoloId,
-        tavoloNumero: result.ordinazione.Tavolo?.numero,
-        tavoloNumeroType: typeof result.ordinazione.Tavolo?.numero,
-        tavoloObject: result.ordinazione.Tavolo
-      });
-      
       const eventData = {
         orderId: result.ordinazione.id,
         tableNumber: result.ordinazione.Tavolo?.numero || undefined,
