@@ -179,6 +179,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
                   prezzo: p.prezzo,
                   note: p.note,
                   glassesCount: p.glassesCount,
+                  configurazione: p.configurazione,
                   stato: "INSERITO",
                   postazione: "PREPARA",
                   updatedAt: new Date(),
@@ -873,7 +874,8 @@ export async function getProdotti() {
         codice: true,
         requiresGlasses: true,
         disponibile: true,
-        terminato: true
+        terminato: true,
+        isMiscelato: true
       },
       orderBy: {
         categoria: 'asc'
@@ -1422,6 +1424,7 @@ export async function accettaRichiestaMerge(richiestaId: string) {
       nome?: string;
       quantita: number;
       prezzo: number;
+      configurazione?: any;
     }>;
 
     // Esegui il merge in una transazione
@@ -1470,7 +1473,8 @@ export async function accettaRichiestaMerge(richiestaId: string) {
               prezzo: p.prezzo,
               stato: 'INSERITO',
               updatedAt: new Date(),
-              glassesCount: prodotto?.requiresGlasses ? p.quantita : null
+              glassesCount: prodotto?.requiresGlasses ? p.quantita : null,
+              configurazione: p.configurazione
             }
           });
         }
@@ -1868,6 +1872,7 @@ export async function mergeOrdineProdotti(ordinazioneId: string, prodotti: Prodo
               quantita: p.quantita,
               prezzo: p.prezzo,
               note: p.note,
+              configurazione: p.configurazione,
               stato: "INSERITO",
               postazione: "PREPARA",
               updatedAt: new Date(),

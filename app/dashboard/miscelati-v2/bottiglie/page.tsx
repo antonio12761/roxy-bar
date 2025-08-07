@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Search, Save, X, Wine, Droplet } from 'lucide-react';
-import { getBottiglie, saveBottiglia, getCategorieIngredienti } from '@/lib/actions/sistema-miscelati-semplificato';
+import { Plus, Edit2, Trash2, Search, Save, X, Wine, Droplet } from 'lucide-react';
+import { getBottiglie, saveBottiglia, deleteBottiglia, getCategorieIngredienti } from '@/lib/actions/sistema-miscelati-semplificato';
 import type { BottigliaData } from '@/lib/actions/sistema-miscelati-semplificato';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AuthGuard } from '@/components/auth-guard';
@@ -24,7 +24,8 @@ function BottiglieContent() {
     marca: '',
     descrizione: '',
     gradazioneAlcolica: undefined,
-    prezzoExtra: 0,
+    costoPorzione: 0,
+    mlPorzione: 40,
     disponibile: true,
     ordinamento: 0
   });
@@ -56,13 +57,14 @@ function BottiglieContent() {
       nome: bottiglia.nome,
       marca: bottiglia.marca || '',
       descrizione: bottiglia.descrizione || '',
-      gradazioneAlcolica: bottiglia.gradazioneAlcolica?.toNumber(),
-      prezzoExtra: bottiglia.prezzoExtra?.toNumber() || 0,
+      gradazioneAlcolica: bottiglia.gradazioneAlcolica,
+      costoPorzione: bottiglia.costoPorzione || 0,
+      mlPorzione: bottiglia.mlPorzione || 40,
       disponibile: bottiglia.disponibile,
       ordinamento: bottiglia.ordinamento
     });
     setEditingId(bottiglia.id);
-    setShowNewForm(false);
+    setShowNewForm(true);  // Mostra il form principale per la modifica
   };
 
   const handleNew = () => {
@@ -72,7 +74,8 @@ function BottiglieContent() {
       marca: '',
       descrizione: '',
       gradazioneAlcolica: undefined,
-      prezzoExtra: 0,
+      costoPorzione: 0,
+    mlPorzione: 40,
       disponibile: true,
       ordinamento: 0
     });
@@ -97,7 +100,8 @@ function BottiglieContent() {
         marca: '',
         descrizione: '',
         gradazioneAlcolica: undefined,
-        prezzoExtra: 0,
+        costoPorzione: 0,
+    mlPorzione: 40,
         disponibile: true,
         ordinamento: 0
       });
@@ -109,6 +113,17 @@ function BottiglieContent() {
   const handleCancel = () => {
     setEditingId(null);
     setShowNewForm(false);
+    setFormData({
+      categoriaId: '',
+      nome: '',
+      marca: '',
+      descrizione: '',
+      gradazioneAlcolica: undefined,
+      costoPorzione: 0,
+      mlPorzione: 40,
+      disponibile: true,
+      ordinamento: 0
+    });
   };
 
   const toggleDisponibilita = async (bottiglia: any) => {
@@ -121,6 +136,19 @@ function BottiglieContent() {
     loadData();
   };
 
+  const handleDelete = async (bottiglia: any) => {
+    if (!confirm(`Eliminare la bottiglia "${bottiglia.nome}"?`)) {
+      return;
+    }
+    
+    const result = await deleteBottiglia(bottiglia.id);
+    if (result.success) {
+      loadData();
+    } else {
+      alert(result.error || 'Errore nell\'eliminazione');
+    }
+  };
+
   // Filtra bottiglie
   const filteredBottiglie = bottiglie.filter(b => {
     const matchCategoria = !selectedCategoria || b.categoriaId === selectedCategoria;
@@ -130,13 +158,40 @@ function BottiglieContent() {
     return matchCategoria && matchSearch;
   });
 
-  // Raggruppa per categoria
+  // Raggruppa per categoria e ordina
   const bottigliePerCategoria = filteredBottiglie.reduce((acc, bottiglia) => {
-    const cat = bottiglia.categoria?.nome || 'Senza Categoria';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(bottiglia);
+    const catKey = `${bottiglia.categoria?.ordinamento || 999}_${bottiglia.categoria?.nome || 'Senza Categoria'}`;
+    if (!acc[catKey]) {
+      acc[catKey] = {
+        nome: bottiglia.categoria?.nome || 'Senza Categoria',
+        icona: bottiglia.categoria?.icona || '📦',
+        colore: bottiglia.categoria?.colore || '#6B7280',
+        tipo: bottiglia.categoria?.tipo || 'ALTRO',
+        bottiglie: []
+      };
+    }
+    acc[catKey].bottiglie.push(bottiglia);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, { nome: string; icona: string; colore: string; tipo: string; bottiglie: any[] }>);
+
+  // Ordina le categorie per ordinamento e le bottiglie all'interno di ogni categoria
+  const categorieOrdinate = Object.keys(bottigliePerCategoria)
+    .sort((a, b) => {
+      const [ordA] = a.split('_').map(Number);
+      const [ordB] = b.split('_').map(Number);
+      return ordA - ordB;
+    })
+    .map(key => {
+      const categoria = bottigliePerCategoria[key];
+      // Ordina le bottiglie per ordinamento e poi per nome
+      categoria.bottiglie.sort((a: any, b: any) => {
+        if (a.ordinamento !== b.ordinamento) {
+          return a.ordinamento - b.ordinamento;
+        }
+        return a.nome.localeCompare(b.nome);
+      });
+      return categoria;
+    });
 
   if (loading) {
     return (
@@ -171,7 +226,7 @@ function BottiglieContent() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-lg"
               style={{ 
-                backgroundColor: colors.bg.primary,
+                backgroundColor: colors.bg.darker,
                 borderColor: colors.border.primary,
                 color: colors.text.primary
               }}
@@ -184,7 +239,7 @@ function BottiglieContent() {
           onChange={(e) => setSelectedCategoria(e.target.value)}
           className="px-4 py-2 border rounded-lg"
           style={{ 
-            backgroundColor: colors.bg.primary,
+            backgroundColor: colors.bg.darker,
             borderColor: colors.border.primary,
             color: colors.text.primary
           }}
@@ -211,7 +266,7 @@ function BottiglieContent() {
         </button>
       </div>
 
-      {/* Form Nuova Bottiglia */}
+      {/* Form Nuova/Modifica Bottiglia */}
       {showNewForm && (
         <div 
           className="p-4 sm:p-6 rounded-lg shadow-lg mb-4 sm:mb-6 border-2"
@@ -221,7 +276,7 @@ function BottiglieContent() {
           }}
         >
           <h2 className="text-lg sm:text-xl font-bold mb-4" style={{ color: colors.text.primary }}>
-            Nuova Bottiglia
+            {editingId ? 'Modifica Bottiglia' : 'Nuova Bottiglia'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
@@ -233,7 +288,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -256,7 +311,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -273,7 +328,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -290,7 +345,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, gradazioneAlcolica: e.target.value ? parseFloat(e.target.value) : undefined })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -302,21 +357,40 @@ function BottiglieContent() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
-                Prezzo Extra (€)
+                Costo per Porzione (€)
               </label>
               <input
                 type="number"
-                value={formData.prezzoExtra}
-                onChange={(e) => setFormData({ ...formData, prezzoExtra: parseFloat(e.target.value) || 0 })}
+                value={formData.costoPorzione}
+                onChange={(e) => setFormData({ ...formData, costoPorzione: parseFloat(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
                 placeholder="0.00"
-                step="0.50"
+                step="0.10"
                 min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
+                ML per Porzione
+              </label>
+              <input
+                type="number"
+                value={formData.mlPorzione}
+                onChange={(e) => setFormData({ ...formData, mlPorzione: parseInt(e.target.value) || 40 })}
+                className="w-full px-3 py-2 border rounded-lg"
+                style={{ 
+                  backgroundColor: colors.bg.darker,
+                  borderColor: colors.border.primary,
+                  color: colors.text.primary
+                }}
+                placeholder="40"
+                min="1"
+                title="40ml per alcolici, 200ml per mixer, 1 per garnish"
               />
             </div>
             <div>
@@ -329,7 +403,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, ordinamento: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -345,7 +419,7 @@ function BottiglieContent() {
                 onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -370,7 +444,7 @@ function BottiglieContent() {
               onClick={handleSave}
               className="px-4 py-2 rounded-lg flex items-center gap-2 transition-opacity hover:opacity-90"
               style={{ 
-                backgroundColor: colors.success.main,
+                backgroundColor: colors.button.success,
                 color: 'white'
               }}
             >
@@ -393,25 +467,40 @@ function BottiglieContent() {
       )}
 
       {/* Lista Bottiglie per Categoria */}
-      {Object.entries(bottigliePerCategoria).map(([categoria, bottiglieCategoria]) => (
-        <div key={categoria} className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.text.primary }}>
-              {categoria}
-            </h2>
-            <span 
-              className="px-2 py-1 rounded-full text-xs sm:text-sm"
-              style={{ 
-                backgroundColor: colors.bg.secondary,
-                color: colors.text.secondary
-              }}
-            >
-              {bottiglieCategoria.length} bottiglie
-            </span>
+      {categorieOrdinate.map((categoria, catIndex) => (
+        <div key={categoria.nome} className="mb-8 sm:mb-10">
+          {/* Header della categoria con stile migliorato */}
+          <div className="flex items-center gap-3 mb-4 sm:mb-5 pb-2 border-b-2" 
+            style={{ borderColor: categoria.colore }}
+          >
+            <span className="text-2xl sm:text-3xl">{categoria.icona}</span>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: colors.text.primary }}>
+                {categoria.nome}
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span 
+                  className="px-2 py-0.5 rounded-full text-xs"
+                  style={{ 
+                    backgroundColor: categoria.colore + '20',
+                    color: categoria.colore,
+                    border: `1px solid ${categoria.colore}`
+                  }}
+                >
+                  {categoria.tipo}
+                </span>
+                <span 
+                  className="text-xs sm:text-sm"
+                  style={{ color: colors.text.muted }}
+                >
+                  {categoria.bottiglie.length} {categoria.bottiglie.length === 1 ? 'bottiglia' : 'bottiglie'}
+                </span>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {bottiglieCategoria.map(bottiglia => (
+            {categoria.bottiglie.map((bottiglia: any, index: number) => (
               <div
                 key={bottiglia.id}
                 className={`p-3 sm:p-4 rounded-lg shadow border-2 transition-all duration-300 ${
@@ -419,10 +508,10 @@ function BottiglieContent() {
                 }`}
                 style={{ 
                   backgroundColor: colors.bg.card,
-                  borderColor: editingId === bottiglia.id ? colors.button.primary : colors.border.primary
+                  borderColor: colors.border.primary
                 }}
               >
-                {editingId === bottiglia.id ? (
+                {false ? (  // Disabilitiamo il form inline, usiamo sempre il form principale
                   // Form di modifica inline
                   <div className="space-y-2">
                     <input
@@ -431,7 +520,7 @@ function BottiglieContent() {
                       onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                       className="w-full px-2 py-1 border rounded text-sm"
                       style={{ 
-                        backgroundColor: colors.bg.primary,
+                        backgroundColor: colors.bg.darker,
                         borderColor: colors.border.primary,
                         color: colors.text.primary
                       }}
@@ -443,7 +532,7 @@ function BottiglieContent() {
                       onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
                       className="w-full px-2 py-1 border rounded text-sm"
                       style={{ 
-                        backgroundColor: colors.bg.primary,
+                        backgroundColor: colors.bg.darker,
                         borderColor: colors.border.primary,
                         color: colors.text.primary
                       }}
@@ -456,7 +545,7 @@ function BottiglieContent() {
                         onChange={(e) => setFormData({ ...formData, gradazioneAlcolica: e.target.value ? parseFloat(e.target.value) : undefined })}
                         className="w-1/2 px-2 py-1 border rounded text-sm"
                         style={{ 
-                          backgroundColor: colors.bg.primary,
+                          backgroundColor: colors.bg.darker,
                           borderColor: colors.border.primary,
                           color: colors.text.primary
                         }}
@@ -465,16 +554,16 @@ function BottiglieContent() {
                       />
                       <input
                         type="number"
-                        value={formData.prezzoExtra}
-                        onChange={(e) => setFormData({ ...formData, prezzoExtra: parseFloat(e.target.value) || 0 })}
+                        value={formData.costoPorzione}
+                        onChange={(e) => setFormData({ ...formData, costoPorzione: parseFloat(e.target.value) || 0 })}
                         className="w-1/2 px-2 py-1 border rounded text-sm"
                         style={{ 
-                          backgroundColor: colors.bg.primary,
+                          backgroundColor: colors.bg.darker,
                           borderColor: colors.border.primary,
                           color: colors.text.primary
                         }}
                         placeholder="€"
-                        step="0.50"
+                        step="0.10"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -482,7 +571,7 @@ function BottiglieContent() {
                         onClick={handleSave}
                         className="px-2 py-1 rounded text-sm transition-opacity hover:opacity-90"
                         style={{ 
-                          backgroundColor: colors.success.main,
+                          backgroundColor: colors.button.success,
                           color: 'white'
                         }}
                       >
@@ -518,7 +607,7 @@ function BottiglieContent() {
                         <span 
                           className="text-xs sm:text-sm px-2 py-1 rounded"
                           style={{ 
-                            backgroundColor: colors.bg.secondary,
+                            backgroundColor: colors.bg.hover,
                             color: colors.text.secondary
                           }}
                         >
@@ -536,19 +625,37 @@ function BottiglieContent() {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t"
                       style={{ borderColor: colors.border.primary }}
                     >
-                      <div>
-                        {bottiglia.prezzoExtra > 0 && (
-                          <span className="text-sm font-semibold" style={{ color: colors.success.main }}>
-                            +€{bottiglia.prezzoExtra.toFixed(2)}
+                      <div className="flex flex-col items-start gap-1">
+                        {bottiglia.costoPorzione > 0 && (
+                          <span className="text-sm font-semibold" style={{ color: colors.text.secondary }}>
+                            €{bottiglia.costoPorzione.toFixed(2)}
                           </span>
                         )}
+                        <div className="flex items-center gap-2">
+                          {bottiglia.mlPorzione && (
+                            <span className="text-xs" style={{ color: colors.text.muted }}>
+                              {bottiglia.mlPorzione}ml
+                            </span>
+                          )}
+                          {bottiglia.ordinamento > 0 && (
+                            <span className="text-xs px-1 rounded" 
+                              style={{ 
+                                backgroundColor: colors.bg.hover,
+                                color: colors.text.muted 
+                              }}
+                              title="Posizione ordinamento"
+                            >
+                              #{bottiglia.ordinamento}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex gap-1">
                         <button
                           onClick={() => toggleDisponibilita(bottiglia)}
                           className="p-1 rounded transition-colors"
                           style={{ 
-                            color: bottiglia.disponibile ? colors.success.main : colors.error.main
+                            color: bottiglia.disponibile ? colors.text.success : colors.text.error
                           }}
                           title={bottiglia.disponibile ? 'Disponibile' : 'Non disponibile'}
                         >
@@ -560,8 +667,19 @@ function BottiglieContent() {
                           style={{ 
                             color: colors.button.primary
                           }}
+                          title="Modifica"
                         >
                           <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bottiglia)}
+                          className="p-1 rounded transition-colors"
+                          style={{ 
+                            color: colors.text.error
+                          }}
+                          title="Elimina"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -570,13 +688,18 @@ function BottiglieContent() {
               </div>
             ))}
           </div>
+          
+          {/* Separatore tra categorie */}
+          {catIndex < categorieOrdinate.length - 1 && (
+            <div className="mt-8 sm:mt-10" />
+          )}
         </div>
       ))}
 
-      {Object.keys(bottigliePerCategoria).length === 0 && (
+      {categorieOrdinate.length === 0 && (
         <div 
           className="text-center py-12 rounded-lg"
-          style={{ backgroundColor: colors.bg.secondary }}
+          style={{ backgroundColor: colors.bg.hover }}
         >
           <Wine className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" 
             style={{ color: colors.text.muted }} 

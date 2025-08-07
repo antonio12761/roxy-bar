@@ -120,6 +120,34 @@ export default function OrderItemsList({
                     </span>
                   )}
                 </p>
+                
+                {/* Mostra ingredienti per miscelati */}
+                {item.configurazione?.selezioni && (
+                  <div className="mt-2 p-2 rounded text-sm" 
+                    style={{ 
+                      backgroundColor: colors.bg.card, 
+                      border: `1px solid ${colors.border.primary}` 
+                    }}>
+                    <div className="font-medium mb-1" style={{ color: colors.text.accent }}>
+                      🍸 Ingredienti:
+                    </div>
+                    {item.configurazione.selezioni.map((sel: any, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 mb-1" style={{ color: colors.text.secondary }}>
+                        <span className="font-medium">{sel.categoriaNome}:</span>
+                        <span>
+                          {sel.bottiglie.map((b: any, bidx: number) => (
+                            <span key={bidx}>
+                              {b.nome}
+                              {b.marca && ` (${b.marca})`}
+                              {bidx < sel.bottiglie.length - 1 && ', '}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 {item.note && (
                   <p className="text-sm mt-1 italic" style={{ color: colors.text.secondary }}>
                     📝 {item.note}

@@ -34,6 +34,7 @@ import { HeartsAnimation } from "@/components/ui/HeartsAnimation";
 import { QRScannerModal } from "@/components/cameriere/QRScannerModal";
 import ProductVariantModal from "@/components/cameriere/ProductVariantModal";
 import { getProdottoConfigurabile } from "@/lib/actions/prodotti-configurabili";
+import { MixedProductModal } from "@/components/cameriere/MixedProductModal";
 
 interface Product {
   id: number;
@@ -354,6 +355,8 @@ export default function TavoloPage() {
   const [isSubmittingFromModal, setIsSubmittingFromModal] = useState(false);
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
+  const [showMixedModal, setShowMixedModal] = useState(false);
+  const [selectedProductForMixed, setSelectedProductForMixed] = useState<Product | null>(null);
   const [pendingQuantity, setPendingQuantity] = useState<number>(1);
   const [pendingGlasses, setPendingGlasses] = useState<number | undefined>(undefined);
   const [pendingNote, setPendingNote] = useState<string | undefined>(undefined);
@@ -863,6 +866,17 @@ export default function TavoloPage() {
       return;
     }
     
+    // Controlla se il prodotto è miscelato
+    if (product.isMiscelato && !configurazione && !prezzoFinale) {
+      // Salva i parametri pendenti e apri il modal per miscelati
+      setSelectedProductForMixed(product);
+      setPendingQuantity(quantity);
+      setPendingGlasses(glasses);
+      setPendingNote(note);
+      setShowMixedModal(true);
+      return;
+    }
+    
     // Controlla se il prodotto è configurabile
     if (!configurazione && !prezzoFinale) {
       const prodottoConfig = await getProdottoConfigurabile(product.id);
@@ -910,18 +924,59 @@ export default function TavoloPage() {
     }
 
     setOrder(prev => {
-      // Per prodotti configurabili, non raggruppiamo automaticamente
+      // Per prodotti configurabili, cerchiamo se esiste già la stessa configurazione
       if (configurazione) {
-        return [...prev, { 
-          prodotto: product, 
-          quantita: quantity,
-          glassesCount: product.requiresGlasses ? glasses : undefined,
-          note: note,
-          configurazione: configurazione,
-          prezzoFinale: prezzoFinale
-        }];
+        // Funzione helper per confrontare configurazioni
+        const isSameConfiguration = (config1: any, config2: any) => {
+          if (!config1 || !config2) return false;
+          
+          // Per miscelati, confronta le selezioni
+          if (config1.selezioni && config2.selezioni) {
+            return JSON.stringify(config1.selezioni) === JSON.stringify(config2.selezioni);
+          }
+          
+          // Per altre configurazioni, confronta tutto
+          return JSON.stringify(config1) === JSON.stringify(config2);
+        };
+        
+        // Cerca un item esistente con la stessa configurazione
+        const existingConfigured = prev.find(item => 
+          item.prodotto.id === product.id && 
+          item.note === note && 
+          isSameConfiguration(item.configurazione, configurazione) &&
+          item.prezzoFinale === prezzoFinale
+        );
+        
+        if (existingConfigured) {
+          // Se esiste, incrementa la quantità
+          return prev.map(item => 
+            item.prodotto.id === product.id && 
+            item.note === note && 
+            isSameConfiguration(item.configurazione, configurazione) &&
+            item.prezzoFinale === prezzoFinale
+              ? { 
+                  ...item, 
+                  quantita: item.quantita + quantity,
+                  glassesCount: item.glassesCount !== undefined && glasses !== undefined 
+                    ? item.glassesCount + glasses 
+                    : item.glassesCount
+                }
+              : item
+          );
+        } else {
+          // Se non esiste, aggiungi come nuovo
+          return [...prev, { 
+            prodotto: product, 
+            quantita: quantity,
+            glassesCount: product.requiresGlasses ? glasses : undefined,
+            note: note,
+            configurazione: configurazione,
+            prezzoFinale: prezzoFinale
+          }];
+        }
       }
       
+      // Per prodotti non configurabili, mantieni la logica esistente
       const existing = prev.find(item => item.prodotto.id === product.id && item.note === note && !item.configurazione);
       if (existing) {
         return prev.map(item => 
@@ -2050,6 +2105,11 @@ export default function TavoloPage() {
                                  colors.text.primary 
                         }}>
                           {item.prodotto.nome}
+                          {item.prodotto.isMiscelato && item.configurazione && (
+                            <span className="text-xs" style={{ color: colors.text.accent }}>
+                              🍸
+                            </span>
+                          )}
                           {isExhausted && (
                             <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">
                               Non disponibile
@@ -2089,6 +2149,22 @@ export default function TavoloPage() {
                             {item.glassesCount !== undefined ? item.glassesCount : 0} bicchier{(item.glassesCount !== undefined ? item.glassesCount : 0) === 1 ? 'e' : 'i'}
                           </div>
                         )}
+                        {item.configurazione?.selezioni && (
+                          <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
+                            {item.configurazione.selezioni.map((sel: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-1">
+                                <span>•</span>
+                                <span className="font-medium">{sel.categoriaNome}:</span>
+                                {sel.bottiglie.map((b: any, bidx: number) => (
+                                  <span key={bidx}>
+                                    {b.nome}{b.marca && ` (${b.marca})`}
+                                    {bidx < sel.bottiglie.length - 1 && ', '}
+                                  </span>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {item.note && (
                           <div className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.text.muted }}>
                             <StickyNote className="h-3 w-3" />
@@ -2125,7 +2201,19 @@ export default function TavoloPage() {
                           e.stopPropagation();
                           // Check if we can increment (no constraints for partially available items)
                           // We allow adding more to request them
-                          addToOrder(item.prodotto, 1);
+                          // Se è un miscelato, passa anche la configurazione esistente
+                          if (item.prodotto.isMiscelato && item.configurazione) {
+                            addToOrder(
+                              item.prodotto, 
+                              1, 
+                              item.glassesCount, 
+                              undefined, 
+                              item.configurazione, 
+                              item.prezzoFinale
+                            );
+                          } else {
+                            addToOrder(item.prodotto, 1, item.glassesCount);
+                          }
                         }}
                         className="p-1 rounded transition-colors"
                         style={{
@@ -2400,6 +2488,43 @@ export default function TavoloPage() {
             prezzo: selectedProductForVariant.prezzo
           }}
           onConfirm={handleVariantConfirm}
+        />
+      )}
+      
+      {/* Mixed Product Modal */}
+      {selectedProductForMixed && (
+        <MixedProductModal
+          isOpen={showMixedModal}
+          onClose={() => {
+            setShowMixedModal(false);
+            setSelectedProductForMixed(null);
+            setPendingQuantity(1);
+            setPendingGlasses(undefined);
+            setPendingNote(undefined);
+          }}
+          product={{
+            id: selectedProductForMixed.id,
+            nome: selectedProductForMixed.nome,
+            prezzo: selectedProductForMixed.prezzo
+          }}
+          onConfirm={(configurazione) => {
+            // Aggiungi il prodotto con la configurazione miscelato
+            addToOrder(
+              selectedProductForMixed,
+              pendingQuantity,
+              pendingGlasses,
+              pendingNote,
+              configurazione,
+              configurazione.prezzoTotale
+            );
+            
+            // Reset stati
+            setShowMixedModal(false);
+            setSelectedProductForMixed(null);
+            setPendingQuantity(1);
+            setPendingGlasses(undefined);
+            setPendingNote(undefined);
+          }}
         />
       )}
       

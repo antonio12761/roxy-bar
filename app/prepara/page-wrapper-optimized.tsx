@@ -459,7 +459,8 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
               timestamp: item.timestampOrdine,
               postazione: item.postazione,
               note: item.note,
-              glassesCount: item.glassesCount
+              glassesCount: item.glassesCount,
+              configurazione: item.configurazione // Aggiungi configurazione per miscelati
             })),
             totaleCosto: ord.totale,
             stato: ord.stato === 'ORDINATO_ESAURITO' ? 'ORDINATO_ESAURITO' : ord.stato,

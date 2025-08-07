@@ -10,6 +10,7 @@ export interface OrderItem {
   postazione: string;
   note?: string | null;
   glassesCount?: number;
+  configurazione?: any; // Per miscelati e prodotti configurabili
 }
 
 export interface Ordinazione {

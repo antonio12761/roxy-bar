@@ -11,6 +11,7 @@ interface OrderItem {
   prezzo: number;
   isPagato: boolean;
   pagatoDa?: string;
+  configurazione?: any; // Per miscelati
 }
 
 interface Payment {
@@ -54,19 +55,25 @@ export default function OrderCard({ order, isSelected, onClick, isSelectable }: 
     });
   };
 
-  // Raggruppa le righe per prodotto
+  // Raggruppa le righe per prodotto e configurazione
   const groupedItems = order.righe.reduce((acc, item) => {
-    const key = item.prodotto.nome;
+    // Per miscelati, crea una chiave unica che include la configurazione
+    const configKey = item.configurazione?.selezioni 
+      ? JSON.stringify(item.configurazione.selezioni)
+      : '';
+    const key = item.prodotto.nome + configKey;
+    
     if (!acc[key]) {
       acc[key] = {
         nome: item.prodotto.nome,
         prezzo: item.prezzo,
+        configurazione: item.configurazione,
         items: []
       };
     }
     acc[key].items.push(item);
     return acc;
-  }, {} as Record<string, { nome: string; prezzo: number; items: OrderItem[] }>);
+  }, {} as Record<string, { nome: string; prezzo: number; configurazione?: any; items: OrderItem[] }>);
 
   return (
     <div
@@ -127,13 +134,26 @@ export default function OrderCard({ order, isSelected, onClick, isSelectable }: 
             <div key={group.nome} className="space-y-1">
               {/* Mostra prima gli items non pagati se ce ne sono */}
               {quantitaNonPagata > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: colors.text.primary }}>
-                    {quantitaNonPagata}x {group.nome}
-                  </span>
-                  <span style={{ color: colors.text.primary }}>
-                    €{(prezzoUnitario * quantitaNonPagata).toFixed(2)}
-                  </span>
+                <div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: colors.text.primary }}>
+                      {quantitaNonPagata}x {group.nome}
+                    </span>
+                    <span style={{ color: colors.text.primary }}>
+                      €{(prezzoUnitario * quantitaNonPagata).toFixed(2)}
+                    </span>
+                  </div>
+                  {/* Mostra ingredienti per miscelati */}
+                  {group.configurazione?.selezioni && (
+                    <div className="ml-4 mt-1 text-xs" style={{ color: colors.text.muted }}>
+                      {group.configurazione.selezioni.map((sel: any, idx: number) => (
+                        <span key={idx}>
+                          {idx > 0 && ' • '}
+                          {sel.bottiglie.map((b: any) => b.nome).join(', ')}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               

@@ -13,6 +13,9 @@ interface OrderItem {
   prezzo: number;
   isPagato: boolean;
   pagatoDa?: string;
+  configurazione?: {
+    selezioni?: any[];
+  };
 }
 
 interface Order {
@@ -147,13 +150,19 @@ export function SimplePartialPaymentModal({
     };
   });
   
-  // Raggruppa prodotti per nome usando i dati reali dal database
+  // Raggruppa prodotti per nome e configurazione usando i dati reali dal database
   const prodottiRaggruppati = order.righe.reduce((acc, item) => {
-    const key = item.prodotto.nome;
+    // Per miscelati, crea una chiave unica che include la configurazione
+    const configKey = item.configurazione?.selezioni 
+      ? JSON.stringify(item.configurazione.selezioni)
+      : '';
+    const key = item.prodotto.nome + configKey;
+    
     if (!acc[key]) {
       acc[key] = {
         nome: item.prodotto.nome,
         prezzo: item.prezzo,
+        configurazione: item.configurazione,
         nonPagati: [],
         pagati: [],
         quantitaTotale: 0,
@@ -181,6 +190,9 @@ export function SimplePartialPaymentModal({
   }, {} as Record<string, { 
     nome: string; 
     prezzo: number; 
+    configurazione?: {
+      selezioni?: any[];
+    };
     nonPagati: any[]; 
     pagati: any[];
     quantitaTotale: number;
@@ -416,6 +428,17 @@ export function SimplePartialPaymentModal({
                           <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
                             {gruppo.quantitaPagataTotale}x • €{gruppo.prezzo.toFixed(2)} cad.
                           </p>
+                          {/* Mostra ingredienti per miscelati già pagati */}
+                          {gruppo.configurazione?.selezioni && (
+                            <div className="text-xs mt-1" style={{ color: colors.text.muted }}>
+                              🍸 {gruppo.configurazione.selezioni.map((sel: any, idx: number) => (
+                                <span key={idx}>
+                                  {idx > 0 && ' • '}
+                                  {sel.bottiglie.map((b: any) => b.nome).join(', ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <span className="font-medium" style={{ color: colors.text.secondary, textDecoration: 'line-through' }}>
                           €{(gruppo.quantitaPagataTotale * gruppo.prezzo).toFixed(2)}
@@ -461,13 +484,26 @@ export function SimplePartialPaymentModal({
                       {/* Nome prodotto e totali - PIÙ COMPATTO */}
                       <div className="mb-2">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-base" style={{ color: colors.text.primary }}>
-                              {gruppo.nome}
-                            </h4>
-                            <span className="text-xs" style={{ color: colors.text.secondary }}>
-                              €{gruppo.prezzo.toFixed(2)}
-                            </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium text-base" style={{ color: colors.text.primary }}>
+                                {gruppo.nome}
+                              </h4>
+                              <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                €{gruppo.prezzo.toFixed(2)}
+                              </span>
+                            </div>
+                            {/* Mostra ingredienti per miscelati */}
+                            {gruppo.configurazione?.selezioni && (
+                              <div className="mt-1 text-xs" style={{ color: colors.text.muted }}>
+                                🍸 {gruppo.configurazione.selezioni.map((sel: any, idx: number) => (
+                                  <span key={idx}>
+                                    {idx > 0 && ' • '}
+                                    {sel.bottiglie.map((b: any) => b.nome).join(', ')}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-base font-semibold" style={{ color: colors.text.primary }}>

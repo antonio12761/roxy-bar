@@ -1,91 +1,451 @@
 {
-  "totalErrors": 10,
-  "timestamp": "2025-08-07T03:37:01.419Z",
+  "totalErrors": 61,
+  "timestamp": "2025-08-07T08:43:17.474Z",
   "categories": {
     "propertyNotExist": [
       {
-        "file": "lib/actions/scontrino-diretto.ts",
-        "line": "lib/actions/scontrino-diretto.ts(79,24): error TS2339: Property 'sendEvent' does not exist on type 'SSEManager'.",
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(153,28): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'.",
         "errorCode": "2339",
-        "message": "Property 'sendEvent' does not exist on type 'SSEManager'.",
-        "context": ""
+        "message": "Property 'configurazione' does not exist on type 'OrderItem'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(154,29): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(154,29): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type 'OrderItem'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(162,9): error TS2353: Object literal may only specify known properties, and 'configurazione' does not exist in type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(162,30): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type 'OrderItem'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(426,35): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(426,35): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(428,42): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(428,42): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(491,37): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(491,37): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(493,44): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'."
+      },
+      {
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(493,44): error TS2339: Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "context": "lib/actions/ordinazioni.ts(1476,33): error TS2339: Property 'configurazione' does not exist on type '{ prodottoId: number; nome?: string | undefined; quantita: number; prezzo: number; }'."
+      },
+      {
+        "file": "lib/actions/ordinazioni.ts",
+        "line": "lib/actions/ordinazioni.ts(1476,33): error TS2339: Property 'configurazione' does not exist on type '{ prodottoId: number; nome?: string | undefined; quantita: number; prezzo: number; }'.",
+        "errorCode": "2339",
+        "message": "Property 'configurazione' does not exist on type '{ prodottoId: number; nome?: string | undefined; quantita: number; prezzo: number; }'.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(73,32): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?"
       }
     ],
     "cannotFind": [],
-    "typeAssignment": [
+    "typeAssignment": [],
+    "implicitAny": [
       {
-        "file": "components/cassa/DirectReceiptModal.tsx",
-        "line": "components/cassa/DirectReceiptModal.tsx(239,57): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "errorCode": "2345",
-        "message": "Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "context": "components/cassa/DirectReceiptModal.tsx(246,57): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'."
+        "file": "components/cameriere/MixedProductModal.tsx",
+        "line": "components/cameriere/MixedProductModal.tsx(93,79): error TS7006: Parameter 'id' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'id' implicitly has an 'any' type.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(153,28): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'."
       },
       {
-        "file": "components/cassa/DirectReceiptModal.tsx",
-        "line": "components/cassa/DirectReceiptModal.tsx(246,57): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "errorCode": "2345",
-        "message": "Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "context": "components/cassa/DirectReceiptModal.tsx(256,55): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'."
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(204,49): error TS7006: Parameter 'b' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'b' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(228,28): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
       },
       {
-        "file": "components/cassa/DirectReceiptModal.tsx",
-        "line": "components/cassa/DirectReceiptModal.tsx(256,55): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "errorCode": "2345",
-        "message": "Argument of type 'number' is not assignable to parameter of type 'string'.",
-        "context": "lib/actions/scontrino-diretto.ts(32,9): error TS2322: Type '{ cameriereId: string; stato: \"PAGATO\"; statoPagamento: \"COMPLETAMENTE_PAGATO\"; note: string; nomeCliente: string; updatedAt: Date; }' is not assignable to type '(Without<OrdinazioneCreateInput, OrdinazioneUncheckedCreateInput> & OrdinazioneUncheckedCreateInput) | (Without<...> & OrdinazioneCreateInput)'."
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(329,45): error TS7006: Parameter 'r' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'r' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(413,29): error TS2551: Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?"
       },
       {
-        "file": "lib/actions/scontrino-diretto.ts",
-        "line": "lib/actions/scontrino-diretto.ts(32,9): error TS2322: Type '{ cameriereId: string; stato: \"PAGATO\"; statoPagamento: \"COMPLETAMENTE_PAGATO\"; note: string; nomeCliente: string; updatedAt: Date; }' is not assignable to type '(Without<OrdinazioneCreateInput, OrdinazioneUncheckedCreateInput> & OrdinazioneUncheckedCreateInput) | (Without<...> & OrdinazioneCreateInput)'.",
-        "errorCode": "2322",
-        "message": "Type '{ cameriereId: string; stato: \"PAGATO\"; statoPagamento: \"COMPLETAMENTE_PAGATO\"; note: string; nomeCliente: string; updatedAt: Date; }' is not assignable to type '(Without<OrdinazioneCreateInput, OrdinazioneUncheckedCreateInput> & OrdinazioneUncheckedCreateInput) | (Without<...> & OrdinazioneCreateInput)'.",
-        "context": "  Type '{ cameriereId: string; stato: \"PAGATO\"; statoPagamento: \"COMPLETAMENTE_PAGATO\"; note: string; nomeCliente: string; updatedAt: Date; }' is not assignable to type 'Without<OrdinazioneCreateInput, OrdinazioneUncheckedCreateInput> & OrdinazioneUncheckedCreateInput'."
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(565,49): error TS7006: Parameter 'b' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'b' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(587,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?"
       },
       {
-        "file": "lib/actions/scontrino-diretto.ts",
-        "line": "lib/actions/scontrino-diretto.ts(51,15): error TS2322: Type '\"RITIRATO\"' is not assignable to type 'StatoRigaOrdinazione | undefined'.",
-        "errorCode": "2322",
-        "message": "Type '\"RITIRATO\"' is not assignable to type 'StatoRigaOrdinazione | undefined'.",
-        "context": "lib/actions/scontrino-diretto.ts(54,15): error TS2561: Object literal may only specify known properties, but 'prodotto' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Prodotto'?"
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(609,52): error TS7006: Parameter 'c' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'c' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(648,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(711,37): error TS7006: Parameter 'c' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'c' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(712,39): error TS7006: Parameter 'c' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(712,39): error TS7006: Parameter 'c' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'c' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(713,41): error TS7006: Parameter 'c' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(713,41): error TS7006: Parameter 'c' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'c' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(714,41): error TS7006: Parameter 'c' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(714,41): error TS7006: Parameter 'c' implicitly has an 'any' type.",
+        "errorCode": "7006",
+        "message": "Parameter 'c' implicitly has an 'any' type.",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(718,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
       }
     ],
-    "implicitAny": [],
     "possiblyNull": [],
     "functionDeclaration": [],
     "argumentCount": [],
     "other": [
       {
-        "file": "components/cassa/DirectReceiptModal.tsx",
-        "line": "components/cassa/DirectReceiptModal.tsx(86,13): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.",
-        "errorCode": "2367",
-        "message": "This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.",
-        "context": "components/cassa/DirectReceiptModal.tsx(99,41): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap."
+        "file": "app/dashboard/miscelati-v2/ricette/page.tsx",
+        "line": "app/dashboard/miscelati-v2/ricette/page.tsx(480,26): error TS18048: 'comp.maxSelezioni' is possibly 'undefined'.",
+        "errorCode": "18048",
+        "message": "'comp.maxSelezioni' is possibly 'undefined'.",
+        "context": "components/cameriere/MixedProductModal.tsx(93,79): error TS7006: Parameter 'id' implicitly has an 'any' type."
       },
       {
-        "file": "components/cassa/DirectReceiptModal.tsx",
-        "line": "components/cassa/DirectReceiptModal.tsx(99,41): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.",
-        "errorCode": "2367",
-        "message": "This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.",
-        "context": "components/cassa/DirectReceiptModal.tsx(239,57): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'."
+        "file": "components/cassa/SimplePartialPaymentModal.tsx",
+        "line": "components/cassa/SimplePartialPaymentModal.tsx(162,9): error TS2353: Object literal may only specify known properties, and 'configurazione' does not exist in type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "errorCode": "2353",
+        "message": "Object literal may only specify known properties, and 'configurazione' does not exist in type '{ nome: string; prezzo: number; nonPagati: any[]; pagati: any[]; quantitaTotale: number; quantitaPagataTotale: number; quantitaRimanenteTotale: number; }'.",
+        "context": "components/cassa/SimplePartialPaymentModal.tsx(162,30): error TS2339: Property 'configurazione' does not exist on type 'OrderItem'."
       },
       {
-        "file": "lib/actions/scontrino-diretto.ts",
-        "line": "lib/actions/scontrino-diretto.ts(54,15): error TS2561: Object literal may only specify known properties, but 'prodotto' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Prodotto'?",
-        "errorCode": "2561",
-        "message": "Object literal may only specify known properties, but 'prodotto' does not exist in type 'RigaOrdinazioneInclude<DefaultArgs>'. Did you mean to write 'Prodotto'?",
-        "context": "lib/actions/scontrino-diretto.ts(71,11): error TS2561: Object literal may only specify known properties, but 'userId' does not exist in type 'Without<PagamentoCreateInput, PagamentoUncheckedCreateInput> & PagamentoUncheckedCreateInput'. Did you mean to write 'User'?"
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(73,32): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(99,28): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?"
       },
       {
-        "file": "lib/actions/scontrino-diretto.ts",
-        "line": "lib/actions/scontrino-diretto.ts(71,11): error TS2561: Object literal may only specify known properties, but 'userId' does not exist in type 'Without<PagamentoCreateInput, PagamentoUncheckedCreateInput> & PagamentoUncheckedCreateInput'. Did you mean to write 'User'?",
-        "errorCode": "2561",
-        "message": "Object literal may only specify known properties, but 'userId' does not exist in type 'Without<PagamentoCreateInput, PagamentoUncheckedCreateInput> & PagamentoUncheckedCreateInput'. Did you mean to write 'User'?",
-        "context": "lib/actions/scontrino-diretto.ts(79,24): error TS2339: Property 'sendEvent' does not exist on type 'SSEManager'."
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(99,28): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(113,28): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(113,28): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(142,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(142,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(151,33): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'componenteMiscelato'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(151,33): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'componenteMiscelato'?",
+        "errorCode": "2551",
+        "message": "Property 'ComponenteMiscelato' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'componenteMiscelato'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(159,14): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(159,14): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(184,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(184,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(204,49): error TS7006: Parameter 'b' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(228,28): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(246,28): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(246,28): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(279,32): error TS2551: Property 'SelezioneBottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'selezioneBottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(279,32): error TS2551: Property 'SelezioneBottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'selezioneBottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'SelezioneBottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'selezioneBottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(287,14): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(287,14): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(310,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(310,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "errorCode": "2551",
+        "message": "Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(329,45): error TS7006: Parameter 'r' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(413,29): error TS2551: Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?",
+        "errorCode": "2551",
+        "message": "Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(426,29): error TS2551: Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(426,29): error TS2551: Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?",
+        "errorCode": "2551",
+        "message": "Property 'Prodotto' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'prodotto'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(445,18): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(445,18): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?",
+        "errorCode": "2551",
+        "message": "Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(449,28): error TS2551: Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(449,28): error TS2551: Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?",
+        "errorCode": "2551",
+        "message": "Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(464,28): error TS2551: Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(464,28): error TS2551: Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?",
+        "errorCode": "2551",
+        "message": "Property 'RicettaMiscelata' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'ricettaMiscelata'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(482,18): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(482,18): error TS2551: Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?",
+        "errorCode": "2551",
+        "message": "Property 'ComponenteMiscelato' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'componenteMiscelato'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(515,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(515,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "errorCode": "2551",
+        "message": "Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(553,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(553,32): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(565,49): error TS7006: Parameter 'b' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(587,30): error TS2551: Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "errorCode": "2551",
+        "message": "Property 'RicettaMiscelata' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'ricettaMiscelata'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(603,34): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(603,34): error TS2551: Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(609,52): error TS7006: Parameter 'c' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(648,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(658,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(658,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(668,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(668,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(678,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(678,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(688,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(688,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(698,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(698,12): error TS2551: Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "errorCode": "2551",
+        "message": "Property 'CategoriaIngrediente' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'categoriaIngrediente'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(711,37): error TS7006: Parameter 'c' implicitly has an 'any' type."
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(718,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(729,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(729,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(740,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(740,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(751,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(751,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(766,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(766,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(777,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(777,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(792,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(792,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(802,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(802,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(812,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(812,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(822,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(822,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(836,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(836,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(845,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(845,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(854,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(854,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": "lib/actions/sistema-miscelati-semplificato.ts(863,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?"
+      },
+      {
+        "file": "lib/actions/sistema-miscelati-semplificato.ts",
+        "line": "lib/actions/sistema-miscelati-semplificato.ts(863,12): error TS2551: Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "errorCode": "2551",
+        "message": "Property 'Bottiglia' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, \"$connect\" | \"$disconnect\" | \"$on\" | \"$transaction\" | \"$use\" | \"$extends\">'. Did you mean 'bottiglia'?",
+        "context": ""
       }
     ]
   },
   "fileErrors": {
-    "lib/actions/scontrino-diretto.ts": 5,
-    "components/cassa/DirectReceiptModal.tsx": 5
+    "components/cassa/SimplePartialPaymentModal.tsx": 8,
+    "lib/actions/ordinazioni.ts": 1,
+    "components/cameriere/MixedProductModal.tsx": 1,
+    "lib/actions/sistema-miscelati-semplificato.ts": 50,
+    "app/dashboard/miscelati-v2/ricette/page.tsx": 1
   }
 }

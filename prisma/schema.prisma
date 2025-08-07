@@ -743,6 +743,7 @@ model Prodotto {
   subcategoryId           Int?
   requiresGlasses         Boolean                   @default(false)
   isMiscelato             Boolean                   @default(false)
+  Bottiglie               Bottiglia[]
   IngredientiRiferimento  Ingrediente[]             @relation("IngredienteToProdotto")
   Inventario              Inventario?
   InventarioEsaurito      InventarioEsaurito?
@@ -757,6 +758,7 @@ model Prodotto {
   ProdottoPaginaCategoria ProdottoPaginaCategoria[]
   ProdottiRecenti         ProdottoRecente[]
   ProductProcedure        ProductProcedure?
+  RicettaMiscelata        RicettaMiscelata?
   RigaOrdinazione         RigaOrdinazione[]
   RigaOrdineFornitore     RigaOrdineFornitore[]
 
@@ -961,6 +963,7 @@ model RigaOrdinazione {
   timestampConsegna                                      DateTime?
   newProductId                                           Int?
   glassesCount                                           Int?
+  configurazione                                         Json?
   esaurito                                               Boolean                   @default(false)
   nomeProdotto                                           String?
   isSplit                                                Boolean                   @default(false)
@@ -1825,6 +1828,98 @@ model ImpostazioniScontrino {
   @@index([attivo])
 }
 
+model CategoriaIngrediente {
+  id                  String                   @id @default(cuid())
+  nome                String                   @unique
+  descrizione         String?
+  icona               String?
+  colore              String?
+  ordinamento         Int                      @default(0)
+  tipo                TipoCategoriaIngrediente @default(ALCOLICO)
+  attivo              Boolean                  @default(true)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  Bottiglie           Bottiglia[]
+  ComponentiMiscelati ComponenteMiscelato[]
+
+  @@index([ordinamento])
+  @@index([attivo])
+}
+
+model Bottiglia {
+  id                    String               @id @default(cuid())
+  categoriaId           String
+  nome                  String
+  marca                 String?
+  descrizione           String?
+  gradazioneAlcolica    Decimal?             @db.Decimal(5, 2)
+  disponibile           Boolean              @default(true)
+  ordinamento           Int                  @default(0)
+  prodottoRiferimentoId Int?
+  immagine              String?
+  costoPorzione         Decimal              @default(0) @db.Decimal(10, 2)
+  mlPorzione            Int                  @default(40)
+  categoria             CategoriaIngrediente @relation(fields: [categoriaId], references: [id])
+  prodotto              Prodotto?            @relation(fields: [prodottoRiferimentoId], references: [id])
+  RicetteBase           RicettaMiscelata[]   @relation("ComponenteBase")
+  SelezioniBottiglia    SelezioneBottiglia[]
+
+  @@index([categoriaId, ordinamento])
+  @@index([disponibile])
+  @@index([prodottoRiferimentoId])
+}
+
+model RicettaMiscelata {
+  id               String                @id @default(cuid())
+  prodottoId       Int                   @unique
+  nome             String
+  descrizione      String?
+  istruzioni       String?
+  prezzoVendita    Decimal               @default(0) @db.Decimal(10, 2)
+  margineExtra     Decimal               @default(0) @db.Decimal(10, 2)
+  componenteBaseId String?
+  bicchiere        String?
+  ghiaccio         Boolean               @default(true)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  Componenti       ComponenteMiscelato[]
+  componenteBase   Bottiglia?            @relation("ComponenteBase", fields: [componenteBaseId], references: [id])
+  prodotto         Prodotto              @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+
+  @@index([prodottoId])
+  @@index([componenteBaseId])
+}
+
+model ComponenteMiscelato {
+  id                String               @id @default(cuid())
+  ricettaId         String
+  categoriaId       String
+  obbligatorio      Boolean              @default(true)
+  quantitaML        Int?
+  proporzione       String?
+  note              String?
+  ordinamento       Int                  @default(0)
+  maxSelezioni      Int                  @default(1)
+  bottiglieBaseIds  String[]             @default([]) // IDs delle bottiglie preselezionate per la ricetta base
+  categoria         CategoriaIngrediente @relation(fields: [categoriaId], references: [id])
+  ricetta           RicettaMiscelata     @relation(fields: [ricettaId], references: [id], onDelete: Cascade)
+
+  @@index([ricettaId, ordinamento])
+  @@index([categoriaId])
+}
+
+model SelezioneBottiglia {
+  id               String    @id @default(cuid())
+  configurazioneId String
+  bottigliaId      String
+  quantitaML       Int
+  costoCalcolato   Decimal   @db.Decimal(10, 2)
+  bottiglia        Bottiglia @relation(fields: [bottigliaId], references: [id])
+
+  @@index([configurazioneId])
+  @@index([bottigliaId])
+}
+
 enum AmbitoSpesa {
   ACCONTI
   DIPENDENTI
@@ -2143,5 +2238,16 @@ enum TipoProdottoConfigurabile {
   COCKTAIL
   BEVANDA
   PANINO
+  ALTRO
+}
+
+enum TipoCategoriaIngrediente {
+  ALCOLICO
+  MIXER
+  SCIROPPO
+  SUCCO
+  GARNISH
+  BITTER
+  LIQUORE
   ALTRO
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ChevronUp, ChevronDown, Save, X } from 'lucide-react';
-import { getCategorieIngredienti, saveCategoriaIngrediente } from '@/lib/actions/sistema-miscelati-semplificato';
+import { getCategorieIngredienti, saveCategoriaIngrediente, deleteCategoriaIngrediente } from '@/lib/actions/sistema-miscelati-semplificato';
 import type { CategoriaIngredienteData } from '@/lib/actions/sistema-miscelati-semplificato';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AuthGuard } from '@/components/auth-guard';
@@ -203,7 +203,7 @@ function CategorieIngredientiContent() {
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -219,7 +219,7 @@ function CategorieIngredientiContent() {
                 onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -241,7 +241,7 @@ function CategorieIngredientiContent() {
                 onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ 
-                  backgroundColor: colors.bg.primary,
+                  backgroundColor: colors.bg.darker,
                   borderColor: colors.border.primary,
                   color: colors.text.primary
                 }}
@@ -259,7 +259,7 @@ function CategorieIngredientiContent() {
                   onChange={(e) => setFormData({ ...formData, icona: e.target.value })}
                   className="flex-1 px-3 py-2 border rounded-lg text-2xl text-center"
                   style={{ 
-                    backgroundColor: colors.bg.primary,
+                    backgroundColor: colors.bg.darker,
                     borderColor: colors.border.primary,
                     color: colors.text.primary
                   }}
@@ -271,7 +271,7 @@ function CategorieIngredientiContent() {
                       onClick={() => setFormData({ ...formData, icona: emoji })}
                       className="w-10 h-10 border rounded hover:opacity-80 text-xl transition-opacity"
                       style={{ 
-                        backgroundColor: colors.bg.secondary,
+                        backgroundColor: colors.bg.hover,
                         borderColor: colors.border.primary
                       }}
                     >
@@ -325,7 +325,7 @@ function CategorieIngredientiContent() {
               onClick={handleSave}
               className="px-4 py-2 rounded-lg flex items-center gap-2 transition-opacity hover:opacity-90"
               style={{ 
-                backgroundColor: colors.success.main,
+                backgroundColor: colors.button.success,
                 color: 'white'
               }}
             >
@@ -367,7 +367,7 @@ function CategorieIngredientiContent() {
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 border rounded-lg font-bold"
                   style={{ 
-                    backgroundColor: colors.bg.primary,
+                    backgroundColor: colors.bg.darker,
                     borderColor: colors.border.primary,
                     color: colors.text.primary
                   }}
@@ -377,7 +377,7 @@ function CategorieIngredientiContent() {
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   style={{ 
-                    backgroundColor: colors.bg.primary,
+                    backgroundColor: colors.bg.darker,
                     borderColor: colors.border.primary,
                     color: colors.text.primary
                   }}
@@ -394,7 +394,7 @@ function CategorieIngredientiContent() {
                   onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   style={{ 
-                    backgroundColor: colors.bg.primary,
+                    backgroundColor: colors.bg.darker,
                     borderColor: colors.border.primary,
                     color: colors.text.primary
                   }}
@@ -407,7 +407,7 @@ function CategorieIngredientiContent() {
                     onChange={(e) => setFormData({ ...formData, icona: e.target.value })}
                     className="w-16 px-2 py-1 border rounded text-center text-2xl"
                     style={{ 
-                      backgroundColor: colors.bg.primary,
+                      backgroundColor: colors.bg.darker,
                       borderColor: colors.border.primary,
                       color: colors.text.primary
                     }}
@@ -425,7 +425,7 @@ function CategorieIngredientiContent() {
                     onClick={handleSave}
                     className="px-3 py-1 rounded flex items-center gap-1 text-sm transition-opacity hover:opacity-90"
                     style={{ 
-                      backgroundColor: colors.success.main,
+                      backgroundColor: colors.button.success,
                       color: 'white'
                     }}
                   >
@@ -509,11 +509,32 @@ function CategorieIngredientiContent() {
                         backgroundColor: colors.bg.hover,
                         color: colors.button.primary
                       }}
+                      title="Modifica"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm(`Eliminare la categoria "${categoria.nome}"?`)) {
+                          const result = await deleteCategoriaIngrediente(categoria.id);
+                          if (result.success) {
+                            loadCategorie();
+                          } else {
+                            alert(result.error || 'Errore nell\'eliminazione');
+                          }
+                        }
+                      }}
+                      className="p-2 rounded transition-colors"
+                      style={{ 
+                        backgroundColor: colors.bg.hover,
+                        color: colors.text.error
+                      }}
+                      title="Elimina"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                     {!categoria.attivo && (
-                      <span className="text-xs px-2 py-1" style={{ color: colors.error.main }}>
+                      <span className="text-xs px-2 py-1" style={{ color: colors.text.error }}>
                         Disattiva
                       </span>
                     )}
@@ -528,7 +549,7 @@ function CategorieIngredientiContent() {
       {categorie.length === 0 && !showNewForm && (
         <div 
           className="text-center py-12 rounded-lg"
-          style={{ backgroundColor: colors.bg.secondary }}
+          style={{ backgroundColor: colors.bg.hover }}
         >
           <p className="mb-4" style={{ color: colors.text.muted }}>
             Nessuna categoria configurata

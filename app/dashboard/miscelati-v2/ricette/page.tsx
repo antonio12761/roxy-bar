@@ -32,7 +32,9 @@ function RicetteContent() {
     istruzioni: '',
     bicchiere: 'Tumbler Basso',
     ghiaccio: true,
-    componenti: []
+    componenti: [],
+    prezzoVendita: 0,
+    margineExtra: 0  // Default 0, prezzo = solo costo ingredienti
   });
 
   useEffect(() => {
@@ -66,7 +68,9 @@ function RicetteContent() {
       istruzioni: '',
       bicchiere: 'Tumbler Basso',
       ghiaccio: true,
-      componenti: []
+      componenti: [],
+      prezzoVendita: 0,
+      margineExtra: 0
     });
     setShowNewForm(true);
     setEditingId(null);
@@ -82,13 +86,16 @@ function RicetteContent() {
       componenteBaseId: ricetta.componenteBaseId,
       bicchiere: ricetta.bicchiere || 'Tumbler Basso',
       ghiaccio: ricetta.ghiaccio,
+      prezzoVendita: ricetta.prezzoVendita || 0,
+      margineExtra: ricetta.margineExtra || 5,
       componenti: ricetta.Componenti.map((c: any) => ({
         categoriaId: c.categoriaId,
         obbligatorio: c.obbligatorio,
         quantitaML: c.quantitaML,
         proporzione: c.proporzione,
         note: c.note,
-        maxSelezioni: c.maxSelezioni || 1
+        maxSelezioni: c.maxSelezioni || 1,
+        bottiglieBaseIds: c.bottiglieBaseIds || []
       }))
     });
     setEditingId(ricetta.id);
@@ -140,6 +147,32 @@ function RicetteContent() {
   const updateComponente = (index: number, field: keyof ComponenteMiscelatoData, value: any) => {
     const newComponenti = [...formData.componenti];
     newComponenti[index] = { ...newComponenti[index], [field]: value };
+    setFormData({ ...formData, componenti: newComponenti });
+  };
+  
+  const updateBottiglieBase = (index: number, bottigliaId: string) => {
+    const newComponenti = [...formData.componenti];
+    const comp = newComponenti[index];
+    const currentIds = comp.bottiglieBaseIds || [];
+    
+    if (comp.maxSelezioni === 1) {
+      // Selezione singola
+      newComponenti[index] = { ...comp, bottiglieBaseIds: [bottigliaId] };
+    } else {
+      // Selezione multipla
+      if (currentIds.includes(bottigliaId)) {
+        newComponenti[index] = { 
+          ...comp, 
+          bottiglieBaseIds: currentIds.filter(id => id !== bottigliaId) 
+        };
+      } else if (currentIds.length < (comp.maxSelezioni || 1)) {
+        newComponenti[index] = { 
+          ...comp, 
+          bottiglieBaseIds: [...currentIds, bottigliaId] 
+        };
+      }
+    }
+    
     setFormData({ ...formData, componenti: newComponenti });
   };
 
@@ -245,6 +278,40 @@ function RicetteContent() {
                 <span>Con ghiaccio</span>
               </label>
             </div>
+            
+            {/* Sezione Margine */}
+            <div className="md:col-span-2 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold mb-3">Margine Extra (Opzionale)</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Margine Extra (€)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.margineExtra || 0}
+                    onChange={(e) => setFormData({ ...formData, margineExtra: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="0.00"
+                    step="0.50"
+                    min="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lascia a 0 per vendere al costo degli ingredienti
+                  </p>
+                </div>
+                
+                <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm">
+                    <span className="font-medium text-blue-900">Formula Prezzo: </span>
+                    <span className="text-blue-700">
+                      Costo ingredienti {(formData.margineExtra ?? 0) > 0 ? `+ €${(formData.margineExtra ?? 0).toFixed(2)}` : '(nessun margine)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Componenti Ricetta */}
@@ -272,14 +339,21 @@ function RicetteContent() {
               </div>
             ) : (
               <div className="space-y-3">
-                {formData.componenti.map((comp, index) => (
+                {formData.componenti.map((comp, index) => {
+                  const categoriaBottiglie = bottiglie.filter(b => b.categoriaId === comp.categoriaId);
+                  
+                  return (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium mb-1">Categoria</label>
                         <select
                           value={comp.categoriaId}
-                          onChange={(e) => updateComponente(index, 'categoriaId', e.target.value)}
+                          onChange={(e) => {
+                            updateComponente(index, 'categoriaId', e.target.value);
+                            // Reset bottiglie base quando cambia categoria
+                            updateComponente(index, 'bottiglieBaseIds', []);
+                          }}
                           className="w-full px-2 py-1 border rounded text-sm"
                         >
                           {categorie.map(cat => (
@@ -364,8 +438,55 @@ function RicetteContent() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Sezione Bottiglie Base */}
+                    {categoriaBottiglie.length > 0 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <label className="block text-xs font-medium mb-2">
+                          Bottiglie Base per Ricetta 
+                          <span className="text-gray-500 ml-1">(usate per calcolo prezzo menu)</span>
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {categoriaBottiglie.map(bottiglia => {
+                            const isSelected = comp.bottiglieBaseIds?.includes(bottiglia.id) || false;
+                            const isDisabled = !isSelected && 
+                              (comp.bottiglieBaseIds?.length || 0) >= (comp.maxSelezioni || 1);
+                            
+                            return (
+                              <button
+                                key={bottiglia.id}
+                                type="button"
+                                onClick={() => !isDisabled && updateBottiglieBase(index, bottiglia.id)}
+                                disabled={isDisabled}
+                                className={`p-2 text-xs rounded border transition-colors ${
+                                  isSelected 
+                                    ? 'bg-blue-100 border-blue-500 text-blue-700' 
+                                    : isDisabled
+                                    ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="font-medium">{bottiglia.nome}</div>
+                                {bottiglia.marca && (
+                                  <div className="text-xs opacity-75">{bottiglia.marca}</div>
+                                )}
+                                <div className="text-xs mt-1">
+                                  €{bottiglia.costoPorzione.toFixed(2)}/{bottiglia.mlPorzione}ml
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {(comp.maxSelezioni || 1) > 1 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Seleziona fino a {comp.maxSelezioni || 1} bottiglie
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -441,9 +562,9 @@ function RicetteContent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {comp.maxSelezioni > 1 && (
+                          {(comp.maxSelezioni || 1) > 1 && (
                             <span className="text-xs bg-blue-100 px-2 py-1 rounded">
-                              Max {comp.maxSelezioni}
+                              Max {comp.maxSelezioni || 1}
                             </span>
                           )}
                           <span className={`text-xs px-2 py-1 rounded ${
@@ -469,11 +590,12 @@ function RicetteContent() {
                 <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
                   <span>🥃 {ricetta.bicchiere}</span>
                   {ricetta.ghiaccio && <span>🧊 Con ghiaccio</span>}
-                  {ricetta.prodotto && (
-                    <span className="ml-auto">
-                      €{ricetta.prodotto.prezzo?.toFixed(2)}
-                    </span>
-                  )}
+                  <span className="ml-auto font-medium text-green-600">
+                    {ricetta.margineExtra > 0 
+                      ? `Costo ingredienti + €${ricetta.margineExtra.toFixed(2)}`
+                      : 'Solo costo ingredienti'
+                    }
+                  </span>
                 </div>
               </div>
             )}

@@ -25,7 +25,7 @@ function MiscelatiDashboardContent() {
       icon: Wine,
       href: '/dashboard/miscelati-v2/bottiglie',
       color: 'bg-blue-500',
-      stats: 'Aggiungi marche e prezzi extra'
+      stats: 'Aggiungi marche e costi'
     },
     {
       title: 'Ricette Miscelati',
@@ -101,7 +101,7 @@ function MiscelatiDashboardContent() {
           <li className="flex items-start">
             <span className="font-bold mr-2">2.</span>
             <div>
-              <strong>Aggiungi le Bottiglie</strong> - Inserisci le bottiglie disponibili per ogni categoria con eventuali prezzi extra
+              <strong>Aggiungi le Bottiglie</strong> - Inserisci le bottiglie disponibili per ogni categoria con i costi al litro
             </div>
           </li>
           <li className="flex items-start">
@@ -156,7 +156,7 @@ function MiscelatiDashboardContent() {
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-lg p-4 sm:p-6" style={{ backgroundColor: colors.bg.secondary }}>
+      <div className="rounded-lg p-4 sm:p-6" style={{ backgroundColor: colors.bg.hover }}>
         <h2 className="font-bold text-base sm:text-lg mb-4" style={{ color: colors.text.primary }}>Azioni Rapide</h2>
         <div className="flex flex-wrap gap-2 sm:gap-3">
           {quickActions.map((action) => {
@@ -190,7 +190,7 @@ function MiscelatiDashboardContent() {
       {/* Example */}
       <div className="mt-6 sm:mt-8 rounded-lg p-4 sm:p-6 border-2" style={{ 
         backgroundColor: colors.bg.card,
-        borderColor: colors.success.light
+        borderColor: colors.border.success
       }}>
         <h2 className="font-bold text-base sm:text-lg mb-4" style={{ color: colors.text.primary }}>🍸 Esempio Pratico: Gin Tonic</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" style={{ color: colors.text.secondary }}>
@@ -213,10 +213,10 @@ function MiscelatiDashboardContent() {
           <div>
             <strong className="block mb-2 text-sm sm:text-base" style={{ color: colors.text.primary }}>Cliente sceglie:</strong>
             <ul className="space-y-1 text-xs sm:text-sm">
-              <li>• Hendricks (+€2)</li>
-              <li>• Fever-Tree (+€1.50)</li>
-              <li>• Rosmarino (+€0.50)</li>
-              <li className="font-bold">→ Totale: Base + €4</li>
+              <li>• Hendricks (€25/L)</li>
+              <li>• Fever-Tree (€8/L)</li>
+              <li>• Rosmarino (€2/L)</li>
+              <li className="font-bold">→ Totale: Costo + Margine</li>
             </ul>
           </div>
         </div>
