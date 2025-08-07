@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Package, Users, CheckCircle, Clock, Loader2, AlertCircle, RotateCcw, Euro, User, Maximize2, Minimize2, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import OrderCard from './OrderCard';
@@ -94,11 +94,21 @@ export default function TableDetailsDrawer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { settings: printerSettings, updateSettings: updatePrinterSettings } = usePrinterSettings();
   const [stampaScontrino, setStampaScontrino] = useState(true); // Default: stampa abilitata
+  
+  // Ref per mantenere il valore del cliente
+  const clienteNomeRef = useRef(clienteNome);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Aggiorna ref quando cambia il valore
+  useEffect(() => {
+    clienteNomeRef.current = clienteNome;
+  }, [clienteNome]);
 
   useEffect(() => {
     if (isOpen) {
       // Reset state when modal opens
       setClienteNome('');
+      clienteNomeRef.current = '';
       setSuggestions([]);
       setShowSuggestions(false);
       
@@ -614,25 +624,31 @@ export default function TableDetailsDrawer({
                               style={{ color: colors.text.secondary }}
                             />
                             <input
+                              ref={inputRef}
                               type="text"
                               value={clienteNome}
-                              onChange={(e) => handleClienteSearch(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setClienteNome(value);
+                                clienteNomeRef.current = value;
+                                handleClienteSearch(value);
+                              }}
                               onFocus={() => {
                                 if (clienteNome.length === 0 && recentClienti.length > 0) {
                                   setSuggestions(recentClienti);
                                   setShowSuggestions(true);
                                 }
                               }}
-                              onBlur={() => {
-                                // Ritarda la chiusura per permettere il click sui suggerimenti
-                                setTimeout(() => setShowSuggestions(false), 200);
-                              }}
                               placeholder="Inserisci o seleziona il nome del cliente"
                               className="w-full pl-10 pr-4 py-2 rounded-lg border"
+                              autoComplete="off"
+                              autoCorrect="off"
+                              autoCapitalize="words"
                               style={{
                                 borderColor: colors.border.primary,
                                 backgroundColor: colors.bg.card,
-                                color: colors.text.primary
+                                color: colors.text.primary,
+                                fontSize: '16px'
                               }}
                             />
                           </div>
@@ -660,7 +676,16 @@ export default function TableDetailsDrawer({
                                 {suggestions.map((suggestion, index) => (
                                   <div
                                     key={index}
-                                    onClick={() => handleSelectSuggestion(suggestion)}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const value = suggestion;
+                                      setClienteNome(value);
+                                      clienteNomeRef.current = value;
+                                      setShowSuggestions(false);
+                                      if (inputRef.current) {
+                                        inputRef.current.blur();
+                                      }
+                                    }}
                                     className="px-3 py-2 cursor-pointer hover:bg-opacity-10 transition-colors flex items-center gap-2"
                                     style={{
                                       backgroundColor: 'transparent',
@@ -687,28 +712,37 @@ export default function TableDetailsDrawer({
                     {/* Opzione Stampa Scontrino - Mostra solo se non è autoprint */}
                     {printerSettings.showConfirmDialog && !printerSettings.autoprint && (
                       <div className="px-4 py-3">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={stampaScontrino}
-                            onChange={(e) => {
-                              setStampaScontrino(e.target.checked);
-                              // Salva la preferenza dell'utente
-                              updatePrinterSettings({ defaultEnabled: e.target.checked });
-                            }}
-                            className="w-4 h-4 rounded border-2 transition-colors"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newValue = !stampaScontrino;
+                            setStampaScontrino(newValue);
+                            updatePrinterSettings({ defaultEnabled: newValue });
+                          }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-opacity-10 transition-colors"
+                          style={{
+                            backgroundColor: 'transparent'
+                          }}
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors`}
                             style={{
-                              accentColor: colors.button.primary,
-                              borderColor: colors.border.primary
+                              backgroundColor: stampaScontrino ? colors.button.primary : 'transparent',
+                              borderColor: stampaScontrino ? colors.button.primary : colors.border.primary
                             }}
-                          />
-                          <div className="flex items-center gap-2">
+                          >
+                            {stampaScontrino && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 flex-1 text-left">
                             <Printer className="h-4 w-4" style={{ color: colors.text.secondary }} />
                             <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
                               Stampa scontrino automaticamente
                             </span>
                           </div>
-                        </label>
+                        </button>
                         <p className="text-xs mt-1 ml-7" style={{ color: colors.text.muted }}>
                           Stampa su Netum NT-1809 via Bluetooth
                         </p>
@@ -742,13 +776,13 @@ export default function TableDetailsDrawer({
                           }
                           
                           if (paymentMode === 'table') {
-                            onPayTable(clienteNome, stampaScontrino);
+                            onPayTable(clienteNomeRef.current || clienteNome, stampaScontrino);
                           } else if (paymentMode === 'client') {
-                            onPayByClient(clienteNome, stampaScontrino);
+                            onPayByClient(clienteNomeRef.current || clienteNome, stampaScontrino);
                           } else if (paymentMode === 'partial') {
                             onPayPartial(stampaScontrino);
                           } else {
-                            onPayOrder(clienteNome, stampaScontrino);
+                            onPayOrder(clienteNomeRef.current || clienteNome, stampaScontrino);
                           }
                           onTriggerParticles(e.currentTarget);
                         }}
