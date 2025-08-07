@@ -189,7 +189,8 @@ export default function CassaHeader({
               className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
               style={{ 
                 backgroundColor: colors.button.primary,
-                color: colors.button.primaryText
+                color: colors.button.primaryText,
+                cursor: 'pointer'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
@@ -206,7 +207,8 @@ export default function CassaHeader({
               className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
               style={{ 
                 backgroundColor: colors.button.success,
-                color: colors.button.successText
+                color: colors.button.successText,
+                cursor: 'pointer'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.successHover}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button.success}
@@ -223,7 +225,8 @@ export default function CassaHeader({
               className="p-1.5 rounded-lg transition-colors duration-200"
               style={{ 
                 backgroundColor: colors.button?.secondary || '#f3f4f6',
-                color: colors.button?.secondaryText || '#374151'
+                color: colors.button?.secondaryText || '#374151',
+                cursor: 'pointer'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button?.secondaryHover || colors.button?.secondary || '#e5e7eb'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.button?.secondary || '#f3f4f6'}
@@ -238,7 +241,8 @@ export default function CassaHeader({
             className="p-1.5 rounded-lg transition-colors duration-200"
             style={{ 
               backgroundColor: showHistory ? colors.bg.darker : colors.bg.hover,
-              color: colors.text.primary
+              color: colors.text.primary,
+              cursor: 'pointer'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.darker}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = showHistory ? colors.bg.darker : colors.bg.hover}
@@ -252,7 +256,8 @@ export default function CassaHeader({
             className="p-1.5 rounded-lg transition-colors duration-200"
             style={{ 
               backgroundColor: showScontrinoQueue ? colors.button.primaryHover : colors.button.primary,
-              color: colors.button.primaryText
+              color: colors.button.primaryText,
+              cursor: 'pointer'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.button.primaryHover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = showScontrinoQueue ? colors.button.primaryHover : colors.button.primary}
@@ -264,7 +269,7 @@ export default function CassaHeader({
           <button
             onClick={onRefresh}
             className="p-1.5 rounded-lg transition-colors"
-            style={{ backgroundColor: 'transparent' }}
+            style={{ backgroundColor: 'transparent', cursor: 'pointer' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Aggiorna"
@@ -312,7 +317,8 @@ export default function CassaHeader({
               className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
               style={{ 
                 backgroundColor: colors.button.primary,
-                color: colors.button.primaryText
+                color: colors.button.primaryText,
+                cursor: 'pointer'
               }}
             >
               <ShoppingBag className="h-4 w-4" />
@@ -329,7 +335,8 @@ export default function CassaHeader({
               className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
               style={{ 
                 backgroundColor: colors.button.success,
-                color: colors.button.successText
+                color: colors.button.successText,
+                cursor: 'pointer'
               }}
             >
               <Layers className="h-4 w-4" />
@@ -346,7 +353,8 @@ export default function CassaHeader({
               className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
               style={{ 
                 backgroundColor: colors.button?.secondary || '#f3f4f6',
-                color: colors.button?.secondaryText || '#374151'
+                color: colors.button?.secondaryText || '#374151',
+                cursor: 'pointer'
               }}
             >
               <Bluetooth className="h-4 w-4" />
@@ -362,7 +370,8 @@ export default function CassaHeader({
             className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
             style={{ 
               backgroundColor: showHistory ? colors.bg.darker : colors.bg.hover,
-              color: colors.text.primary
+              color: colors.text.primary,
+              cursor: 'pointer'
             }}
           >
             <Clock className="h-4 w-4" />
@@ -377,7 +386,8 @@ export default function CassaHeader({
             className="px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
             style={{ 
               backgroundColor: showScontrinoQueue ? colors.button.primaryHover : colors.button.primary,
-              color: colors.button.primaryText
+              color: colors.button.primaryText,
+              cursor: 'pointer'
             }}
           >
             <Receipt className="h-4 w-4" />

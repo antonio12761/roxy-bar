@@ -31,6 +31,7 @@ import { ParticleEffect } from "@/components/ui/ParticleEffect";
 import { BrowserNotificationHelper } from "@/lib/utils/notification-helper";
 import { printerService } from "@/lib/bluetooth/printer-service";
 import dynamic from 'next/dynamic';
+import { PWAClickFix } from '@/components/PWAClickFix';
 
 // Componenti sempre visibili (non lazy)
 import CassaHeader from "@/components/cassa/CassaHeader";
@@ -764,6 +765,7 @@ function CassaPageOptimized() {
   return (
     <CassaErrorBoundary level="page">
       <div className="min-h-screen pb-20 sm:pb-96" style={{ backgroundColor: colors.bg.dark }}>
+        <PWAClickFix />
         <ToastContainer />
         {/* Header */}
         <CassaErrorBoundary level="section" isolate>

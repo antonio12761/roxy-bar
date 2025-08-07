@@ -59,7 +59,8 @@ const TableCard = memo(function TableCard({ table, onClick, variant = 'default' 
               ? colors.text.warning || colors.text.accent 
               : colors.border.primary, 
         borderWidth: isPartiallyPaid || hasPartialPayment ? '2px' : '1px', 
-        borderStyle: 'solid' 
+        borderStyle: 'solid',
+        cursor: 'pointer' 
       }}
     >
       {/* Badge per stato pagamento */}
