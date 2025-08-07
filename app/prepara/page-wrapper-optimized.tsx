@@ -477,7 +477,7 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
           hasKitchenItems: ord.righe.some((item: any) => item.postazione === 'CUCINA'),
           cameriere: ord.cameriere?.nome,
           note: ord.note
-        }))
+        }))  
         .filter(ord => ord.items.length > 0);
 
       console.log('[Prepara] Filtered PREPARA orders:', preparaOrders.length);
