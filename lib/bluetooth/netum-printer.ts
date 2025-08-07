@@ -132,6 +132,33 @@ export interface ReceiptData {
   totale: number;
   pagamenti: Payment[];
   nomeCliente?: string;
+  // Nuovi campi per impostazioni personalizzate
+  header?: {
+    businessName?: string;
+    address?: string;
+    phone?: string;
+    vatNumber?: string;
+    fiscalCode?: string;
+  };
+  headerMessage?: string;
+  footer?: {
+    message?: string;
+    promotionalMessage?: string;
+    footerNote?: string;
+  };
+  printSettings?: {
+    paperWidth?: number;
+    separator?: string;
+    autoCut?: boolean;
+  };
+  displayOptions?: {
+    showDate?: boolean;
+    showTime?: boolean;
+    showOperator?: boolean;
+    showTable?: boolean;
+    showOrderNumber?: boolean;
+    showCustomer?: boolean;
+  };
 }
 
 export class NetumPrinter {
@@ -482,35 +509,62 @@ export class NetumPrinter {
       await this.sendCommand(ESC_POS.INIT);
       await this.sendCommand(ESC_POS.CHARSET_CP850); // Usa CP850 per supporto simbolo Euro
       
-      // Header - Nome bar/ristorante
+      // Header personalizzato da impostazioni
+      const businessName = receiptData.header?.businessName || 'BAR ROXY';
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
-      await this.printCentered('BAR ROXY', true);
+      await this.printCentered(businessName, true);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
       
-      await this.printCentered('Gestionale Bar');
+      // Informazioni attività
+      if (receiptData.header?.address) {
+        await this.printCentered(receiptData.header.address);
+      }
+      if (receiptData.header?.phone) {
+        await this.printCentered(`Tel: ${receiptData.header.phone}`);
+      }
+      if (receiptData.header?.vatNumber) {
+        await this.printCentered(`P.IVA: ${receiptData.header.vatNumber}`);
+      }
+      if (receiptData.header?.fiscalCode) {
+        await this.printCentered(`C.F.: ${receiptData.header.fiscalCode}`);
+      }
+      
+      // Messaggio intestazione personalizzato
+      if (receiptData.headerMessage) {
+        await this.sendCommand(ESC_POS.NEW_LINE);
+        await this.printCentered(receiptData.headerMessage);
+      }
+      
       await this.sendCommand(ESC_POS.NEW_LINE);
       
-      // Separatore
-      await this.printSeparatorLine('=');
+      // Separatore personalizzato
+      const separator = receiptData.printSettings?.separator || '=';
+      await this.printSeparatorLine(separator);
       
-      // Informazioni ordine
-      await this.sendText(`Scontrino: ${receiptData.numero}`);
-      await this.sendCommand(ESC_POS.NEW_LINE);
+      // Informazioni ordine (con controllo displayOptions)
+      const opts = receiptData.displayOptions || {};
       
-      await this.sendText(`Data: ${this.formatDate(receiptData.data)}`);
-      await this.sendCommand(ESC_POS.NEW_LINE);
+      if (opts.showOrderNumber !== false) {
+        await this.sendText(`Scontrino: ${receiptData.numero}`);
+        await this.sendCommand(ESC_POS.NEW_LINE);
+      }
       
-      if (receiptData.tavolo) {
+      if (opts.showDate !== false) {
+        await this.sendText(`Data: ${this.formatDate(receiptData.data)}`);
+        await this.sendCommand(ESC_POS.NEW_LINE);
+      }
+      
+      if (receiptData.tavolo && opts.showTable !== false) {
         await this.sendText(`Tavolo: ${receiptData.tavolo}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.cameriere) {
+      if (receiptData.cameriere && opts.showOperator !== false) {
         await this.sendText(`Cameriere: ${receiptData.cameriere}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.nomeCliente) {
+      if (receiptData.nomeCliente && opts.showCustomer !== false) {
         await this.sendText(`Cliente: ${receiptData.nomeCliente}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
@@ -556,15 +610,33 @@ export class NetumPrinter {
         }
       }
       
-      // Footer
+      // Footer personalizzato
       await this.sendCommand(ESC_POS.NEW_LINE);
-      await this.printSeparatorLine('=');
-      await this.printCentered('Grazie per la visita!');
+      await this.printSeparatorLine(separator);
+      
+      // Messaggio di ringraziamento
+      const thankYouMessage = receiptData.footer?.message || 'Grazie per la visita!';
+      await this.printCentered(thankYouMessage);
+      
+      // Messaggio promozionale
+      if (receiptData.footer?.promotionalMessage) {
+        await this.sendCommand(ESC_POS.NEW_LINE);
+        await this.printCentered(receiptData.footer.promotionalMessage);
+      }
+      
+      // Nota a piè di pagina
+      if (receiptData.footer?.footerNote) {
+        await this.sendCommand(ESC_POS.NEW_LINE);
+        await this.sendText(receiptData.footer.footerNote);
+      }
+      
       await this.sendCommand(ESC_POS.NEW_LINE);
       
-      // Feed e taglia
+      // Feed e taglia (controllato da impostazioni)
       await this.sendCommand(ESC_POS.FEED_LINE);
-      await this.sendCommand(ESC_POS.CUT);
+      if (receiptData.printSettings?.autoCut !== false) {
+        await this.sendCommand(ESC_POS.CUT);
+      }
       
       console.log('✅ Scontrino stampato con successo');
       return true;

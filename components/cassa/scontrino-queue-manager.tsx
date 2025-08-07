@@ -20,7 +20,7 @@ import {
   getStatisticheScontrini 
 } from "@/lib/services/scontrino-queue";
 import { useTheme } from "@/contexts/ThemeContext";
-import { netumPrinter, type ReceiptData } from "@/lib/bluetooth/netum-printer";
+import { printerService } from "@/lib/bluetooth/printer-service";
 
 interface ScontrinoQueue {
   id: string;
@@ -121,7 +121,7 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
   const connectPrinter = async () => {
     try {
       setPrinterStatus("Connessione in corso...");
-      const connected = await netumPrinter.connect();
+      const connected = await printerService.connectPrinter();
       if (connected) {
         setPrinterConnected(true);
         setPrinterStatus("Connesso");
@@ -140,7 +140,7 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
   // Disconnetti stampante
   const disconnectPrinter = async () => {
     try {
-      await netumPrinter.disconnect();
+      await printerService.disconnectPrinter();
       setPrinterConnected(false);
       setPrinterStatus("Non connesso");
     } catch (error) {
@@ -158,19 +158,20 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
 
       // Se non connesso, prova a connettersi
       if (!printerConnected) {
-        const connected = await netumPrinter.connect();
+        const connected = await printerService.connectPrinter();
         if (!connected) {
           throw new Error("Impossibile connettersi alla stampante");
         }
         setPrinterConnected(true);
       }
 
-      // Prepara dati per la stampa
-      const receiptData: ReceiptData = {
+      // Prepara dati per la stampa (il servizio caricherà le impostazioni)
+      const receiptData = {
         numero: scontrino.id.substring(0, 8),
         data: scontrino.timestampCreazione,
         tavolo: scontrino.tavoloNumero,
         cameriere: scontrino.cameriereNome,
+        nomeCliente: scontrino.clienteNome,
         righe: scontrino.righe.map(r => ({
           nome: r.prodotto,
           quantita: r.quantita,
@@ -181,12 +182,11 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
         pagamenti: scontrino.modalitaPagamento ? [{
           metodo: scontrino.modalitaPagamento,
           importo: scontrino.totale
-        }] : [],
-        nomeCliente: scontrino.clienteNome
+        }] : []
       };
 
-      // Stampa scontrino
-      const successo = await netumPrinter.printReceipt(receiptData);
+      // Stampa scontrino con impostazioni personalizzate
+      const successo = await printerService.printReceipt(receiptData);
       
       if (successo) {
         await marcaScontrinoStampato(scontrino.id);
