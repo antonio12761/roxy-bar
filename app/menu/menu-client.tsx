@@ -1169,7 +1169,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                   {order.map((item) => {
                     // Parse note per prodotti miscelati
                     const isMixedProduct = item.note?.startsWith('Ingredienti:');
-                    const ingredients = isMixedProduct 
+                    const ingredients = isMixedProduct && item.note
                       ? item.note.replace('Ingredienti: ', '').split(', ')
                       : [];
                     const isVariantProduct = item.note?.startsWith('Gusto:');
@@ -1273,7 +1273,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                               )}
                               
                               {/* Gusto per varianti */}
-                              {isVariantProduct && (
+                              {isVariantProduct && item.note && (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] font-semibold text-gray-500">
                                     VARIANTE:
@@ -1596,7 +1596,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
               <div className="text-sm space-y-2" style={{ color: colors.text.primary }}>
                 {(hasCompletedOrder ? completedOrderData : order).map((item) => {
                   const isMixedProduct = item.note?.startsWith('Ingredienti:');
-                  const ingredients = isMixedProduct 
+                  const ingredients = isMixedProduct && item.note
                     ? item.note.replace('Ingredienti: ', '').split(', ')
                     : [];
                   const isVariantProduct = item.note?.startsWith('Gusto:');
@@ -1647,7 +1647,7 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                           )}
                           
                           {/* Variante */}
-                          {isVariantProduct && (
+                          {isVariantProduct && item.note && (
                             <div className="text-xs text-orange-600 mt-1">
                               {item.note.replace('Gusto: ', '')}
                             </div>

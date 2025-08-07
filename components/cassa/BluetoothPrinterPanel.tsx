@@ -91,12 +91,11 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
                       'bluetooth' in navigator;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
       <div 
-        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl shadow-xl border"
+        className="relative w-full h-full sm:max-w-2xl sm:max-h-[90vh] overflow-y-auto sm:rounded-xl shadow-xl"
         style={{ 
-          backgroundColor: colors.bg.card,
-          borderColor: colors.border.primary 
+          backgroundColor: colors.bg.card
         }}
       >
         {/* Header */}

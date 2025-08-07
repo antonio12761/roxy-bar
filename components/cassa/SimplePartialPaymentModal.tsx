@@ -277,15 +277,12 @@ export function SimplePartialPaymentModal({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${isFullscreen ? '' : 'items-end sm:items-center'} justify-center ${isFullscreen ? '' : 'sm:p-4'}`}
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
-      <div className={`${isFullscreen ? 'w-full h-full' : 'rounded-t-2xl sm:rounded-lg w-full sm:max-w-3xl max-h-[80vh] sm:max-h-[85vh]'} overflow-hidden`}
+      <div className="w-full h-full sm:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-hidden"
         style={{
-          backgroundColor: colors.bg.card,
-          borderColor: colors.border.primary,
-          borderWidth: '1px',
-          borderStyle: 'solid'
+          backgroundColor: colors.bg.card
         }}
       >
         {/* Header */}
@@ -303,30 +300,16 @@ export function SimplePartialPaymentModal({
               Seleziona gli articoli da pagare
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-opacity-10"
-              style={{ backgroundColor: 'transparent' }}
-              title={isFullscreen ? "Esci da schermo intero" : "Schermo intero"}
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-5 w-5" style={{ color: colors.text.secondary }} />
-              ) : (
-                <Maximize2 className="h-5 w-5" style={{ color: colors.text.secondary }} />
-              )}
-            </button>
-            <button
-              onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-opacity-10"
-              style={{ backgroundColor: 'transparent' }}
-            >
-              <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg transition-colors hover:bg-opacity-10"
+            style={{ backgroundColor: 'transparent' }}
+          >
+            <X className="h-5 w-5" style={{ color: colors.text.secondary }} />
+          </button>
         </div>
 
-        <div className={`p-4 sm:p-6 overflow-y-auto ${isFullscreen ? 'max-h-[calc(100vh-200px)]' : 'max-h-[calc(80vh-180px)] sm:max-h-[calc(85vh-200px)]'}`}>
+        <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           {/* Riepilogo ordine */}
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
             <span className="text-xs uppercase tracking-wider block mb-2" style={{ color: colors.text.muted }}>

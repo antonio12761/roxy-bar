@@ -181,15 +181,12 @@ export default function TableDetailsDrawer({
   if (!isOpen || !selectedTable) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${isFullscreen ? '' : 'items-end sm:items-center'} justify-center ${isFullscreen ? '' : 'sm:p-4'}`}
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
-      <div className={`${isFullscreen ? 'w-full h-full' : 'rounded-t-2xl sm:rounded-lg w-full sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh]'} overflow-hidden`} 
+      <div className="w-full h-full sm:max-w-5xl sm:max-h-[90vh] sm:rounded-lg overflow-hidden"
         style={{ 
-          backgroundColor: colors.bg.card, 
-          borderColor: colors.border.primary, 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
+          backgroundColor: colors.bg.card
         }}
       >
         {/* Drawer Header */}
@@ -250,44 +247,18 @@ export default function TableDetailsDrawer({
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
+                onClick={onClose}
                 className="p-2 rounded-lg transition-all"
                 style={{ 
-                  backgroundColor: colors.bg.hover
+                  backgroundColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.button.primary + '20';
+                  e.currentTarget.style.backgroundColor = colors.bg.hover;
                   const svg = e.currentTarget.querySelector('svg');
                   if (svg) svg.style.color = colors.button.primary;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.hover;
-                  const svg = e.currentTarget.querySelector('svg');
-                  if (svg) svg.style.color = colors.text.secondary;
-                }}
-                title={isFullscreen ? "Esci da schermo intero" : "Schermo intero"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="h-5 w-5" style={{ color: colors.text.secondary }} />
-                ) : (
-                  <Maximize2 className="h-5 w-5" style={{ color: colors.text.secondary }} />
-                )}
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg transition-all hover:rotate-90"
-                style={{ 
-                  backgroundColor: colors.bg.hover,
-                  transform: 'rotate(0deg)',
-                  transitionDuration: '200ms'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.button.danger + '20';
-                  const svg = e.currentTarget.querySelector('svg');
-                  if (svg) svg.style.color = colors.button.danger;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.hover;
+                  e.currentTarget.style.backgroundColor = 'transparent';
                   const svg = e.currentTarget.querySelector('svg');
                   if (svg) svg.style.color = colors.text.secondary;
                 }}

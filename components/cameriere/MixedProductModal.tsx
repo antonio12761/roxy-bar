@@ -414,7 +414,7 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                                 )}
                                 
                                 {/* Grid delle bottiglie per questa marca */}
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                   {bottigliePerMarca[marca]
                                     .sort((a, b) => {
                                       // Ordina per gradazione alcolica (se presente) poi per nome
@@ -434,7 +434,7 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                                           onClick={() => !isDisabled && handleSelezione(componente.categoriaId, bottiglia.id, componente)}
                                           disabled={isDisabled}
                                           className={`
-                                            relative p-2 rounded-lg border transition-all duration-200
+                                            relative p-3 rounded-lg border transition-all duration-200
                                             ${isDisabled ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:shadow-lg hover:scale-105 active:scale-95'}
                                             ${isSelected ? 'shadow-md transform scale-105' : 'hover:border-orange-300'}
                                           `}
@@ -451,24 +451,30 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                                         >
                                           {/* Selected Badge */}
                                           {isSelected && (
-                                            <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
-                                              <Check className="w-3 h-3" />
+                                            <div className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white rounded-full p-1 shadow-sm z-10">
+                                              <Check className="w-3.5 h-3.5" />
                                             </div>
                                           )}
                                           
                                           {/* Content */}
-                                          <div className="space-y-1">
-                                            <div className="text-xs font-bold leading-tight line-clamp-2" style={{ color: colors.text.primary }}>
+                                          <div className="space-y-1.5">
+                                            <div className="text-sm font-bold leading-tight line-clamp-2" style={{ color: colors.text.primary }}>
                                               {bottiglia.nome}
                                             </div>
                                             
+                                            {bottiglia.marca && (
+                                              <div className="text-xs leading-tight opacity-70" style={{ color: colors.text.secondary }}>
+                                                {bottiglia.marca}
+                                              </div>
+                                            )}
+                                            
                                             <div className="pt-1 space-y-0.5">
-                                              <div className="text-xs font-bold" style={{ color: isSelected ? colors.primary : '#D97B34' }}>
+                                              <div className="text-sm font-bold" style={{ color: isSelected ? colors.primary : '#D97B34' }}>
                                                 €{bottiglia.costoPorzione.toFixed(2)}
                                               </div>
                                               
                                               {bottiglia.gradazioneAlcolica && (
-                                                <div className="text-[10px]" style={{ color: colors.text.muted }}>
+                                                <div className="text-xs" style={{ color: colors.text.muted }}>
                                                   {bottiglia.gradazioneAlcolica}°
                                                 </div>
                                               )}
@@ -497,30 +503,36 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                                   </>
                                 )}
                                 
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 opacity-50">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 opacity-50">
                                   {nonDisponibili.map(bottiglia => (
                                     <button
                                       key={bottiglia.id}
                                       disabled
-                                      className="relative p-2 rounded-lg border bg-gray-50 cursor-not-allowed"
+                                      className="relative p-3 rounded-lg border bg-gray-50 cursor-not-allowed"
                                       style={{
                                         borderColor: '#E5E5E5'
                                       }}
                                     >
-                                      <div className="space-y-1">
-                                        <div className="text-xs font-bold leading-tight line-clamp-2 text-gray-400">
+                                      <div className="space-y-1.5">
+                                        <div className="text-sm font-bold leading-tight line-clamp-2 text-gray-400">
                                           {bottiglia.nome}
                                         </div>
                                         
                                         {bottiglia.marca && (
-                                          <div className="text-[10px] leading-tight line-clamp-1 text-gray-400">
+                                          <div className="text-xs leading-tight opacity-70 text-gray-400">
                                             {bottiglia.marca}
                                           </div>
                                         )}
+                                        
+                                        <div className="pt-1">
+                                          <div className="text-sm text-gray-400">
+                                            €{bottiglia.costoPorzione.toFixed(2)}
+                                          </div>
+                                        </div>
                                       </div>
                                       
                                       <div className="absolute inset-0 bg-gray-100 bg-opacity-60 rounded-lg flex items-center justify-center">
-                                        <span className="text-[10px] font-bold text-red-600 bg-white px-1 py-0.5 rounded">
+                                        <span className="text-xs font-bold text-red-600 bg-white px-2 py-1 rounded">
                                           ESAURITO
                                         </span>
                                       </div>
