@@ -639,6 +639,12 @@ export default function TableDetailsDrawer({
                                   setShowSuggestions(true);
                                 }
                               }}
+                              onBlur={() => {
+                                // Delay per permettere al click di essere registrato
+                                setTimeout(() => {
+                                  setShowSuggestions(false);
+                                }, 200);
+                              }}
                               placeholder="Inserisci o seleziona il nome del cliente"
                               className="w-full pl-10 pr-4 py-2 rounded-lg border"
                               autoComplete="off"
@@ -678,13 +684,17 @@ export default function TableDetailsDrawer({
                                     key={index}
                                     onMouseDown={(e) => {
                                       e.preventDefault();
+                                      e.stopPropagation();
                                       const value = suggestion;
                                       setClienteNome(value);
                                       clienteNomeRef.current = value;
                                       setShowSuggestions(false);
-                                      if (inputRef.current) {
-                                        inputRef.current.blur();
-                                      }
+                                      // Non fare blur immediato per evitare problemi su Android
+                                      setTimeout(() => {
+                                        if (inputRef.current) {
+                                          inputRef.current.blur();
+                                        }
+                                      }, 100);
                                     }}
                                     className="px-3 py-2 cursor-pointer hover:bg-opacity-10 transition-colors flex items-center gap-2"
                                     style={{

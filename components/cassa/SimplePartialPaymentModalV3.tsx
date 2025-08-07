@@ -206,6 +206,12 @@ export function SimplePartialPaymentModal({
                 clienteNomeRef.current = value;
               }}
               onFocus={() => setShowDropdown(true)}
+              onBlur={() => {
+                // Delay per permettere al click di essere registrato
+                setTimeout(() => {
+                  setShowDropdown(false);
+                }, 200);
+              }}
               placeholder="Inserisci il nome del cliente"
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               autoComplete="off"
@@ -223,12 +229,16 @@ export function SimplePartialPaymentModal({
                     className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                     onMouseDown={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setClienteNome(cliente);
                       clienteNomeRef.current = cliente;
                       setShowDropdown(false);
-                      if (inputRef.current) {
-                        inputRef.current.blur();
-                      }
+                      // Non fare blur immediato per evitare problemi su Android
+                      setTimeout(() => {
+                        if (inputRef.current) {
+                          inputRef.current.blur();
+                        }
+                      }, 100);
                     }}
                   >
                     {cliente}
