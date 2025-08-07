@@ -15,10 +15,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Recupera le impostazioni attive
+    console.log("API: Ricerca impostazioni attive nel DB...");
     let impostazioni = await prisma.impostazioniScontrino.findFirst({
       where: { attivo: true },
       orderBy: { updatedAt: "desc" }
     });
+    console.log("API: Impostazioni trovate:", impostazioni ? "SI" : "NO");
+    if (impostazioni) {
+      console.log("API: Nome attività:", impostazioni.nomeAttivita);
+      console.log("API: Indirizzo:", impostazioni.indirizzo);
+    }
 
     // Se non esistono impostazioni, crea quelle di default
     if (!impostazioni) {
