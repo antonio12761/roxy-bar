@@ -17,21 +17,31 @@
   }
 }
 
-/* PWA Android fullscreen - nasconde barre di sistema */
+/* PWA Android fullscreen - fix per scroll e modal */
 @media all and (display-mode: fullscreen) {
-  html, body {
+  html {
+    height: 100%;
     overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
   }
   
-  /* Nasconde elementi di sistema Android */
   body {
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling su iOS/Android */
+    overscroll-behavior: contain; /* Previene pull-to-refresh accidentali */
+  }
+  
+  /* Fix per Android WebView scrolling */
+  #__next {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Nasconde elementi di sistema Android ma permette interazione */
+  body {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* Previene zoom su double tap */
   }
 }
 

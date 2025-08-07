@@ -3,7 +3,7 @@
   "short_name": "Roxy Bar",
   "description": "Sistema di gestione per Roxy Bar",
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
@@ -117,5 +117,5 @@
     }
   ],
   "related_applications": [],
-  "display_override": ["fullscreen", "standalone", "minimal-ui"]
+  "display_override": ["standalone", "minimal-ui", "browser"]
 }

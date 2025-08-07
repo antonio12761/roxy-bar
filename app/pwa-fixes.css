@@ -1,0 +1,198 @@
+/* PWA Android Fixes */
+
+/* Fix per scroll in PWA Android */
+@media screen and (max-width: 768px) {
+  /* Previene il blocco dello scroll su Android */
+  body {
+    position: relative !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Container principale app */
+  #__next {
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  /* Fix per modal/dialog su Android */
+  [role="dialog"],
+  [data-state="open"],
+  .fixed.inset-0 {
+    position: fixed !important;
+    z-index: 9999 !important;
+    touch-action: none; /* Blocca scroll del background quando modal è aperto */
+  }
+  
+  /* Assicura che l'overlay dei modal sia sopra tutto */
+  [data-radix-portal] {
+    z-index: 10000 !important;
+  }
+  
+  /* Fix per sheet/drawer su Android */
+  [data-vaul-drawer] {
+    position: fixed !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Previene scroll del body quando modal è aperto */
+  body:has([role="dialog"][data-state="open"]) {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+  
+  /* Fix touch events per bottoni in PWA */
+  button,
+  a,
+  [role="button"],
+  [onclick],
+  .cursor-pointer {
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* Previene delay del click */
+  }
+  
+  /* Fix per input focus su Android */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Previene zoom indesiderato su input focus */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Previene zoom su iOS/Android */
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  
+  /* Fix per safe area su Android con notch */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Fix specifici per Chrome Android in PWA mode */
+@media all and (display-mode: standalone) {
+  /* Ripristina scroll normale */
+  html, body {
+    overflow: visible !important;
+    position: relative !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+  
+  /* Fix per viewport in standalone */
+  html {
+    height: 100%;
+  }
+  
+  body {
+    min-height: 100%;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Smooth scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix per elementi fixed in PWA */
+  .fixed {
+    position: fixed !important;
+    -webkit-transform: translateZ(0); /* Hardware acceleration */
+    transform: translateZ(0);
+  }
+}
+
+/* Fix per Samsung Internet Browser */
+@supports (-webkit-appearance: none) and (not (overflow: -webkit-marquee)) and (not (-webkit-text-stroke: 1px transparent)) {
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Fix per Vaul drawer su Android */
+[vaul-drawer] {
+  touch-action: none;
+}
+
+[vaul-drawer-wrapper] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+}
+
+[vaul-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+}
+
+/* Fix per Click events su Android PWA */
+@media (pointer: coarse) {
+  /* Touch devices */
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;
+  }
+  
+  /* Aumenta area cliccabile per icone piccole */
+  .h-4.w-4,
+  .h-5.w-5,
+  .h-6.w-6 {
+    padding: 8px;
+    margin: -8px;
+  }
+}
+
+/* Fix per viewport height su Android browser */
+.h-screen {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Fix per bottom navigation/toolbar su Android */
+.bottom-0 {
+  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Previene pull-to-refresh accidentale */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Fix specifici per MixedProductModal e altri modal custom */
+.modal-container,
+[data-modal="true"] {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* Assicura che overlay backdrop funzioni */
+.backdrop,
+.modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9998 !important;
+  pointer-events: auto !important;
+}

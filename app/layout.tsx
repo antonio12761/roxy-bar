@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import "./pwa-fixes.css";
 import { Toaster } from "sonner";
 import '@/lib/setup/decimal-fix';
 import '@/lib/utils/log-filter';

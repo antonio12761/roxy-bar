@@ -236,15 +236,24 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      data-modal="true"
+      style={{ pointerEvents: 'auto' }}
+    >
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm modal-backdrop"
         onClick={onClose}
+        style={{ pointerEvents: 'auto' }}
       />
       
       <div 
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl"
-        style={{ backgroundColor: colors.bg.card }}
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl modal-container"
+        style={{ 
+          backgroundColor: colors.bg.card,
+          pointerEvents: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         {/* Header */}
         <div 
