@@ -50,7 +50,7 @@ const PayDebtModal = dynamic(
 );
 
 const SimplePartialPaymentModal = dynamic(
-  () => import("@/components/cassa/SimplePartialPaymentModalV2").then(mod => ({ default: mod.SimplePartialPaymentModal })),
+  () => import("@/components/cassa/SimplePartialPaymentModalV3").then(mod => ({ default: mod.SimplePartialPaymentModal })),
   { ssr: false }
 );
 
