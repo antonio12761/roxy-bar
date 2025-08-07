@@ -441,12 +441,23 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
         .filter((ord: any) => ord.righe.some((item: any) => 
           item.postazione === 'PREPARA' || item.postazione === 'BANCO'
         ))
-        .map((ord: any) => ({
-          id: ord.id,
-          tavolo: ord.Tavolo?.numero || ord.tipo,
-          nomeCliente: ord.nomeCliente || ord.note?.split('Cliente: ')[1]?.split(' - ')[0],
-          timestamp: ord.dataApertura,
-          items: ord.righe
+        .map((ord: any) => {
+          // DEBUG: Log tavolo data
+          console.log('[DEBUG Prepara] Mapping order from DB:', {
+            orderId: ord.id,
+            tavoloId: ord.tavoloId,
+            tavoloNumero: ord.Tavolo?.numero,
+            tavoloNumeroType: typeof ord.Tavolo?.numero,
+            tipo: ord.tipo,
+            tavoloObject: ord.Tavolo
+          });
+          
+          return {
+            id: ord.id,
+            tavolo: ord.Tavolo?.numero || ord.tipo,
+            nomeCliente: ord.nomeCliente || ord.note?.split('Cliente: ')[1]?.split(' - ')[0],
+            timestamp: ord.dataApertura,
+            items: ord.righe
             .filter((item: any) => item.postazione === 'PREPARA' || item.postazione === 'BANCO')
             .map((item: any) => ({
               id: item.id,
@@ -539,6 +550,14 @@ export default function PreparaPageOptimized({ currentUser }: { currentUser: any
 
   // Handle new order event - Memoized to prevent re-creation
   const handleNewOrder = useCallback((data: any) => {
+    
+    // DEBUG: Log received data
+    console.log('[DEBUG Prepara] New order SSE data:', {
+      orderId: data.orderId,
+      tableNumber: data.tableNumber,
+      tableNumberType: typeof data.tableNumber,
+      fullData: data
+    });
     
     // Check if we already have this order
     const orderExists = orders.some(order => order.id === data.orderId);

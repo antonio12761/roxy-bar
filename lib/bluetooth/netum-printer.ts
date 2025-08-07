@@ -541,7 +541,7 @@ export class NetumPrinter {
       // Stampa nome attività in grande e bold
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.sendCommand(ESC_POS.BOLD_ON);
-      await this.printCentered(businessName.toUpperCase(), true);
+      await this.printCentered(businessName.toUpperCase(), false); // FALSE perché bold già attivo!
       await this.sendCommand(ESC_POS.BOLD_OFF);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
       
@@ -563,7 +563,7 @@ export class NetumPrinter {
       if (receiptData.headerMessage) {
         await this.sendCommand(ESC_POS.NEW_LINE);
         await this.sendCommand(ESC_POS.BOLD_ON);
-        await this.printCentered(receiptData.headerMessage);
+        await this.printCentered(receiptData.headerMessage, false); // FALSE perché bold già attivo!
         await this.sendCommand(ESC_POS.BOLD_OFF);
       }
       
@@ -657,7 +657,7 @@ export class NetumPrinter {
       // Messaggio SOLO SE CONFIGURATO IN ADMIN
       if (receiptData.footer?.message) {
         await this.sendCommand(ESC_POS.BOLD_ON);
-        await this.printCentered(receiptData.footer.message);
+        await this.printCentered(receiptData.footer.message, false); // FALSE perché bold già attivo!
         await this.sendCommand(ESC_POS.BOLD_OFF);
       }
       
