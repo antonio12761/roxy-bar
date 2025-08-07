@@ -720,7 +720,7 @@ export function SimplePartialPaymentModal({
                         >
                           <User className="h-3 w-3" style={{ color: colors.text.secondary }} />
                           <span>{suggestion}</span>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
