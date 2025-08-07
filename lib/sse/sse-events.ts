@@ -4,7 +4,7 @@ export interface SSEEventMap {
   // Order events
   'order:new': {
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     customerName?: string;
     items: Array<{
       id: string;
@@ -28,7 +28,7 @@ export interface SSEEventMap {
     orderId: string;
     oldStatus: string;
     newStatus: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     timestamp: string;
   };
   
@@ -44,14 +44,14 @@ export interface SSEEventMap {
   'order:ready': {
     orderId: string;
     orderNumber?: number;
-    tableNumber?: number;
+    tableNumber?: string | number;
     readyItems: string[];
     timestamp: string;
   };
   
   'order:delivered': {
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     deliveredBy?: string;
     timestamp: string;
   };
@@ -104,14 +104,14 @@ export interface SSEEventMap {
   
   'order:sent': {
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     orderType: string;
     timestamp: string;
   };
   
   'order:in-preparation': {
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     orderType: string;
     timestamp: string;
   };
@@ -119,7 +119,7 @@ export interface SSEEventMap {
   'order:cancelled': {
     orderId: string;
     orderNumber?: number;
-    tableNumber?: number;
+    tableNumber?: string | number;
     orderType?: string;
     reason?: string;
     approvedBy?: string;
@@ -130,7 +130,7 @@ export interface SSEEventMap {
   'order:cancellation-request': {
     requestId: string;
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     reason: string;
     requestedBy: string;
     timestamp: string;
@@ -139,7 +139,7 @@ export interface SSEEventMap {
   'order:cancellation-rejected': {
     requestId: string;
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     rejectedBy: string;
     reason?: string;
     timestamp: string;
@@ -199,7 +199,7 @@ export interface SSEEventMap {
   
   'order:merged': {
     orderId: string;
-    tableNumber: number;
+    tableNumber: string | number;
     newItems: Array<{
       id: string;
       productName: string;
@@ -231,7 +231,7 @@ export interface SSEEventMap {
     orderId: string;
     itemId: string;
     productName?: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     cancelledBy: string;
     timestamp: string;
   };
@@ -242,7 +242,7 @@ export interface SSEEventMap {
     productName?: string;
     oldQuantity: number;
     newQuantity: number;
-    tableNumber?: number;
+    tableNumber?: string | number;
     modifiedBy: string;
     timestamp: string;
   };
@@ -365,7 +365,7 @@ export interface SSEEventMap {
   
   'notification:reminder': {
     orderId: string;
-    tableNumber?: number;
+    tableNumber?: string | number;
     type: 'pickup' | 'payment' | 'preparation';
     message: string;
   };

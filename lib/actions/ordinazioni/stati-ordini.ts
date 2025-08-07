@@ -58,7 +58,7 @@ export async function aggiornaStatoOrdinazione(
       case "ORDINATO":
         notificationManager.notifyOrderUpdated({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           status: nuovoStato,
           changes: [{
@@ -72,7 +72,7 @@ export async function aggiornaStatoOrdinazione(
       case "IN_PREPARAZIONE":
         notificationManager.notifyOrderUpdated({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           status: nuovoStato,
           changes: [{
@@ -86,7 +86,7 @@ export async function aggiornaStatoOrdinazione(
       case "PRONTO":
         notificationManager.notifyOrderReady({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo
         });
         break;
@@ -94,7 +94,7 @@ export async function aggiornaStatoOrdinazione(
       case "CONSEGNATO":
         notificationManager.notifyOrderDelivered({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           amount: parseFloat(ordinazione.totale.toString())
         });
@@ -103,7 +103,7 @@ export async function aggiornaStatoOrdinazione(
       case "PAGATO":
         notificationManager.notifyOrderPaid({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           amount: parseFloat(ordinazione.totale.toString())
         });
@@ -112,7 +112,7 @@ export async function aggiornaStatoOrdinazione(
       case "ANNULLATO":
         notificationManager.notifyOrderCancelled({
           orderId: ordinazione.id,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           reason: "Annullata dall'utente"
         });
@@ -136,7 +136,7 @@ export async function aggiornaStatoOrdinazione(
       orderNumber: ordinazione.numero,
       oldStatus: ordinazioneCorrente.stato,
       newStatus: nuovoStato,
-      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo?.numero || undefined,
       timestamp: new Date().toISOString()
     };
     
@@ -144,7 +144,7 @@ export async function aggiornaStatoOrdinazione(
       eventData = {
         orderId: ordinazione.id,
         orderNumber: ordinazione.numero,
-        tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+        tableNumber: ordinazione.Tavolo?.numero || undefined,
         deliveredBy: utente.nome,
         timestamp: new Date().toISOString()
       };
@@ -253,7 +253,7 @@ export async function aggiornaStatoRiga(
     }
 
     if (result.riga) {
-      const tableNumber = result.riga.Ordinazione.Tavolo ? parseInt(result.riga.Ordinazione.Tavolo.numero) : undefined;
+      const tableNumber = result.riga.Ordinazione.Tavolo?.numero || undefined;
       
       notificationManager.notifyItemStatusChange(
         result.riga.Ordinazione.id,
@@ -355,14 +355,14 @@ export async function completaTuttiGliItems(ordinazioneId: string) {
     if (result.ordinazione) {
       notificationManager.notifyOrderReady({
         orderId: result.ordinazione.id,
-        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? result.ordinazione.Tavolo.numero : undefined,
         orderType: result.ordinazione.tipo
       });
 
       sseService.emit('order:ready', {
         orderId: result.ordinazione.id,
         orderNumber: result.ordinazione.numero,
-        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? result.ordinazione.Tavolo.numero : undefined,
         readyItems: [],
         timestamp: new Date().toISOString()
       });
@@ -469,7 +469,7 @@ export async function segnaOrdineRitirato(ordinazioneId: string) {
     if (ordinazione) {
       notificationManager.notifyOrderDelivered({
         orderId: ordinazione.id,
-        tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+        tableNumber: ordinazione.Tavolo?.numero || undefined,
         orderType: ordinazione.tipo,
         amount: parseFloat(ordinazione.totale.toString())
       });
@@ -477,7 +477,7 @@ export async function segnaOrdineRitirato(ordinazioneId: string) {
       const eventData = {
         orderId: ordinazione.id,
         orderNumber: ordinazione.numero,
-        tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+        tableNumber: ordinazione.Tavolo?.numero || undefined,
         deliveredBy: utente.nome,
         timestamp: new Date().toISOString()
       };

@@ -445,7 +445,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
     } else if (result.ordinazione) {
       notificationManager.notifyOrderCreated({
         orderId: result.ordinazione.id,
-        tableNumber: result.ordinazione.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione.Tavolo?.numero || undefined,
         orderType: result.ordinazione.tipo,
         items: result.ordinazione.RigaOrdinazione ? result.ordinazione.RigaOrdinazione.map(r => ({
           nome: r.Prodotto?.nome || 'Prodotto',
@@ -458,7 +458,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
       
       const eventData = {
         orderId: result.ordinazione.id,
-        tableNumber: result.ordinazione.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione.Tavolo?.numero || undefined,
         customerName: result.ordinazione.nomeCliente || undefined,
         items: result.ordinazione.RigaOrdinazione ? result.ordinazione.RigaOrdinazione.map(r => ({
           id: r.id,
@@ -671,7 +671,7 @@ export async function cancellaOrdinazione(ordinazioneId: string) {
 
       sseService.emit('order:cancelled', {
         orderId: ordinazioneId,
-        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione.tavoloId && result.ordinazione.Tavolo ? result.ordinazione.Tavolo.numero : undefined,
         orderType: result.ordinazione.tipo,
         reason: "Cancellata dall'utente",
         approvedBy: utente.nome || utente.id,
@@ -777,7 +777,7 @@ export async function cancellaRigaOrdinazione(rigaId: string) {
       orderId: riga.ordinazioneId,
       itemId: rigaId,
       productName: riga.Prodotto?.nome,
-      tableNumber: riga.Ordinazione.Tavolo ? parseInt(riga.Ordinazione.Tavolo.numero) : undefined,
+      tableNumber: riga.Ordinazione.Tavolo?.numero || undefined,
       cancelledBy: utente.nome || utente.id,
       timestamp: new Date().toISOString()
     });
@@ -897,7 +897,7 @@ export async function modificaQuantitaRiga(rigaId: string, nuovaQuantita: number
       productName: riga.Prodotto?.nome,
       oldQuantity: riga.quantita,
       newQuantity: nuovaQuantita,
-      tableNumber: riga.Ordinazione.Tavolo ? parseInt(riga.Ordinazione.Tavolo.numero) : undefined,
+      tableNumber: riga.Ordinazione.Tavolo?.numero || undefined,
       modifiedBy: utente.nome || utente.id,
       timestamp: new Date().toISOString()
     });
@@ -1016,7 +1016,7 @@ export async function mergeOrdineProdotti(ordinazioneId: string, prodotti: Prodo
     if (result.success) {
       notificationManager.notifyOrderUpdated({
         orderId: ordinazioneId,
-        tableNumber: result.ordinazione?.Tavolo ? parseInt(result.ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.ordinazione?.Tavolo?.numero || undefined,
         orderType: result.ordinazione?.tipo || 'TAVOLO',
         status: result.ordinazione?.stato || 'IN_PREPARAZIONE',
         changes: [{

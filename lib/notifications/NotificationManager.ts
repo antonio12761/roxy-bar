@@ -22,7 +22,7 @@ export interface NotificationConfig {
 
 export interface OrderNotificationData {
   orderId: string;
-  tableNumber?: number;
+  tableNumber?: string | number;
   orderType: "TAVOLO" | "ASPORTO" | "BANCONE";
   items?: Array<{
     nome: string;
@@ -541,7 +541,7 @@ export class NotificationManager {
   public notifyCancellationRequest(data: {
     orderId: string;
     orderNumber: number;
-    tableNumber?: number;
+    tableNumber?: string | number;
     requestedBy: string;
     reason: string;
     currentStatus: string;
@@ -655,7 +655,7 @@ export class NotificationManager {
     itemId: string,
     newStatus: string,
     itemName: string,
-    tableNumber?: number
+    tableNumber?: string | number
   ): string {
     let configKey = "item_in_progress";
     if (newStatus === "PRONTO") configKey = "item_ready";
@@ -754,7 +754,7 @@ export class NotificationManager {
    * Send a notification for duplicate order warnings
    */
   public notifyDuplicateOrderWarning(
-    tableNumber: number,
+    tableNumber: string | number,
     existingOrderId: string,
     attemptedItems: any[]
   ): string {

@@ -70,7 +70,7 @@ export async function creaRichiestaAnnullamento(data: RichiestaAnnullamentoData)
     notificationManager.notifyCancellationRequest({
       orderId: ordinazione.id,
       orderNumber: ordinazione.numero,
-      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo?.numero || undefined,
       requestedBy: utente.nome || utente.id,
       reason: data.motivo,
       currentStatus: ordinazione.stato
@@ -80,7 +80,7 @@ export async function creaRichiestaAnnullamento(data: RichiestaAnnullamentoData)
     sseService.emit('order:cancellation-request', {
       requestId: richiesta.id,
       orderId: ordinazione.id,
-      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo?.numero || undefined,
       reason: data.motivo,
       requestedBy: utente.nome || utente.id,
       timestamp: new Date().toISOString()
@@ -182,7 +182,7 @@ export async function approvaRichiestaAnnullamento(richiestaId: string) {
       // Notifica l'annullamento
       notificationManager.notifyOrderCancelled({
         orderId: result.ordinazione.id,
-        tableNumber: result.richiesta?.Ordinazione.Tavolo ? parseInt(result.richiesta.Ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.richiesta?.Ordinazione.Tavolo?.numero || undefined,
         orderType: result.ordinazione.tipo,
         reason: `Approvato da ${utente.nome || utente.id}`
       });
@@ -190,7 +190,7 @@ export async function approvaRichiestaAnnullamento(richiestaId: string) {
       // Emetti evento SSE
       sseService.emit('order:cancelled', {
         orderId: result.ordinazione.id,
-        tableNumber: result.richiesta?.Ordinazione.Tavolo ? parseInt(result.richiesta.Ordinazione.Tavolo.numero) : undefined,
+        tableNumber: result.richiesta?.Ordinazione.Tavolo?.numero || undefined,
         approvedBy: utente.nome || utente.id,
         timestamp: new Date().toISOString()
       });
@@ -241,7 +241,7 @@ export async function rifiutaRichiestaAnnullamento(richiestaId: string, motivoRi
     sseService.emit('order:cancellation-rejected', {
       requestId: richiestaId,
       orderId: richiesta.ordinazioneId,
-      tableNumber: richiesta.Ordinazione.Tavolo ? parseInt(richiesta.Ordinazione.Tavolo.numero) : undefined,
+      tableNumber: richiesta.Ordinazione.Tavolo?.numero || undefined,
       rejectedBy: utente.nome || utente.id,
       reason: motivoRifiuto,
       timestamp: new Date().toISOString()

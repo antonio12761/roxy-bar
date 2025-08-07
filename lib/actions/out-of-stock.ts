@@ -1229,7 +1229,7 @@ export async function handleOutOfStockResponse(
       sseService.emit('order:cancelled', {
         orderId: order.id,
         orderNumber: order.numero,
-        tableNumber: order.Tavolo?.numero ? parseInt(order.Tavolo.numero.toString(), 10) || undefined : undefined,
+        tableNumber: order.Tavolo?.numero || undefined,
         reason: 'Prodotti esauriti - Cliente ha annullato',
         timestamp: new Date().toISOString()
       }, {

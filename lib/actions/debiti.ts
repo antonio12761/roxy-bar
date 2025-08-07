@@ -152,7 +152,7 @@ export async function creaDebito(
       clienteName: debito.Cliente.nome,
       amount: importo,
       orderId: ordinazioneId,
-      tableNumber: debito.Ordinazione?.Tavolo?.numero ? parseInt(debito.Ordinazione.Tavolo.numero) : undefined,
+      tableNumber: debito.Ordinazione?.Tavolo?.numero || undefined,
       timestamp: new Date().toISOString()
     };
 

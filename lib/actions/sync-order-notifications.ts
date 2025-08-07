@@ -48,7 +48,7 @@ export async function syncOrderNotifications() {
           // Notifica nuovo ordine
           notificationManager.notifyOrderCreated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             waiterName: ordinazione.User?.nome,
             items: ordinazione.RigaOrdinazione.map((r: any) => ({
@@ -60,7 +60,7 @@ export async function syncOrderNotifications() {
           
           sseService.emit('order:new', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             customerName: ordinazione.nomeCliente || undefined,
             items: ordinazione.RigaOrdinazione.map((r: any) => ({
               id: r.id,
@@ -79,7 +79,7 @@ export async function syncOrderNotifications() {
           // Notifica ordine inviato in cucina
           notificationManager.notifyOrderUpdated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             status: "IN_PREPARAZIONE",
             changes: [{
@@ -93,7 +93,7 @@ export async function syncOrderNotifications() {
             orderId: ordinazione.id,
             oldStatus: 'ORDINATO',
             newStatus: 'IN_PREPARAZIONE',
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             timestamp: new Date().toISOString()
           });
           
@@ -104,7 +104,7 @@ export async function syncOrderNotifications() {
           // Notifica ordine in preparazione
           notificationManager.notifyOrderUpdated({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             status: "IN_PREPARAZIONE",
             changes: [{
@@ -118,7 +118,7 @@ export async function syncOrderNotifications() {
             orderId: ordinazione.id,
             oldStatus: 'IN_PREPARAZIONE',
             newStatus: 'IN_PREPARAZIONE',
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             timestamp: new Date().toISOString()
           });
           
@@ -129,7 +129,7 @@ export async function syncOrderNotifications() {
           // Notifica ordine pronto
           notificationManager.notifyOrderReady({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             items: ordinazione.RigaOrdinazione.map((r: any) => ({
               nome: r.Prodotto.nome,
@@ -141,7 +141,7 @@ export async function syncOrderNotifications() {
           sseService.emit('order:ready', {
             orderId: ordinazione.id,
             orderNumber: ordinazione.numero,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             readyItems: ordinazione.RigaOrdinazione.filter((r: any) => r.stato === 'PRONTO').map((r: any) => r.id),
             timestamp: new Date().toISOString()
           });
@@ -153,14 +153,14 @@ export async function syncOrderNotifications() {
           // Notifica ordine consegnato
           notificationManager.notifyOrderDelivered({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             amount: parseFloat(ordinazione.totale.toString())
           });
           
           sseService.emit('order:delivered', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             deliveredBy: ordinazione.User?.nome,
             timestamp: new Date().toISOString()
           });
@@ -172,7 +172,7 @@ export async function syncOrderNotifications() {
           // Notifica richiesta conto
           notificationManager.notifyPaymentRequested({
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             orderType: ordinazione.tipo,
             amount: parseFloat(ordinazione.totale.toString()),
             customerName: ordinazione.nomeCliente || undefined
@@ -180,7 +180,7 @@ export async function syncOrderNotifications() {
           
           sseService.emit('notification:reminder', {
             orderId: ordinazione.id,
-            tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+            tableNumber: ordinazione.Tavolo?.numero || undefined,
             type: 'payment',
             message: `Richiesta conto per ${ordinazione.tipo} ${ordinazione.Tavolo ? `Tavolo ${ordinazione.Tavolo.numero}` : ''} - €${ordinazione.totale}`
           });

@@ -135,7 +135,7 @@ export async function sollecitaOrdinePronto(ordinazioneId: string) {
 
     sseService.emit('notification:reminder', {
       orderId: ordinazione.id,
-      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo?.numero || undefined,
       type: 'pickup',
       message: `Sollecito per ordine ${ordinazione.tipo} ${ordinazione.Tavolo ? `Tavolo ${ordinazione.Tavolo.numero}` : ''}`
     });

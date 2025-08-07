@@ -279,7 +279,8 @@ export class PrinterService {
       formattedData.qrCode = settings.urlQRCode;
     }
     
-    if (settings.mostraSocial) {
+    // PASSA SEMPRE I SOCIAL SE CONFIGURATI
+    if (settings.mostraSocial || settings.socialInstagram || settings.socialFacebook) {
       formattedData.social = {
         facebook: settings.socialFacebook,
         instagram: settings.socialInstagram

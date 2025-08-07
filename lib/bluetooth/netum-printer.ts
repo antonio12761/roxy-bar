@@ -538,11 +538,15 @@ export class NetumPrinter {
       await this.sendCommand(ESC_POS.INIT);
       await this.sendCommand(ESC_POS.CHARSET_CP850);
       
-      // USA SOLO DATI DA ADMIN
+      // USA SOLO DATI DA ADMIN - STAMPA IN GRANDE!
       const businessName = receiptData.header.businessName;
       console.log('🏪 Nome da admin:', businessName);
+      
+      // TITOLO MOLTO GRANDE E BOLD
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
-      await this.printCentered(businessName, true);
+      await this.sendCommand(ESC_POS.BOLD_ON);
+      await this.printCentered(businessName.toUpperCase(), true);
+      await this.sendCommand(ESC_POS.BOLD_OFF);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
       
       // Informazioni attività
@@ -559,10 +563,12 @@ export class NetumPrinter {
         await this.printCentered(`C.F.: ${receiptData.header.fiscalCode}`);
       }
       
-      // Messaggio intestazione personalizzato
+      // Messaggio intestazione personalizzato (es. SCONTRINO NON FISCALE)
       if (receiptData.headerMessage) {
         await this.sendCommand(ESC_POS.NEW_LINE);
+        await this.sendCommand(ESC_POS.BOLD_ON);
         await this.printCentered(receiptData.headerMessage);
+        await this.sendCommand(ESC_POS.BOLD_OFF);
       }
       
       await this.sendCommand(ESC_POS.NEW_LINE);
@@ -652,19 +658,29 @@ export class NetumPrinter {
       
       // Messaggio SOLO SE CONFIGURATO IN ADMIN
       if (receiptData.footer?.message) {
+        await this.sendCommand(ESC_POS.BOLD_ON);
         await this.printCentered(receiptData.footer.message);
+        await this.sendCommand(ESC_POS.BOLD_OFF);
       }
       
-      // Messaggio promozionale
+      // Messaggio promozionale (es. Instagram)
       if (receiptData.footer?.promotionalMessage) {
         await this.sendCommand(ESC_POS.NEW_LINE);
         await this.printCentered(receiptData.footer.promotionalMessage);
       }
       
-      // Nota a piè di pagina
+      // Social media se configurati
+      if ((receiptData as any).social?.instagram) {
+        await this.printCentered(`Instagram: ${(receiptData as any).social.instagram}`);
+      }
+      if ((receiptData as any).social?.facebook) {
+        await this.printCentered(`Facebook: ${(receiptData as any).social.facebook}`);
+      }
+      
+      // Nota a piè di pagina (es. sito web)
       if (receiptData.footer?.footerNote) {
         await this.sendCommand(ESC_POS.NEW_LINE);
-        await this.sendText(receiptData.footer.footerNote);
+        await this.printCentered(receiptData.footer.footerNote);
       }
       
       await this.sendCommand(ESC_POS.NEW_LINE);

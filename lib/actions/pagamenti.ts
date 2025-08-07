@@ -554,7 +554,7 @@ export async function richiediPagamento(ordinazioneId: string) {
     // Notifica richiesta pagamento
     notificationManager.notifyPaymentRequested({
       orderId: ordinazioneId,
-      tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+      tableNumber: ordinazione.Tavolo?.numero || undefined,
       orderType: ordinazione.tipo,
       amount: rimanente,
       customerName: ordinazione.clienteId || ordinazione.nomeCliente || undefined
@@ -614,7 +614,7 @@ export async function richiediScontrino(
         // Invia notifica alla cassa per richiesta scontrino
         notificationManager.notifyReceiptRequested({
           orderId,
-          tableNumber: ordinazione.Tavolo ? parseInt(ordinazione.Tavolo.numero) : undefined,
+          tableNumber: ordinazione.Tavolo?.numero || undefined,
           orderType: ordinazione.tipo,
           amount,
           waiterName: utente.nome,
