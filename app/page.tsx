@@ -60,7 +60,10 @@ export default function MaintenancePage() {
             <h3 className="text-white font-semibold mb-1">Performance</h3>
             <p className="text-gray-400 text-sm">Ottimizzazioni in corso</p>
           </div>
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+          <div 
+            onClick={() => router.push('/login')}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700 cursor-pointer hover:bg-gray-700/50 hover:border-orange-500/50 transition-all duration-300 transform hover:scale-105"
+          >
             <div className="text-3xl mb-2">🛡️</div>
             <h3 className="text-white font-semibold mb-1">Sicurezza</h3>
             <p className="text-gray-400 text-sm">Protezione avanzata</p>
