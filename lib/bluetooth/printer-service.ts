@@ -199,10 +199,28 @@ export class PrinterService {
   async loadReceiptSettings(): Promise<any> {
     try {
       this.logDebug('Chiamata API impostazioni-scontrino...');
-      const response = await fetch('/api/impostazioni-scontrino');
+      console.log('🌐 Chiamata API /api/impostazioni-scontrino');
+      
+      const response = await fetch('/api/impostazioni-scontrino', {
+        method: 'GET',
+        credentials: 'include', // IMPORTANTE: include cookies per autenticazione
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('📡 Risposta status:', response.status);
       
       if (!response.ok) {
         this.logDebug(`API risposta non OK: ${response.status} ${response.statusText}`);
+        console.error('❌ API ERROR:', response.status, response.statusText);
+        
+        // Prova a leggere il corpo dell'errore
+        try {
+          const errorBody = await response.text();
+          console.error('❌ Error body:', errorBody);
+        } catch (e) {}
+        
         return null;
       }
       
@@ -313,9 +331,11 @@ export class PrinterService {
         return false;
       }
 
-      // Carica impostazioni personalizzate
+      // FORZA SEMPRE il caricamento delle impostazioni
       this.logDebug('=== INIZIO CARICAMENTO IMPOSTAZIONI ===');
+      console.log('🔄 CARICAMENTO IMPOSTAZIONI DA ADMIN...');
       const settings = await this.loadReceiptSettings();
+      console.log('📋 Settings caricate:', settings ? 'OK' : 'MANCANTI');
       
       if (settings) {
         this.logDebug('Impostazioni trovate:');
@@ -343,7 +363,13 @@ export class PrinterService {
       this.logDebug('Applicazione impostazioni al receipt...');
       const formattedReceipt = this.formatReceiptWithSettings(baseReceipt, settings);
       
-      // Log dettagliato di cosa stiamo passando
+      // LOG COMPLETO per debug
+      console.log('📋 DATI COMPLETI PASSATI A STAMPANTE:');
+      console.log('Header:', JSON.stringify(formattedReceipt.header));
+      console.log('Footer:', JSON.stringify(formattedReceipt.footer));
+      console.log('DisplayOptions:', JSON.stringify(formattedReceipt.displayOptions));
+      console.log('PrintSettings:', JSON.stringify(formattedReceipt.printSettings));
+      
       this.logDebug('Dati formattati per stampa:');
       this.logDebug('- Header business: ' + formattedReceipt.header?.businessName);
       this.logDebug('- Header address: ' + formattedReceipt.header?.address);
