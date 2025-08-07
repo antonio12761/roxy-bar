@@ -1,5 +1,18 @@
 /* Mobile and PWA optimizations for Cassa page */
 
+/* Global fix per Android PWA - touch-action su tutti gli elementi interattivi */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+[onclick],
+.cursor-pointer {
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
 /* Touch-friendly tap targets */
 @media (max-width: 640px) {
   /* Ensure minimum 44x44px tap targets as per Material Design guidelines */

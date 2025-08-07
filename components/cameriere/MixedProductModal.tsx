@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X, Wine, Droplet, Coffee, Check, AlertCircle } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { getRicettaByProdottoId, getBottigliePerCategoria } from '@/lib/actions/sistema-miscelati-semplificato';
 
 interface MixedProductModalProps {
@@ -42,8 +41,32 @@ interface Bottiglia {
 }
 
 export function MixedProductModal({ isOpen, onClose, product, onConfirm }: MixedProductModalProps) {
-  const { currentTheme, themeMode } = useTheme();
-  const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  // Colori coerenti con la pagina menu
+  const colors = {
+    primary: '#D97B34',
+    secondary: '#FFF5EB',
+    text: {
+      primary: '#1A1A1A',
+      secondary: '#6B6B6B',
+      muted: '#9B9B9B',
+      error: '#F44336',
+      accent: '#D97B34'
+    },
+    bg: {
+      main: '#FAFAF9',
+      card: '#FFFFFF',
+      hover: '#F5F5F4',
+      input: '#FFFFFF'
+    },
+    border: {
+      primary: '#E5E5E5'
+    },
+    button: {
+      primary: '#D97B34',
+      primaryText: '#FFFFFF',
+      primaryHover: '#B85C1C'
+    }
+  };
   
   const [loading, setLoading] = useState(true);
   const [ricetta, setRicetta] = useState<any>(null);
@@ -410,9 +433,10 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 rounded-lg font-medium transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg font-medium transition-colors border hover:bg-gray-50"
                 style={{ 
-                  backgroundColor: colors.bg.hover,
+                  borderColor: colors.border.primary,
+                  backgroundColor: 'white',
                   color: colors.text.primary 
                 }}
               >
@@ -421,13 +445,9 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
               <button
                 onClick={handleConfirm}
                 disabled={!isValid()}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  !isValid() ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 ${
+                  !isValid() ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'
                 }`}
-                style={{ 
-                  backgroundColor: colors.button.primary,
-                  color: colors.button.primaryText 
-                }}
               >
                 Conferma Ordine
               </button>
