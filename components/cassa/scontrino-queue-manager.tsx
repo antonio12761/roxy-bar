@@ -58,6 +58,8 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
   const [printerConnected, setPrinterConnected] = useState(false);
   const [printerStatus, setPrinterStatus] = useState<string>("Non connesso");
   const [autoStampa, setAutoStampa] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
   // Carica scontrini dalla queue
   const loadScontrini = async () => {
@@ -105,6 +107,38 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
       return () => clearInterval(interval);
     }
   }, [isOpen, autoRefresh]);
+
+  // Cattura i log del printer service
+  useEffect(() => {
+    const addLog = (message: string) => {
+      setDebugLogs(prev => [...prev.slice(-50), message]); // Mantieni solo ultimi 50 log
+    };
+
+    // Sovrascrivi console.log temporaneamente per catturare tutto
+    const originalLog = console.log;
+    const originalError = console.error;
+    
+    console.log = (...args: any[]) => {
+      addLog(`LOG: ${args.join(' ')}`);
+      originalLog(...args);
+    };
+    
+    console.error = (...args: any[]) => {
+      addLog(`ERROR: ${args.join(' ')}`);
+      originalError(...args);
+    };
+
+    // Sottoscrivi ai log del printer service
+    const unsubscribe = printerService.onDebugLog((log) => {
+      addLog(`PRINTER: ${log}`);
+    });
+
+    return () => {
+      console.log = originalLog;
+      console.error = originalError;
+      unsubscribe();
+    };
+  }, []);
 
   // Auto stampa scontrini in coda
   useEffect(() => {
@@ -338,6 +372,21 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
               <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} style={{ color: colors.text.secondary }} />
             </button>
             
+            {/* Pulsante Debug Logs */}
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className={`px-3 py-1 rounded text-sm transition-colors duration-200 ${showDebug ? 'ring-2' : ''}`}
+              style={{ 
+                backgroundColor: showDebug ? '#FFA500' : colors.bg.hover,
+                color: showDebug ? '#FFFFFF' : colors.text.primary,
+                borderColor: showDebug ? '#FF8C00' : colors.border.primary,
+                borderWidth: '1px',
+                borderStyle: 'solid'
+              }}
+            >
+              🐛 Debug {showDebug ? 'ON' : 'OFF'}
+            </button>
+            
             <button
               onClick={onClose}
               className="p-2 rounded-lg transition-colors"
@@ -506,6 +555,64 @@ export default function ScontrinoQueueManager({ isOpen, onClose }: ScontrinoQueu
             </div>
           )}
         </div>
+        
+        {/* Pannello Debug Logs (visibile solo quando showDebug è true) */}
+        {showDebug && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black text-green-400 p-4 border-t max-h-64 overflow-y-auto" 
+               style={{ borderColor: '#FF8C00', fontFamily: 'monospace', fontSize: '12px' }}>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-yellow-400 font-bold">📱 DEBUG CONSOLE (Android)</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setDebugLogs(prev => [...prev, '🔄 TEST: Caricamento impostazioni da admin...']);
+                    try {
+                      const settings = await printerService.loadReceiptSettings();
+                      if (settings) {
+                        setDebugLogs(prev => [...prev, 
+                          `✅ Impostazioni caricate:`,
+                          `  - Nome: ${settings.nomeAttivita}`,
+                          `  - Indirizzo: ${settings.indirizzo}`,
+                          `  - Tel: ${settings.telefono}`,
+                          `  - Messaggio: ${settings.messaggioRingraziamento}`
+                        ]);
+                      } else {
+                        setDebugLogs(prev => [...prev, '❌ Nessuna impostazione trovata']);
+                      }
+                    } catch (error) {
+                      setDebugLogs(prev => [...prev, `❌ Errore: ${error}`]);
+                    }
+                  }}
+                  className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 border border-blue-400 rounded"
+                >
+                  Test Settings
+                </button>
+                <button
+                  onClick={() => setDebugLogs([])}
+                  className="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400 rounded"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            {debugLogs.length === 0 ? (
+              <div className="text-gray-500">In attesa di log...</div>
+            ) : (
+              <div className="space-y-1">
+                {debugLogs.map((log, index) => (
+                  <div key={index} className={`
+                    ${log.includes('ERROR') ? 'text-red-400' : ''}
+                    ${log.includes('✅') ? 'text-green-400' : ''}
+                    ${log.includes('⚠️') ? 'text-yellow-400' : ''}
+                    ${log.includes('🔄') || log.includes('📋') ? 'text-blue-400' : ''}
+                  `}>
+                    {log}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
