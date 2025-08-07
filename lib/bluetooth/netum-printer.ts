@@ -458,51 +458,17 @@ export class NetumPrinter {
   }
 
   /**
-   * Stampa testo centrato con wrap automatico per testi lunghi
+   * Stampa testo centrato
    */
-  private async printCentered(text: string, bold: boolean = false, maxWidth: number = 32): Promise<void> {
-    // Se il testo è troppo lungo, spezzalo su più righe
-    if (text.length > maxWidth) {
-      const words = text.split(' ');
-      let currentLine = '';
-      const lines: string[] = [];
-      
-      for (const word of words) {
-        if ((currentLine + ' ' + word).trim().length > maxWidth) {
-          if (currentLine) {
-            lines.push(currentLine.trim());
-          }
-          currentLine = word;
-        } else {
-          currentLine = currentLine ? currentLine + ' ' + word : word;
-        }
-      }
-      if (currentLine) {
-        lines.push(currentLine.trim());
-      }
-      
-      // Stampa ogni riga
-      await this.sendCommand(ESC_POS.CENTER);
-      if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
-      
-      for (const line of lines) {
-        await this.sendText(line);
-        await this.sendCommand(ESC_POS.NEW_LINE);
-      }
-      
-      if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
-      await this.sendCommand(ESC_POS.LEFT);
-    } else {
-      // Testo corto, stampa normale
-      await this.sendCommand(ESC_POS.CENTER);
-      if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
-      
-      await this.sendText(text);
-      await this.sendCommand(ESC_POS.NEW_LINE);
-      
-      if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
-      await this.sendCommand(ESC_POS.LEFT);
-    }
+  private async printCentered(text: string, bold: boolean = false): Promise<void> {
+    await this.sendCommand(ESC_POS.CENTER);
+    if (bold) await this.sendCommand(ESC_POS.BOLD_ON);
+    
+    await this.sendText(text);
+    await this.sendCommand(ESC_POS.NEW_LINE);
+    
+    if (bold) await this.sendCommand(ESC_POS.BOLD_OFF);
+    await this.sendCommand(ESC_POS.LEFT);
   }
 
   /**
@@ -582,12 +548,19 @@ export class NetumPrinter {
       // 58mm = ~32 caratteri, 80mm = ~48 caratteri
       const charsPerLine = paperWidth === 80 ? 48 : 32;
       
-      // Stampa nome attività in grande con wrap automatico
+      // Stampa nome attività in grande
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.sendCommand(ESC_POS.BOLD_ON);
       
-      // Per testo DOUBLE_SIZE, usa metà larghezza
-      await this.printCentered(businessName.toUpperCase(), false, charsPerLine / 2);
+      // Se il nome è molto lungo, spezzalo
+      if (businessName.length > charsPerLine / 2) {
+        const words = businessName.toUpperCase().split(' ');
+        for (const word of words) {
+          await this.printCentered(word, false); // false perché bold già attivo
+        }
+      } else {
+        await this.printCentered(businessName.toUpperCase(), false); // false perché bold già attivo
+      }
       
       await this.sendCommand(ESC_POS.BOLD_OFF);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
