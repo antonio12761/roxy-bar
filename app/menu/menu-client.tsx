@@ -1166,71 +1166,149 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {order.map((item) => (
-                    <div
-                      key={item.prodotto.id}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-200 transition-colors"
-                      style={{ backgroundColor: '#f3f4f6' }}
-                    >
-                      <div 
-                        className="flex-1 cursor-pointer"
-                        onClick={() => handleEditItemClick(item)}
+                  {order.map((item) => {
+                    // Parse note per prodotti miscelati
+                    const isMixedProduct = item.note?.startsWith('Ingredienti:');
+                    const ingredients = isMixedProduct 
+                      ? item.note.replace('Ingredienti: ', '').split(', ')
+                      : [];
+                    const isVariantProduct = item.note?.startsWith('Gusto:');
+                    
+                    return (
+                      <div
+                        key={item.prodotto.id}
+                        className="rounded-xl overflow-hidden border transition-all hover:shadow-md"
+                        style={{ 
+                          backgroundColor: 'white',
+                          borderColor: colors.border.primary
+                        }}
                       >
-                        <div className="font-semibold text-gray-800">
-                          {item.prodotto.nome}
-                        </div>
-                        <div className="text-sm text-gray-700 font-medium">
-                          €{typeof item.prodotto.prezzo === 'string' ? item.prodotto.prezzo : item.prodotto.prezzo.toFixed(2)} x {item.quantita}
-                        </div>
-                        {item.note && (
-                          <div className="text-xs text-gray-800 mt-1 italic">
-                            📝 {item.note}
-                          </div>
-                        )}
-                        {item.glassesCount !== undefined && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            🥃 {item.glassesCount} bicchieri
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              updateOrderQuantity(item.prodotto.id, item.quantita - 1)
-                            }}
-                            className="p-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors text-white"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-6 text-center text-sm font-bold text-gray-800">
-                            {item.quantita}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              updateOrderQuantity(item.prodotto.id, item.quantita + 1)
-                            }}
-                            className="p-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors text-white"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removeFromOrder(item.prodotto.id)
-                          }}
-                          className="p-1 rounded text-red-500 hover:bg-red-50"
+                        <div 
+                          className="p-3 cursor-pointer"
+                          onClick={() => handleEditItemClick(item)}
                         >
-                          <X className="h-4 w-4" />
-                        </button>
+                          {/* Header con nome e prezzo */}
+                          <div className="flex items-start justify-between mb-1">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {item.prodotto.isMiscelato && (
+                                  <span className="text-base">🍸</span>
+                                )}
+                                <div className="font-bold text-sm" style={{ color: colors.text.primary }}>
+                                  {item.prodotto.nome}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs font-semibold" style={{ color: colors.primary }}>
+                                  €{typeof item.prodotto.prezzo === 'string' 
+                                    ? item.prodotto.prezzo 
+                                    : item.prodotto.prezzo.toFixed(2)}
+                                </span>
+                                <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                  × {item.quantita}
+                                </span>
+                                <span className="text-xs font-bold" style={{ color: colors.primary }}>
+                                  = €{(typeof item.prodotto.prezzo === 'string' 
+                                    ? parseFloat(item.prodotto.prezzo) * item.quantita
+                                    : item.prodotto.prezzo * item.quantita).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Controlli quantità */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  updateOrderQuantity(item.prodotto.id, item.quantita - 1)
+                                }}
+                                className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                <Minus className="h-3 w-3 text-gray-700" />
+                              </button>
+                              <span className="w-8 text-center text-sm font-bold" style={{ color: colors.text.primary }}>
+                                {item.quantita}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  updateOrderQuantity(item.prodotto.id, item.quantita + 1)
+                                }}
+                                className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                <Plus className="h-3 w-3 text-gray-700" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  removeFromOrder(item.prodotto.id)
+                                }}
+                                className="p-1 rounded-md text-red-500 hover:bg-red-50 ml-1"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Dettagli prodotto */}
+                          {(isMixedProduct || isVariantProduct || item.glassesCount !== undefined || (item.note && !isMixedProduct && !isVariantProduct)) && (
+                            <div className="mt-2 pt-2 border-t" style={{ borderColor: colors.border.primary }}>
+                              {/* Ingredienti per miscelati */}
+                              {isMixedProduct && ingredients.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                                    Composizione
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {ingredients.map((ing, idx) => (
+                                      <span 
+                                        key={idx}
+                                        className="text-[10px] px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded-md font-medium"
+                                      >
+                                        {ing.trim()}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Gusto per varianti */}
+                              {isVariantProduct && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-semibold text-gray-500">
+                                    VARIANTE:
+                                  </span>
+                                  <span className="text-xs font-medium" style={{ color: colors.primary }}>
+                                    {item.note.replace('Gusto: ', '')}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Note personalizzate */}
+                              {item.note && !isMixedProduct && !isVariantProduct && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-[10px] mt-0.5">📝</span>
+                                  <span className="text-xs italic" style={{ color: colors.text.secondary }}>
+                                    {item.note}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Bicchieri */}
+                              {item.glassesCount !== undefined && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <span className="text-xs">🥃</span>
+                                  <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                    {item.glassesCount} bicchieri
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1516,45 +1594,88 @@ export default function MenuClient({ initialMenu, products }: MenuClientProps) {
                 Riepilogo ordine:
               </div>
               <div className="text-sm space-y-2" style={{ color: colors.text.primary }}>
-                {(hasCompletedOrder ? completedOrderData : order).map((item) => (
-                  <div key={item.prodotto.id} className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span>{item.quantita}x {item.prodotto.nome}</span>
-                        {hasCompletedOrder && !codeUsedByWaiter && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita - 1)}
-                              className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita + 1)}
-                              className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() => removeFromCompletedOrder(item.prodotto.id)}
-                              className="p-0.5 rounded text-red-500 hover:bg-red-50"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
+                {(hasCompletedOrder ? completedOrderData : order).map((item) => {
+                  const isMixedProduct = item.note?.startsWith('Ingredienti:');
+                  const ingredients = isMixedProduct 
+                    ? item.note.replace('Ingredienti: ', '').split(', ')
+                    : [];
+                  const isVariantProduct = item.note?.startsWith('Gusto:');
+                  
+                  return (
+                    <div key={item.prodotto.id} className="pb-2 border-b last:border-b-0" style={{ borderColor: colors.border.primary }}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {item.prodotto.isMiscelato && <span className="text-sm">🍸</span>}
+                            <span className="font-medium">{item.quantita}x {item.prodotto.nome}</span>
+                            {hasCompletedOrder && !codeUsedByWaiter && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita - 1)}
+                                  className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => updateCompletedOrderQuantity(item.prodotto.id, item.quantita + 1)}
+                                  className="p-0.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => removeFromCompletedOrder(item.prodotto.id)}
+                                  className="p-0.5 rounded text-red-500 hover:bg-red-50"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      {item.note && (
-                        <div className="text-xs text-gray-600 italic mt-1">
-                          📝 {item.note}
+                          
+                          {/* Ingredienti miscelati */}
+                          {isMixedProduct && ingredients.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {ingredients.map((ing, idx) => (
+                                <span 
+                                  key={idx}
+                                  className="text-[10px] px-1 py-0.5 bg-orange-50 text-orange-600 rounded"
+                                >
+                                  {ing.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Variante */}
+                          {isVariantProduct && (
+                            <div className="text-xs text-orange-600 mt-1">
+                              {item.note.replace('Gusto: ', '')}
+                            </div>
+                          )}
+                          
+                          {/* Note normali */}
+                          {item.note && !isMixedProduct && !isVariantProduct && (
+                            <div className="text-xs text-gray-600 italic mt-1">
+                              📝 {item.note}
+                            </div>
+                          )}
+                          
+                          {/* Bicchieri */}
+                          {item.glassesCount !== undefined && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              🥃 {item.glassesCount} bicchieri
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <span className="font-bold" style={{ color: colors.primary }}>
+                          €{(typeof item.prodotto.prezzo === 'string' 
+                            ? parseFloat(item.prodotto.prezzo) * item.quantita
+                            : item.prodotto.prezzo * item.quantita).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                    <span>€{(typeof item.prodotto.prezzo === 'string' 
-                      ? parseFloat(item.prodotto.prezzo) * item.quantita
-                      : item.prodotto.prezzo * item.quantita).toFixed(2)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="pt-2 border-t font-bold flex justify-between" style={{ color: colors.text.primary }}>
                 <span>Totale:</span>

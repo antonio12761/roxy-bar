@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Euro, Check, CreditCard, Banknote, Coins, Plus, Minus, User, Maximize2, Minimize2, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { searchClienti, getRecentClienti } from '@/lib/actions/clienti-autocomplete';
@@ -60,8 +60,6 @@ export function SimplePartialPaymentModal({
   const [recentClienti, setRecentClienti] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stampaScontrino, setStampaScontrino] = useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isSelectingRef = useRef(false);
 
   useEffect(() => {
     if (isOpen && order) {
@@ -101,19 +99,10 @@ export function SimplePartialPaymentModal({
     }
   }, [recentClienti]);
 
-  const handleSelectSuggestion = useCallback((suggestion: string) => {
-    isSelectingRef.current = true;
+  const handleSelectSuggestion = (suggestion: string) => {
     setClienteNome(suggestion);
     setShowSuggestions(false);
-    setSuggestions([]);
-    // Rimuovi il focus dall'input per chiudere la tastiera
-    if (inputRef.current) {
-      inputRef.current.blur();
-    }
-    setTimeout(() => {
-      isSelectingRef.current = false;
-    }, 100);
-  }, []);
+  };
 
   if (!isOpen || !order) return null;
 
@@ -676,49 +665,22 @@ export function SimplePartialPaymentModal({
                     style={{ color: colors.text.secondary }}
                   />
                   <input
-                    ref={inputRef}
                     type="text"
                     value={clienteNome}
-                    onChange={(e) => {
-                      if (!isSelectingRef.current) {
-                        handleClienteSearch(e.target.value);
-                      }
-                    }}
+                    onChange={(e) => handleClienteSearch(e.target.value)}
                     onFocus={() => {
                       if (clienteNome.length === 0 && recentClienti.length > 0) {
                         setSuggestions(recentClienti);
                         setShowSuggestions(true);
                       }
                     }}
-                    onBlur={(e) => {
-                      // Solo se non stiamo selezionando un suggerimento
-                      if (!isSelectingRef.current) {
-                        const relatedTarget = e.relatedTarget as HTMLElement;
-                        if (!relatedTarget || !relatedTarget.closest('.suggestion-item')) {
-                          // Ritarda la chiusura per permettere il click sui suggerimenti
-                          setTimeout(() => {
-                            if (!isSelectingRef.current) {
-                              setShowSuggestions(false);
-                            }
-                          }, 400);
-                        }
-                      }
-                    }}
                     placeholder="Inserisci o seleziona il nome del cliente"
                     className="w-full pl-10 pr-4 py-2 rounded-lg border"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
                     style={{
                       borderColor: colors.border.primary,
                       backgroundColor: colors.bg.card,
                       color: colors.text.primary,
-                      fontSize: '16px',
-                      WebkitUserSelect: 'text',
-                      userSelect: 'text',
-                      pointerEvents: 'auto',
-                      touchAction: 'auto'
+                      fontSize: '16px'
                     }}
                   />
                 </div>
@@ -744,22 +706,18 @@ export function SimplePartialPaymentModal({
                         </div>
                       )}
                       {suggestions.map((suggestion, index) => (
-                        <div
+                        <button
                           key={index}
-                          onClick={() => handleSelectSuggestion(suggestion)}
-                          onTouchEnd={(e) => {
+                          type="button"
+                          onMouseDown={(e) => {
                             e.preventDefault();
-                            e.stopPropagation();
                             handleSelectSuggestion(suggestion);
                           }}
-                          className="suggestion-item px-3 py-3 cursor-pointer hover:bg-opacity-10 transition-colors flex items-center gap-2"
+                          className="w-full px-3 py-3 text-left hover:bg-opacity-10 transition-colors flex items-center gap-2"
                           style={{
                             backgroundColor: 'transparent',
                             color: colors.text.primary,
-                            minHeight: '44px',
-                            cursor: 'pointer',
-                            pointerEvents: 'auto',
-                            touchAction: 'manipulation'
+                            minHeight: '44px'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = colors.bg.hover;
@@ -770,7 +728,7 @@ export function SimplePartialPaymentModal({
                         >
                           <User className="h-3 w-3" style={{ color: colors.text.secondary }} />
                           <span>{suggestion}</span>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -833,19 +791,12 @@ export function SimplePartialPaymentModal({
                     type="checkbox"
                     checked={stampaScontrino}
                     onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      setStampaScontrino(isChecked);
-                      // Salva la preferenza dell'utente
-                      updatePrinterSettings({ defaultEnabled: isChecked });
+                      setStampaScontrino(e.target.checked);
+                      updatePrinterSettings({ defaultEnabled: e.target.checked });
                     }}
                     className="w-5 h-5 rounded border-2 transition-colors"
                     style={{
-                      accentColor: colors.button.primary,
-                      borderColor: colors.border.primary,
-                      WebkitAppearance: 'checkbox',
-                      appearance: 'checkbox',
-                      cursor: 'pointer',
-                      pointerEvents: 'auto'
+                      accentColor: colors.button.primary
                     }}
                   />
                   <div className="flex items-center gap-2">
