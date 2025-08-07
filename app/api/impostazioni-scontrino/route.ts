@@ -15,15 +15,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Recupera le impostazioni attive
-    console.log("API: Ricerca impostazioni attive nel DB...");
+    console.log("GET - Ricerca impostazioni attive nel DB...");
     let impostazioni = await prisma.impostazioniScontrino.findFirst({
       where: { attivo: true },
       orderBy: { updatedAt: "desc" }
     });
-    console.log("API: Impostazioni trovate:", impostazioni ? "SI" : "NO");
+    console.log("GET - Impostazioni trovate:", impostazioni ? "SI" : "NO");
     if (impostazioni) {
-      console.log("API: Nome attività:", impostazioni.nomeAttivita);
-      console.log("API: Indirizzo:", impostazioni.indirizzo);
+      console.log("GET - ID:", impostazioni.id);
+      console.log("GET - Nome attività:", impostazioni.nomeAttivita);
+      console.log("GET - Indirizzo:", impostazioni.indirizzo);
+      console.log("GET - Telefono:", impostazioni.telefono);
+      console.log("GET - Messaggio:", impostazioni.messaggioRingraziamento);
     }
 
     // Se non esistono impostazioni, crea quelle di default
@@ -61,6 +64,10 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...updateData } = body;
 
+    console.log("PUT - Dati ricevuti:", JSON.stringify(body, null, 2));
+    console.log("PUT - ID:", id);
+    console.log("PUT - UpdateData keys:", Object.keys(updateData));
+
     if (!id) {
       return NextResponse.json(
         { error: "ID impostazioni mancante" },
@@ -76,6 +83,12 @@ export async function PUT(request: NextRequest) {
         modificatoDa: user.id,
         updatedAt: new Date()
       }
+    });
+    
+    console.log("PUT - Impostazioni aggiornate:", {
+      nomeAttivita: impostazioniAggiornate.nomeAttivita,
+      indirizzo: impostazioniAggiornate.indirizzo,
+      telefono: impostazioniAggiornate.telefono
     });
 
     return NextResponse.json({ 

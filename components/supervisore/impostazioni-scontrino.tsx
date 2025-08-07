@@ -141,6 +141,15 @@ export default function ImpostazioniScontrinoComponent() {
     setIsSaving(true);
     try {
       const method = impostazioni.id ? "PUT" : "POST";
+      
+      console.log("🔵 SALVATAGGIO IMPOSTAZIONI");
+      console.log("Metodo:", method);
+      console.log("ID:", impostazioni.id);
+      console.log("Nome attività:", impostazioni.nomeAttivita);
+      console.log("Indirizzo:", impostazioni.indirizzo);
+      console.log("Telefono:", impostazioni.telefono);
+      console.log("Dati completi:", JSON.stringify(impostazioni, null, 2));
+      
       const response = await fetch("/api/impostazioni-scontrino", {
         method,
         headers: {
