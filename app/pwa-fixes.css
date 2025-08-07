@@ -140,26 +140,36 @@
 }
 
 /* Fix per Click events su Android PWA */
+/* IMPORTANTE: cursor:pointer è NECESSARIO per onClick su mobile */
+button,
+a,
+[role="button"],
+[onclick],
+.cursor-pointer,
+.clickable {
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* Fix specifico per elementi con onClick in React */
+[class*="onClick"],
+[data-clickable="true"],
+div[onclick],
+div[class*="cursor-pointer"] {
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
 @media (pointer: coarse) {
-  /* Touch devices - area cliccabile minima ma non cambiare dimensioni visuali */
+  /* Touch devices - rimuovi ::before che può bloccare click */
   button,
   a,
   [role="button"] {
     position: relative;
-    /* Aumenta solo l'area cliccabile, non le dimensioni visuali */
-  }
-  
-  /* Crea un'area cliccabile più grande senza modificare il layout */
-  button::before,
-  a::before,
-  [role="button"]::before {
-    content: "";
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    bottom: -8px;
-    left: -8px;
-    /* Area cliccabile estesa invisibile */
+    /* Non usiamo ::before perché può interferire con i click */
   }
   
   /* Reset per icone - mantieni dimensioni originali */
@@ -169,6 +179,15 @@
   .w-5 { width: 1.25rem !important; }
   .h-6 { height: 1.5rem !important; }
   .w-6 { width: 1.5rem !important; }
+  
+  /* Assicura che gli elementi cliccabili abbiano z-index appropriato */
+  button,
+  a,
+  [role="button"],
+  [onclick] {
+    z-index: 1;
+    position: relative;
+  }
 }
 
 /* Fix per viewport height su Android browser */

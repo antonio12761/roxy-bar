@@ -7,6 +7,7 @@ import '@/lib/setup/decimal-fix';
 import '@/lib/utils/log-filter';
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ThemeBodyWrapper from "@/components/ThemeBodyWrapper";
+import { AndroidPWAFix } from "@/components/AndroidPWAFix";
 
 const poppins = Poppins({ 
   subsets: ["latin"],
@@ -68,6 +69,7 @@ export default function RootLayout({
       <body className={poppins.className}>
         <ThemeProvider>
           <ThemeBodyWrapper>
+            <AndroidPWAFix />
             {children}
             <Toaster 
               position="top-center" 
