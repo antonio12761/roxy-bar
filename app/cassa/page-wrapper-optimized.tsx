@@ -168,6 +168,44 @@ function CassaPageOptimized() {
   const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [stampaScontrinoFlag, setStampaScontrinoFlag] = useState(true);
   
+  // Funzione helper per aprire un modal chiudendo tutti gli altri
+  const openModal = (modalName: string) => {
+    // Chiudi tutti i modal
+    setShowHistory(false);
+    setShowScontrinoQueue(false);
+    setShowBluetoothPanel(false);
+    setShowDirectReceiptModal(false);
+    setShowTableDrawer(false);
+    setShowPartialPaymentModal(false);
+    setShowMultiOrderPaymentModal(false);
+    setShowClientModal(false);
+    setShowDebtModal(false);
+    setShowAddDebtModal(false);
+    setShowCameriereModal(false);
+    
+    // Apri il modal richiesto
+    switch(modalName) {
+      case 'history':
+        setShowHistory(true);
+        break;
+      case 'queue':
+        setShowScontrinoQueue(true);
+        break;
+      case 'bluetooth':
+        setShowBluetoothPanel(true);
+        break;
+      case 'directReceipt':
+        setShowDirectReceiptModal(true);
+        break;
+      case 'tableDrawer':
+        setShowTableDrawer(true);
+        break;
+      case 'cameriere':
+        setShowCameriereModal(true);
+        break;
+    }
+  };
+  
   // Validazione con Zod
   const paymentValidation = usePaymentValidation(CreatePaymentSchema);
   const multiOrderValidation = usePaymentValidation(MultiOrderPaymentSchema);
@@ -764,16 +802,17 @@ function CassaPageOptimized() {
           debiti: debiti.length
         }}
         onRefresh={loadOrders}
-        onShowHistory={() => setShowHistory(!showHistory)}
-        onShowScontrinoQueue={() => setShowScontrinoQueue(!showScontrinoQueue)}
+        onShowHistory={() => openModal('history')}
+        onShowScontrinoQueue={() => openModal('queue')}
         onShowMultiPayment={() => {
           // Raccogli tutti gli ordini non pagati da tutti i tavoli
           setSelectedTable(null);
           setSelectedOrder(null);
+          openModal('');
           setShowMultiOrderPaymentModal(true);
         }}
-        onShowBluetoothPanel={() => setShowBluetoothPanel(true)}
-        onShowDirectReceipt={() => setShowDirectReceiptModal(true)}
+        onShowBluetoothPanel={() => openModal('bluetooth')}
+        onShowDirectReceipt={() => openModal('directReceipt')}
         showHistory={showHistory}
         showScontrinoQueue={showScontrinoQueue}
           />
@@ -782,14 +821,71 @@ function CassaPageOptimized() {
         {/* Main Content */}
         <CassaErrorBoundary level="section" isolate>
           <div className="p-3 sm:p-4">
-        {showHistory ? (
+        {/* Renderizza modal basati su stato - come Queue/History che funzionano */}
+        {showHistory && (
           <PaymentHistory isOpen={showHistory} onClose={() => setShowHistory(false)} />
-        ) : showScontrinoQueue ? (
+        )}
+        {showScontrinoQueue && (
           <ScontrinoQueueManager 
             isOpen={showScontrinoQueue} 
             onClose={() => setShowScontrinoQueue(false)} 
           />
-        ) : (
+        )}
+        {showBluetoothPanel && (
+          <BluetoothPrinterPanel 
+            isOpen={showBluetoothPanel}
+            onClose={() => setShowBluetoothPanel(false)}
+          />
+        )}
+        {showDirectReceiptModal && (
+          <DirectReceiptModal 
+            isOpen={showDirectReceiptModal}
+            onClose={() => setShowDirectReceiptModal(false)}
+            onSuccess={() => {
+              loadOrders();
+              setShowDirectReceiptModal(false);
+            }}
+          />
+        )}
+        {showTableDrawer && selectedTable && (
+          <TableDetailsDrawer
+            isOpen={showTableDrawer}
+            selectedTable={selectedTable}
+            selectedOrder={selectedOrder}
+            paymentMethod={paymentMethod}
+            paymentMode={paymentMode}
+            isProcessingPayment={isProcessingPayment}
+            onClose={() => {
+              setShowTableDrawer(false);
+              setSelectedTable(null);
+              setSelectedOrder(null);
+            }}
+            onSelectOrder={setSelectedOrder}
+            onChangePaymentMethod={setPaymentMethod}
+            onChangePaymentMode={setPaymentMode}
+            onPayTable={(clienteNome, stampaScontrino) => handleTablePayment(clienteNome, paymentMethod, stampaScontrino)}
+            onPayOrder={(clienteNome, stampaScontrino) => handlePayment(clienteNome, paymentMethod, stampaScontrino)}
+            onPayByClient={(clienteNome, stampaScontrino) => handlePaymentByClient(clienteNome, paymentMethod, stampaScontrino)}
+            onPayPartial={(stampaScontrino) => {
+              setStampaScontrinoFlag(stampaScontrino ?? true);
+              if (selectedOrder) {
+                const updatedOrder = selectedTable?.ordinazioni.find(o => o.id === selectedOrder.id);
+                if (updatedOrder) {
+                  setSelectedOrder(updatedOrder);
+                }
+                setShowPartialPaymentModal(true);
+              } else if (selectedTable) {
+                setShowMultiOrderPaymentModal(true);
+              }
+            }}
+            onCreateDebt={() => setShowClientModal(true)}
+            onTriggerParticles={triggerParticles}
+            onRefreshData={loadOrders}
+          />
+        )}
+        
+        {/* Main content sempre visibile se non ci sono modal aperti */}
+        {!showHistory && !showScontrinoQueue && (
           <div className="space-y-6">
             {/* Tavoli da Pagare - Unificato */}
             <div className="space-y-4">
@@ -834,7 +930,7 @@ function CassaPageOptimized() {
                       table={table}
                       onClick={() => {
                         setSelectedTable(table);
-                        setShowTableDrawer(true);
+                        openModal('tableDrawer');
                       }}
                     />
                   ));
@@ -859,7 +955,7 @@ function CassaPageOptimized() {
                       table={table}
                       onClick={() => {
                         setSelectedTable(table);
-                        setShowTableDrawer(true);
+                        openModal('tableDrawer');
                       }}
                       variant="paid"
                     />
@@ -912,60 +1008,11 @@ function CassaPageOptimized() {
               </div>
             </div>
           </div>
-          )}
+        )}
           </div>
         </CassaErrorBoundary>
 
-        {/* Scontrino Queue Manager */}
-        <CassaErrorBoundary level="component" isolate>
-          <ScontrinoQueueManager 
-        isOpen={showScontrinoQueue} 
-        onClose={() => setShowScontrinoQueue(false)} 
-          />
-        </CassaErrorBoundary>
-
-        {/* Table Details Drawer */}
-        <CassaErrorBoundary level="component" isolate>
-          <TableDetailsDrawer
-        isOpen={showTableDrawer}
-        selectedTable={selectedTable}
-        selectedOrder={selectedOrder}
-        paymentMethod={paymentMethod}
-        paymentMode={paymentMode}
-        isProcessingPayment={isProcessingPayment}
-        onClose={() => {
-          setShowTableDrawer(false);
-          setSelectedTable(null);
-          setSelectedOrder(null);
-        }}
-        onSelectOrder={setSelectedOrder}
-        onChangePaymentMethod={setPaymentMethod}
-        onChangePaymentMode={setPaymentMode}
-        onPayTable={(clienteNome, stampaScontrino) => handleTablePayment(clienteNome, paymentMethod, stampaScontrino)}
-        onPayOrder={(clienteNome, stampaScontrino) => handlePayment(clienteNome, paymentMethod, stampaScontrino)}
-        onPayByClient={(clienteNome, stampaScontrino) => handlePaymentByClient(clienteNome, paymentMethod, stampaScontrino)}
-        onPayPartial={(stampaScontrino) => {
-          // Salva il flag stampa per i modal di pagamento parziale
-          setStampaScontrinoFlag(stampaScontrino ?? true);
-          
-          // Se c'è un ordine selezionato, usa il modal singolo
-          // Altrimenti usa il modal multi-ordine per il tavolo
-          if (selectedOrder) {
-            // Trova l'ordine aggiornato dai dati correnti
-            const updatedOrder = selectedTable?.ordinazioni.find(o => o.id === selectedOrder.id);
-            if (updatedOrder) {
-              setSelectedOrder(updatedOrder);
-            }
-            setShowPartialPaymentModal(true);
-          } else if (selectedTable) {
-            setShowMultiOrderPaymentModal(true);
-          }
-        }}
-        onCreateDebt={() => setShowClientModal(true)}
-        onTriggerParticles={triggerParticles}
-        onRefreshData={loadOrders} // Passa il metodo di refresh incrementale
-          />
-        </CassaErrorBoundary>
+        {/* Altri modal */}
         
         {/* Client Selection Modal */}
         <CassaErrorBoundary level="component" isolate>
@@ -1217,29 +1264,10 @@ function CassaPageOptimized() {
           />
         </CassaErrorBoundary>
 
-        {/* Bluetooth Printer Panel */}
-        <CassaErrorBoundary level="component" isolate>
-          <BluetoothPrinterPanel 
-            isOpen={showBluetoothPanel}
-            onClose={() => setShowBluetoothPanel(false)}
-          />
-        </CassaErrorBoundary>
-
-        {/* Direct Receipt Modal */}
-        <CassaErrorBoundary level="component" isolate>
-          <DirectReceiptModal 
-            isOpen={showDirectReceiptModal}
-            onClose={() => setShowDirectReceiptModal(false)}
-            onSuccess={() => {
-              loadOrders();
-              setShowDirectReceiptModal(false);
-            }}
-          />
-        </CassaErrorBoundary>
 
         {/* Floating Action Button for Cameriere */}
         <button
-        onClick={() => setShowCameriereModal(true)}
+        onClick={() => openModal('cameriere')}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 shadow-lg rounded-full p-3 sm:p-4 transition-all hover:scale-110"
         style={{
           backgroundColor: colors.button.primary,
