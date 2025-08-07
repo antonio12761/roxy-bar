@@ -523,9 +523,6 @@ export class NetumPrinter {
         throw new Error('Stampante non connessa');
       }
 
-      console.log('🖨️ Inizio stampa scontrino:', receiptData.numero);
-      console.log('📋 Dati header ricevuti:', JSON.stringify(receiptData.header));
-      console.log('📋 Dati footer ricevuti:', JSON.stringify(receiptData.footer));
 
       // VERIFICA CHE CI SIANO LE IMPOSTAZIONI DA ADMIN
       if (!receiptData.header?.businessName) {
@@ -538,30 +535,13 @@ export class NetumPrinter {
       await this.sendCommand(ESC_POS.INIT);
       await this.sendCommand(ESC_POS.CHARSET_CP850);
       
-      // NOME ATTIVITÀ RESPONSIVE
+      // NOME ATTIVITÀ - VERSIONE SEMPLICE
       const businessName = receiptData.header.businessName;
-      const paperWidth = receiptData.printSettings?.paperWidth || 58;
-      console.log('🏪 Nome attività:', businessName);
-      console.log('📏 Larghezza carta:', paperWidth + 'mm');
       
-      // Calcola caratteri per riga basato su larghezza carta
-      // 58mm = ~32 caratteri, 80mm = ~48 caratteri
-      const charsPerLine = paperWidth === 80 ? 48 : 32;
-      
-      // Stampa nome attività in grande
+      // Stampa nome attività in grande e bold
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.sendCommand(ESC_POS.BOLD_ON);
-      
-      // Se il nome è molto lungo, spezzalo
-      if (businessName.length > charsPerLine / 2) {
-        const words = businessName.toUpperCase().split(' ');
-        for (const word of words) {
-          await this.printCentered(word, false); // false perché bold già attivo
-        }
-      } else {
-        await this.printCentered(businessName.toUpperCase(), false); // false perché bold già attivo
-      }
-      
+      await this.printCentered(businessName.toUpperCase(), true);
       await this.sendCommand(ESC_POS.BOLD_OFF);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
       
@@ -599,7 +579,6 @@ export class NetumPrinter {
       
       // Informazioni ordine SOLO SE ABILITATO IN ADMIN
       const opts = receiptData.displayOptions || {};
-      console.log('📋 DisplayOptions ricevute:', JSON.stringify(opts));
       
       if (opts.showOrderNumber) {
         await this.sendText(`Scontrino: ${receiptData.numero}`);
@@ -630,34 +609,20 @@ export class NetumPrinter {
       await this.printSeparatorLine('-');
       
       // Righe ordine
-      if (!receiptData.righe || receiptData.righe.length === 0) {
-        console.error('⚠️ ATTENZIONE: Nessun prodotto da stampare!');
-        await this.sendText('(Nessun prodotto)');
-        await this.sendCommand(ESC_POS.NEW_LINE);
-      } else {
-        console.log(`📦 Stampa ${receiptData.righe.length} prodotti...`);
-        
-        try {
-          for (const riga of receiptData.righe) {
-            console.log(`  - ${riga.nome} x${riga.quantita} = ${riga.totale}`);
-            
-            // Nome prodotto e quantità
-            const itemLine = riga.quantita > 1 
-              ? `${riga.nome} x${riga.quantita}`
-              : riga.nome;
-            
-            await this.printLineItem(itemLine, this.formatPrice(riga.totale));
-            
-            // Se quantità > 1, mostra prezzo unitario
-            if (riga.quantita > 1) {
-              await this.sendText(`  ${this.formatPrice(riga.prezzo)} cad.`);
-              await this.sendCommand(ESC_POS.NEW_LINE);
-            }
+      if (receiptData.righe && receiptData.righe.length > 0) {
+        for (const riga of receiptData.righe) {
+          // Nome prodotto e quantità
+          const itemLine = riga.quantita > 1 
+            ? `${riga.nome} x${riga.quantita}`
+            : riga.nome;
+          
+          await this.printLineItem(itemLine, this.formatPrice(riga.totale));
+          
+          // Se quantità > 1, mostra prezzo unitario
+          if (riga.quantita > 1) {
+            await this.sendText(`  ${this.formatPrice(riga.prezzo)} cad.`);
+            await this.sendCommand(ESC_POS.NEW_LINE);
           }
-          console.log('✅ Prodotti stampati');
-        } catch (error) {
-          console.error('❌ Errore durante stampa prodotti:', error);
-          // Continua comunque con il resto dello scontrino
         }
       }
       
@@ -724,7 +689,6 @@ export class NetumPrinter {
         await this.sendCommand(ESC_POS.CUT);
       }
       
-      console.log('✅ Scontrino stampato con successo');
       return true;
       
     } catch (error) {
