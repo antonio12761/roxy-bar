@@ -228,13 +228,16 @@ export class PrinterService {
    * Formatta dati scontrino con impostazioni personalizzate
    */
   formatReceiptWithSettings(data: ReceiptData, settings: any): ReceiptData {
-    if (!settings) return data;
+    if (!settings) {
+      console.error('❌ NESSUNA IMPOSTAZIONE SCONTRINO TROVATA!');
+      throw new Error('Configurare le impostazioni scontrino in admin prima di stampare');
+    }
     
     const formattedData: any = { ...data };
     
-    // Applica impostazioni intestazione
+    // USA SOLO IMPOSTAZIONI DA ADMIN - NESSUN DEFAULT
     formattedData.header = {
-      businessName: settings.nomeAttivita || 'Bar Roxy',
+      businessName: settings.nomeAttivita, // RICHIESTO
       address: settings.indirizzo,
       phone: settings.telefono,
       vatNumber: settings.partitaIva,
@@ -246,9 +249,9 @@ export class PrinterService {
       formattedData.headerMessage = settings.messaggioIntestazione;
     }
     
-    // Footer
+    // Footer SOLO DA ADMIN
     formattedData.footer = {
-      message: settings.messaggioRingraziamento || 'Grazie per la visita!',
+      message: settings.messaggioRingraziamento, // NO DEFAULT
       promotionalMessage: settings.messaggioPromozionale,
       footerNote: settings.messaggioPiePagina
     };
@@ -265,35 +268,35 @@ export class PrinterService {
       };
     }
     
-    // Impostazioni di stampa
+    // Impostazioni di stampa SOLO DA ADMIN
     formattedData.printSettings = {
-      paperWidth: settings.larghezzaCarta || 48,
-      alignment: settings.allineamentoTitolo || 'center',
-      separator: settings.carattereSeparatore || '-',
-      autoCut: settings.taglioAutomatico !== false,
-      copies: settings.numeroCopieScontrino || 1,
-      density: settings.densitaStampa || 2
+      paperWidth: settings.larghezzaCarta,
+      alignment: settings.allineamentoTitolo,
+      separator: settings.carattereSeparatore,
+      autoCut: settings.taglioAutomatico,
+      copies: settings.numeroCopieScontrino,
+      density: settings.densitaStampa
     };
     
-    // Opzioni di visualizzazione
+    // Opzioni di visualizzazione SOLO DA ADMIN
     formattedData.displayOptions = {
-      showDate: settings.mostraData !== false,
-      showTime: settings.mostraOra !== false,
-      showOperator: settings.mostraOperatore !== false,
-      showTable: settings.mostraTavolo !== false,
-      showOrderNumber: settings.mostraNumeroOrdine !== false,
-      showCustomer: settings.mostraCliente !== false,
-      showProductDetails: settings.mostraDettagliProdotti !== false,
-      showQuantity: settings.mostraQuantita !== false,
-      showUnitPrice: settings.mostraPrezzoUnitario !== false,
-      showLineTotal: settings.mostraTotaleRiga !== false
+      showDate: settings.mostraData,
+      showTime: settings.mostraOra,
+      showOperator: settings.mostraOperatore,
+      showTable: settings.mostraTavolo,
+      showOrderNumber: settings.mostraNumeroOrdine,
+      showCustomer: settings.mostraCliente,
+      showProductDetails: settings.mostraDettagliProdotti,
+      showQuantity: settings.mostraQuantita,
+      showUnitPrice: settings.mostraPrezzoUnitario,
+      showLineTotal: settings.mostraTotaleRiga
     };
     
-    // Formattazione valuta
+    // Formattazione valuta SOLO DA ADMIN
     formattedData.currencyFormat = {
-      symbol: settings.simboloValuta || '€',
-      position: settings.posizioneValuta || 'suffix',
-      decimalSeparator: settings.separatoreDecimale || ','
+      symbol: settings.simboloValuta,
+      position: settings.posizioneValuta,
+      decimalSeparator: settings.separatoreDecimale
     };
     
     return formattedData;

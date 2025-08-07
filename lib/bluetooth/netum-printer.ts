@@ -527,13 +527,20 @@ export class NetumPrinter {
       console.log('📋 Dati header ricevuti:', JSON.stringify(receiptData.header));
       console.log('📋 Dati footer ricevuti:', JSON.stringify(receiptData.footer));
 
+      // VERIFICA CHE CI SIANO LE IMPOSTAZIONI DA ADMIN
+      if (!receiptData.header?.businessName) {
+        console.error('❌ ERRORE: Nome attività non configurato!');
+        console.error('Vai in admin/scontrino e configura le impostazioni');
+        throw new Error('Impostazioni scontrino non configurate');
+      }
+
       // Inizializza stampante
       await this.sendCommand(ESC_POS.INIT);
-      await this.sendCommand(ESC_POS.CHARSET_CP850); // Usa CP850 per supporto simbolo Euro
+      await this.sendCommand(ESC_POS.CHARSET_CP850);
       
-      // Header personalizzato da impostazioni
-      const businessName = receiptData.header?.businessName || 'BAR ROXY';
-      console.log('🏪 Nome attività:', businessName);
+      // USA SOLO DATI DA ADMIN
+      const businessName = receiptData.header.businessName;
+      console.log('🏪 Nome da admin:', businessName);
       await this.sendCommand(ESC_POS.DOUBLE_SIZE);
       await this.printCentered(businessName, true);
       await this.sendCommand(ESC_POS.NORMAL_SIZE);
@@ -560,34 +567,38 @@ export class NetumPrinter {
       
       await this.sendCommand(ESC_POS.NEW_LINE);
       
-      // Separatore personalizzato
-      const separator = receiptData.printSettings?.separator || '=';
-      await this.printSeparatorLine(separator);
+      // Separatore SOLO DA ADMIN
+      const separator = receiptData.printSettings?.separator;
+      if (separator) {
+        await this.printSeparatorLine(separator);
+      } else {
+        await this.printSeparatorLine('='); // Solo questo default per non rompere il layout
+      }
       
-      // Informazioni ordine (con controllo displayOptions)
+      // Informazioni ordine SOLO SE ABILITATO IN ADMIN
       const opts = receiptData.displayOptions || {};
       
-      if (opts.showOrderNumber !== false) {
+      if (opts.showOrderNumber === true) {
         await this.sendText(`Scontrino: ${receiptData.numero}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (opts.showDate !== false) {
+      if (opts.showDate === true) {
         await this.sendText(`Data: ${this.formatDate(receiptData.data)}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.tavolo && opts.showTable !== false) {
+      if (receiptData.tavolo && opts.showTable === true) {
         await this.sendText(`Tavolo: ${receiptData.tavolo}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.cameriere && opts.showOperator !== false) {
+      if (receiptData.cameriere && opts.showOperator === true) {
         await this.sendText(`Cameriere: ${receiptData.cameriere}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.nomeCliente && opts.showCustomer !== false) {
+      if (receiptData.nomeCliente && opts.showCustomer === true) {
         await this.sendText(`Cliente: ${receiptData.nomeCliente}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
@@ -633,13 +644,16 @@ export class NetumPrinter {
         }
       }
       
-      // Footer personalizzato
+      // Footer SOLO DA ADMIN
       await this.sendCommand(ESC_POS.NEW_LINE);
-      await this.printSeparatorLine(separator);
+      if (separator) {
+        await this.printSeparatorLine(separator);
+      }
       
-      // Messaggio di ringraziamento
-      const thankYouMessage = receiptData.footer?.message || 'Grazie per la visita!';
-      await this.printCentered(thankYouMessage);
+      // Messaggio SOLO SE CONFIGURATO IN ADMIN
+      if (receiptData.footer?.message) {
+        await this.printCentered(receiptData.footer.message);
+      }
       
       // Messaggio promozionale
       if (receiptData.footer?.promotionalMessage) {
@@ -655,9 +669,9 @@ export class NetumPrinter {
       
       await this.sendCommand(ESC_POS.NEW_LINE);
       
-      // Feed e taglia (controllato da impostazioni)
+      // Feed e taglia SOLO SE ABILITATO IN ADMIN
       await this.sendCommand(ESC_POS.FEED_LINE);
-      if (receiptData.printSettings?.autoCut !== false) {
+      if (receiptData.printSettings?.autoCut === true) {
         await this.sendCommand(ESC_POS.CUT);
       }
       
