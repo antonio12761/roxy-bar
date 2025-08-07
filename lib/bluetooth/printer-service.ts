@@ -19,6 +19,10 @@ export class PrinterService {
   private status: PrinterStatus = { connected: false };
   private listeners: Array<(status: PrinterStatus) => void> = [];
   private debugListeners: Array<(log: string) => void> = [];
+  private cachedSettings: any = null;
+  private settingsLastLoaded: Date | null = null;
+  private CACHE_DURATION_MS = 300000; // Cache per 5 minuti
+  private isPreloading = false;
   
   /**
    * Log debug message
@@ -49,6 +53,9 @@ export class PrinterService {
     this.printer.onLog = (message: string) => {
       this.logDebug(message);
     };
+    
+    // Pre-carica le impostazioni all'avvio (dopo un breve delay)
+    setTimeout(() => this.preloadSettings(), 1000);
   }
 
   /**
@@ -99,6 +106,10 @@ export class PrinterService {
         });
         
         this.logDebug(`✅ Stampante connessa: ${deviceInfo.name}`);
+        
+        // Pre-carica le impostazioni dopo la connessione
+        this.preloadSettings();
+        
         return true;
       } else {
         this.updateStatus({
@@ -194,9 +205,40 @@ export class PrinterService {
   }
 
   /**
+   * Pre-carica le impostazioni in background
+   */
+  private async preloadSettings(): Promise<void> {
+    if (this.isPreloading) return;
+    this.isPreloading = true;
+    
+    try {
+      this.logDebug('Pre-caricamento impostazioni in background...');
+      const settings = await this.loadReceiptSettings(false);
+      if (settings) {
+        this.cachedSettings = settings;
+        this.settingsLastLoaded = new Date();
+        this.logDebug('Impostazioni pre-caricate con successo');
+      }
+    } catch (error) {
+      this.logDebug('Errore pre-caricamento: ' + error);
+    } finally {
+      this.isPreloading = false;
+    }
+  }
+  
+  /**
    * Carica impostazioni scontrino dal database
    */
-  async loadReceiptSettings(): Promise<any> {
+  async loadReceiptSettings(useCache: boolean = true): Promise<any> {
+    // Usa cache se disponibile e valida
+    if (useCache && this.cachedSettings && this.settingsLastLoaded) {
+      const cacheAge = Date.now() - this.settingsLastLoaded.getTime();
+      if (cacheAge < this.CACHE_DURATION_MS) {
+        this.logDebug('Uso impostazioni dalla cache (età: ' + Math.round(cacheAge/1000) + 's)');
+        return this.cachedSettings;
+      }
+    }
+    
     try {
       this.logDebug('Chiamata API impostazioni-scontrino...');
       console.log('🌐 Chiamata API /api/impostazioni-scontrino');
@@ -231,6 +273,11 @@ export class PrinterService {
         this.logDebug('Impostazioni caricate con successo');
         this.logDebug('Nome attività: ' + result.data.nomeAttivita);
         this.logDebug('Indirizzo: ' + result.data.indirizzo);
+        
+        // Aggiorna cache
+        this.cachedSettings = result.data;
+        this.settingsLastLoaded = new Date();
+        
         return result.data;
       } else {
         this.logDebug('Nessuna impostazione trovata nella risposta');

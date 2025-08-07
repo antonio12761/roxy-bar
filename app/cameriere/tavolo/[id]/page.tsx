@@ -743,8 +743,8 @@ export default function TavoloPage() {
   // Memoize table number to avoid unnecessary re-subscriptions
   const tableNumber = useMemo(() => {
     if (!table) return null;
-    // Convert table numero to number if it's a string
-    const num = typeof table.numero === 'string' ? parseInt(table.numero) : table.numero;
+    // Keep table numero as string (supports alphanumeric like M1, M2, etc.)
+    const num = table.numero;
     console.log('[Tavolo] tableNumber memoized:', num, 'from table:', table);
     return num;
   }, [table?.numero, table?.id]);
@@ -764,8 +764,8 @@ export default function TavoloPage() {
     }
     orderSSESetupRef.current = true;
     
-    // Use tavoloId for consistency instead of tableNumber
-    const currentTableNumber = parseInt(table.numero);
+    // Use table numero as string (supports alphanumeric like M1, M2, etc.)
+    const currentTableNumber = table.numero;
     
     console.log('[Tavolo] Setting up order SSE subscriptions for table:', currentTableNumber, 'tavoloId:', tavoloId);
     

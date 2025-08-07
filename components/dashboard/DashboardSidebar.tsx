@@ -84,6 +84,17 @@ export default function DashboardSidebar() {
       ]
     },
     {
+      id: "miscelati-v2",
+      label: "Miscelati 2.0",
+      icon: Wine,
+      subItems: [
+        { label: "Dashboard", href: "/dashboard/miscelati-v2", icon: LayoutDashboard },
+        { label: "Categorie Ingredienti", href: "/dashboard/miscelati-v2/categorie", icon: Layers },
+        { label: "Bottiglie", href: "/dashboard/miscelati-v2/bottiglie", icon: Wine },
+        { label: "Ricette", href: "/dashboard/miscelati-v2/ricette", icon: Coffee }
+      ]
+    },
+    {
       id: "customers",
       label: "Clienti",
       icon: UserCheck,

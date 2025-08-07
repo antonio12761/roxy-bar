@@ -424,65 +424,73 @@ export async function creaPagamento(
       isolationLevel: 'Serializable' // Massimo isolamento per prevenire anomalie
     });
 
-    // Crea scontrino nella queue
-    try {
-      const ordinazioneCompleta = await prisma.ordinazione.findUnique({
-        where: { id: ordinazioneId },
-        include: {
-          RigaOrdinazione: {
-            where: { id: { in: righePagate } },
-            include: { Prodotto: true }
-          },
-          User: true,
-          Tavolo: true
-        }
-      });
-
-      if (ordinazioneCompleta) {
-        const righeScontrino = ordinazioneCompleta.RigaOrdinazione.map((riga: any) => ({
-          prodotto: riga.Prodotto.nome,
-          quantita: riga.quantita,
-          prezzoUnitario: riga.prezzo.toNumber(),
-          totaleRiga: riga.prezzo.toNumber() * riga.quantita,
-          isPagato: true,
-          pagatoDa: clienteNome
-        }));
-
-        const sessionePagamento = crypto.randomUUID();
-        
-        await creaScontrinoQueue("NON_FISCALE", {
-          tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
-          clienteNome,
-          cameriereNome: ordinazioneCompleta.User.nome,
-          righe: righeScontrino,
-          totale: importo,
-          modalitaPagamento: modalita,
-          ordinazioneIds: [ordinazioneId],
-          pagamentoIds: [pagamento.id],
-          sessionePagamento
+    // Crea scontrino nella queue IN PARALLELO (non attendere)
+    const scontrinoPromise = (async () => {
+      try {
+        const ordinazioneCompleta = await prisma.ordinazione.findUnique({
+          where: { id: ordinazioneId },
+          include: {
+            RigaOrdinazione: {
+              where: { id: { in: righePagate } },
+              include: { Prodotto: true }
+            },
+            User: true,
+            Tavolo: true
+          }
         });
 
-        await creaScontrinoQueue("FISCALE", {
-          tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
-          clienteNome,
-          cameriereNome: ordinazioneCompleta.User.nome,
-          righe: [{
-            prodotto: `Totale Ordine #${ordinazioneCompleta.numero}`,
-            quantita: 1,
-            prezzoUnitario: importo,
-            totaleRiga: importo
-          }],
-          totale: importo,
-          modalitaPagamento: modalita,
-          ordinazioneIds: [ordinazioneId],
-          pagamentoIds: [pagamento.id],
-          sessionePagamento
-        }, "ALTA");
+        if (ordinazioneCompleta) {
+          const righeScontrino = ordinazioneCompleta.RigaOrdinazione.map((riga: any) => ({
+            prodotto: riga.Prodotto.nome,
+            quantita: riga.quantita,
+            prezzoUnitario: riga.prezzo.toNumber(),
+            totaleRiga: riga.prezzo.toNumber() * riga.quantita,
+            isPagato: true,
+            pagatoDa: clienteNome
+          }));
+
+          const sessionePagamento = crypto.randomUUID();
+          
+          // Crea scontrini in parallelo
+          const [nonFiscale, fiscale] = await Promise.all([
+            creaScontrinoQueue("NON_FISCALE", {
+              tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
+              clienteNome,
+              cameriereNome: ordinazioneCompleta.User.nome,
+              righe: righeScontrino,
+              totale: importo,
+              modalitaPagamento: modalita,
+              ordinazioneIds: [ordinazioneId],
+              pagamentoIds: [pagamento.id],
+              sessionePagamento
+            }),
+            creaScontrinoQueue("FISCALE", {
+              tavoloNumero: ordinazioneCompleta.Tavolo?.numero,
+              clienteNome,
+              cameriereNome: ordinazioneCompleta.User.nome,
+              righe: [{
+                prodotto: `Totale Ordine #${ordinazioneCompleta.numero}`,
+                quantita: 1,
+                prezzoUnitario: importo,
+                totaleRiga: importo
+              }],
+              totale: importo,
+              modalitaPagamento: modalita,
+              ordinazioneIds: [ordinazioneId],
+              pagamentoIds: [pagamento.id],
+              sessionePagamento
+            }, "ALTA")
+          ]);
+        }
+      } catch (scontrinoError) {
+        console.error("Errore creazione scontrini:", scontrinoError);
+        // Non bloccare il pagamento per errori scontrino
       }
-    } catch (scontrinoError) {
-      console.error("Errore creazione scontrini:", scontrinoError);
-      // Non bloccare il pagamento per errori scontrino
-    }
+    })();
+    
+    // Non attendere la creazione scontrini per tornare la risposta
+    // Ma assicurati che venga completata in background
+    scontrinoPromise.catch(err => console.error("Errore background scontrino:", err));
 
     revalidatePath("/cassa");
     revalidatePath("/cameriere");

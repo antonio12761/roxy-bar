@@ -1,0 +1,141 @@
+// PROPOSTA SEMPLIFICAZIONE SISTEMA MISCELATI
+// Questo schema può essere aggiunto al file schema.prisma esistente
+
+// 1. Categorie di ingredienti (GIN, RUM, VODKA, TONICHE, etc.)
+model CategoriaIngrediente {
+  id          String   @id @default(cuid())
+  nome        String   @unique  // "GIN", "RUM", "TONICHE", "VODKA", "WHISKY", "MIXER", "GARNISH", etc.
+  descrizione String?
+  icona       String?           // Emoji o icona per UI
+  colore      String?           // Colore per UI
+  ordinamento Int      @default(0)
+  tipo        TipoCategoriaIngrediente @default(ALCOLICO)
+  attivo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  Bottiglie           Bottiglia[]
+  ComponentiMiscelati ComponenteMiscelato[]
+  
+  @@index([ordinamento])
+  @@index([attivo])
+}
+
+// 2. Bottiglie/Prodotti specifici dentro ogni categoria
+model Bottiglia {
+  id                    String   @id @default(cuid())
+  categoriaId           String
+  nome                  String   // "Bombay Sapphire", "Hendricks", "Schweppes Tonica", etc.
+  marca                 String?  // "Bombay", "Hendricks", etc.
+  descrizione           String?
+  gradazioneAlcolica    Decimal? @db.Decimal(5, 2)  // Per alcolici
+  prezzoExtra           Decimal  @default(0) @db.Decimal(10, 2)  // Sovrapprezzo rispetto alla base
+  disponibile           Boolean  @default(true)
+  ordinamento           Int      @default(0)
+  prodottoRiferimentoId Int?     // Link opzionale a Prodotto per gestione scorte
+  immagine              String?  // URL immagine bottiglia
+  
+  categoria             CategoriaIngrediente @relation(fields: [categoriaId], references: [id])
+  prodotto              Prodotto?            @relation(fields: [prodottoRiferimentoId], references: [id])
+  
+  RicetteBase           RicettaMiscelata[]   @relation("ComponenteBase")
+  SelezioniBottiglia    SelezioneBottiglia[]
+  
+  @@index([categoriaId, ordinamento])
+  @@index([disponibile])
+  @@index([prodottoRiferimentoId])
+}
+
+// 3. Ricetta per prodotto miscelato
+model RicettaMiscelata {
+  id                String   @id @default(cuid())
+  prodottoId        Int      @unique
+  nome              String
+  descrizione       String?
+  istruzioni        String?  // Istruzioni preparazione
+  componenteBaseId  String?  // La bottiglia principale predefinita (es. Bombay per gin tonic standard)
+  bicchiere         String?  // Tipo di bicchiere da usare
+  ghiaccio          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  prodotto          Prodotto             @relation(fields: [prodottoId], references: [id], onDelete: Cascade)
+  componenteBase    Bottiglia?           @relation("ComponenteBase", fields: [componenteBaseId], references: [id])
+  Componenti        ComponenteMiscelato[]
+  
+  @@index([prodottoId])
+}
+
+// 4. Componenti della ricetta (quali categorie servono)
+model ComponenteMiscelato {
+  id               String   @id @default(cuid())
+  ricettaId        String
+  categoriaId      String   // "GIN", "TONICHE", etc.
+  obbligatorio     Boolean  @default(true)
+  quantitaML       Int?     // Quantità standard in ML
+  proporzione      String?  // es. "1 parte", "2 parti", "splash"
+  note             String?  // Note specifiche per questo componente
+  ordinamento      Int      @default(0)
+  maxSelezioni     Int      @default(1)  // Quante bottiglie max da questa categoria
+  
+  ricetta          RicettaMiscelata     @relation(fields: [ricettaId], references: [id], onDelete: Cascade)
+  categoria        CategoriaIngrediente @relation(fields: [categoriaId], references: [id])
+  
+  @@index([ricettaId, ordinamento])
+  @@index([categoriaId])
+}
+
+// 5. Selezione bottiglia per ordine (collegamento a ConfigurazioneRigaOrdine esistente)
+model SelezioneBottiglia {
+  id                      String   @id @default(cuid())
+  configurazioneId        String   // Link a ConfigurazioneRigaOrdine
+  bottigliaId             String
+  quantita                Int      @default(1)
+  prezzoApplicato         Decimal  @db.Decimal(10, 2)
+  
+  bottiglia               Bottiglia @relation(fields: [bottigliaId], references: [id])
+  
+  @@index([configurazioneId])
+  @@index([bottigliaId])
+}
+
+// Enum per tipo categoria ingrediente
+enum TipoCategoriaIngrediente {
+  ALCOLICO      // GIN, RUM, VODKA, WHISKY, etc.
+  MIXER         // TONICHE, SODA, GINGER, etc.
+  SCIROPPO      // SCIROPPI vari
+  SUCCO         // SUCCHI di frutta
+  GARNISH       // DECORAZIONI, FRUTTA, SPEZIE
+  BITTER        // AMARI, BITTER
+  LIQUORE       // LIQUORI dolci
+  ALTRO
+}
+
+// ===========================================
+// ESEMPIO DI DATI
+// ===========================================
+
+// CATEGORIE:
+// - id: "cat-gin", nome: "GIN", tipo: ALCOLICO
+// - id: "cat-toniche", nome: "TONICHE", tipo: MIXER
+// - id: "cat-garnish", nome: "GARNISH", tipo: GARNISH
+
+// BOTTIGLIE (categoria GIN):
+// - nome: "Bombay Sapphire", prezzoExtra: 0
+// - nome: "Hendricks", prezzoExtra: 2
+// - nome: "Tanqueray", prezzoExtra: 1
+// - nome: "Gin Mare", prezzoExtra: 3
+
+// BOTTIGLIE (categoria TONICHE):
+// - nome: "Schweppes Tonica", prezzoExtra: 0
+// - nome: "Fever-Tree", prezzoExtra: 1.5
+// - nome: "1724", prezzoExtra: 3
+// - nome: "Thomas Henry", prezzoExtra: 1
+
+// RICETTA GIN TONIC:
+// - nome: "Gin Tonic"
+// - componenteBase: "Bombay Sapphire" (default)
+// - Componenti:
+//   1. categoria: "GIN", obbligatorio: true, quantitaML: 50
+//   2. categoria: "TONICHE", obbligatorio: true, quantitaML: 150
+//   3. categoria: "GARNISH", obbligatorio: false, maxSelezioni: 2

@@ -375,8 +375,8 @@ export class NetumPrinter {
 
     try {
       await this.writeCharacteristic.writeValue(command);
-      // Piccolo delay per evitare overflow del buffer
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Delay RIMOSSO per massima velocità - solo se necessario
+      // await new Promise(resolve => setTimeout(resolve, 2));
     } catch (error) {
       console.error('Errore invio comando:', error);
       throw error;
@@ -440,7 +440,10 @@ export class NetumPrinter {
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
         await this.writeCharacteristic.writeValue(chunk);
-        await new Promise(resolve => setTimeout(resolve, 10));
+        // Delay minimo solo se necessario per evitare overflow
+        if (data.length > 100) {
+          await new Promise(resolve => setTimeout(resolve, 1));
+        }
       }
     } catch (error) {
       console.error('Errore invio testo:', error);
@@ -611,10 +614,8 @@ export class NetumPrinter {
       // Righe ordine
       if (receiptData.righe && receiptData.righe.length > 0) {
         for (const riga of receiptData.righe) {
-          // Nome prodotto e quantità
-          const itemLine = riga.quantita > 1 
-            ? `${riga.nome} x${riga.quantita}`
-            : riga.nome;
+          // Formato: quantità x nome prodotto
+          const itemLine = `${riga.quantita}x${riga.nome}`;
           
           await this.printLineItem(itemLine, this.formatPrice(riga.totale));
           
@@ -629,9 +630,13 @@ export class NetumPrinter {
       // Separatore totale
       await this.printSeparatorLine('-');
       
-      // Totale
+      // Totale - NON usare printLineItem che ha già sendCommand interno
       await this.sendCommand(ESC_POS.BOLD_ON);
-      await this.printLineItem('TOTALE', this.formatPrice(receiptData.totale));
+      await this.sendText('TOTALE');
+      const totaleStr = this.formatPrice(receiptData.totale);
+      const spaces = ' '.repeat(32 - 'TOTALE'.length - totaleStr.length);
+      await this.sendText(spaces + totaleStr);
+      await this.sendCommand(ESC_POS.NEW_LINE);
       await this.sendCommand(ESC_POS.BOLD_OFF);
       
       // Pagamenti

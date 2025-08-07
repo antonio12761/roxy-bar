@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getCurrentUser, generateToken } from "@/lib/auth-multi-tenant";
 import { SSEProvider } from "@/contexts/sse-context";
 import CassaPageWrapper from "./page-wrapper-optimized";
+import { FastPrintInitializer } from "@/components/cassa/fast-print-initializer";
 
 export default async function CassaPage() {
   const user = await getCurrentUser();
@@ -12,6 +13,7 @@ export default async function CassaPage() {
   
   return (
     <SSEProvider token={token || undefined} station="CASSA">
+      <FastPrintInitializer />
       <CassaPageWrapper />
     </SSEProvider>
   );
