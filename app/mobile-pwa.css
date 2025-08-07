@@ -3,14 +3,42 @@
 /* Global fix per Android PWA - touch-action su tutti gli elementi interattivi */
 button,
 a,
-input,
-select,
-textarea,
 [role="button"],
 [onclick],
 .cursor-pointer {
   touch-action: manipulation !important;
   -webkit-tap-highlight-color: transparent !important;
+  cursor: pointer !important;
+}
+
+/* Fix specifico per input elements - NON applicare touch-action manipulation */
+input,
+select,
+textarea,
+input[type="checkbox"],
+input[type="radio"] {
+  touch-action: auto !important;
+  pointer-events: auto !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Ripristina appearance per checkbox e radio */
+input[type="checkbox"] {
+  -webkit-appearance: checkbox !important;
+  appearance: checkbox !important;
+  width: 20px;
+  height: 20px;
+  cursor: pointer !important;
+}
+
+input[type="radio"] {
+  -webkit-appearance: radio !important;
+  appearance: radio !important;
+  width: 20px;
+  height: 20px;
+  cursor: pointer !important;
 }
 
 /* Touch-friendly tap targets */

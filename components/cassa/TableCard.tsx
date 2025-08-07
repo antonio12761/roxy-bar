@@ -46,10 +46,6 @@ const TableCard = memo(function TableCard({ table, onClick, variant = 'default' 
   return (
     <div
       onClick={onClick}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
       className={`rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-200 relative ${
         isPaid && !isPartiallyPaid ? 'opacity-75 hover:opacity-100' : 'hover:scale-[1.02] sm:hover:scale-105 active:scale-[0.98]'
       }`}

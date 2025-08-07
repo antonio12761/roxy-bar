@@ -4,6 +4,7 @@
 
 /* Import mobile and PWA specific styles */
 @import "./mobile-pwa.css";
+@import "./pwa-input-fix.css";
 
 /* Previeni zoom su iOS */
 @supports (-webkit-touch-callout: none) {

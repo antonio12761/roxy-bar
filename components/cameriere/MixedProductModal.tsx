@@ -287,28 +287,31 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
       >
         {/* Header */}
         <div 
-          className="sticky top-0 z-10 flex items-center justify-between p-4 border-b"
+          className="sticky top-0 z-10 flex items-center justify-between p-3 border-b bg-gradient-to-r from-orange-50 via-white to-orange-50"
           style={{ 
-            backgroundColor: colors.bg.card,
-            borderColor: colors.border.primary 
+            borderColor: colors.border.primary
           }}
         >
-          <div>
-            <h2 className="text-xl font-bold" style={{ color: colors.text.primary }}>
-              🍸 Componi {product.nome}
-            </h2>
-            {ricetta?.descrizione && (
-              <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                {ricetta.descrizione}
-              </p>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg">
+              <span className="text-xl">🍸</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold" style={{ color: colors.primary }}>
+                {product.nome}
+              </h2>
+              {ricetta?.descrizione && (
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  {ricetta.descrizione}
+                </p>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
             style={{ 
-              backgroundColor: colors.bg.hover,
-              color: colors.text.primary 
+              color: colors.text.secondary 
             }}
           >
             <X className="w-5 h-5" />
@@ -329,7 +332,7 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
               <div style={{ color: colors.text.error }}>{error}</div>
             </div>
           ) : ricetta ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {ricetta.Componenti.map((componente: Componente) => {
                 const bottiglie = bottigliePerCategoria[componente.categoriaId] || [];
                 const selezioniComponente = selezioni[componente.categoriaId] || [];
@@ -338,30 +341,38 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                   <div key={componente.id}>
                     {/* Categoria Header */}
                     <div 
-                      className="flex items-center gap-2 mb-3 pb-2 border-b"
-                      style={{ borderColor: componente.categoria.colore }}
+                      className="flex items-center gap-2 mb-2 pb-1.5 border-b"
+                      style={{ borderColor: colors.border.primary }}
                     >
-                      <span className="text-2xl">{componente.categoria.icona}</span>
+                      <div className="p-1.5 rounded-md bg-gradient-to-br from-orange-50 to-orange-100">
+                        <span className="text-lg">{componente.categoria.icona}</span>
+                      </div>
                       <div className="flex-1">
-                        <h3 className="font-bold" style={{ color: colors.text.primary }}>
-                          {componente.categoria.nome}
-                          {componente.obbligatorio && (
-                            <span className="text-red-500 ml-1">*</span>
-                          )}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
-                          {componente.quantitaML && (
-                            <span>{componente.quantitaML}ml</span>
-                          )}
-                          {componente.maxSelezioni > 1 && (
-                            <span>Max {componente.maxSelezioni} selezioni</span>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-sm" style={{ color: colors.text.primary }}>
+                            {componente.categoria.nome}
+                            {componente.obbligatorio && (
+                              <span className="text-orange-500 ml-0.5 text-xs">*</span>
+                            )}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {componente.quantitaML && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">
+                                {componente.quantitaML}ml
+                              </span>
+                            )}
+                            {componente.maxSelezioni > 1 && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-700 rounded">
+                                Max {componente.maxSelezioni}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Bottiglie Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                       {bottiglie.map(bottiglia => {
                         const isSelected = selezioniComponente.includes(bottiglia.id);
                         // Per selezione singola (radio), non disabilitare le altre opzioni
@@ -375,31 +386,60 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
                             onClick={() => !isDisabled && handleSelezione(componente.categoriaId, bottiglia.id, componente)}
                             disabled={isDisabled}
                             className={`
-                              p-3 rounded-lg border-2 transition-all
-                              ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
+                              relative p-2 rounded-lg border transition-all duration-200
+                              ${isDisabled ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:shadow-lg hover:scale-105 active:scale-95'}
+                              ${isSelected ? 'shadow-md transform scale-105' : 'hover:border-orange-300'}
                             `}
                             style={{
-                              backgroundColor: isSelected ? componente.categoria.colore + '20' : colors.bg.hover,
-                              borderColor: isSelected ? componente.categoria.colore : colors.border.primary,
-                              color: colors.text.primary
+                              backgroundColor: isSelected 
+                                ? `linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)` 
+                                : 'white',
+                              borderColor: isSelected ? colors.primary : '#E5E5E5',
+                              borderWidth: isSelected ? '2px' : '1px',
+                              background: isSelected 
+                                ? 'linear-gradient(135deg, #FFF5EB 0%, #FFEEDD 100%)'
+                                : 'white'
                             }}
                           >
-                            <div className="text-sm font-medium">{bottiglia.nome}</div>
-                            {bottiglia.marca && (
-                              <div className="text-xs opacity-75">{bottiglia.marca}</div>
-                            )}
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-xs">
-                                €{bottiglia.costoPorzione.toFixed(2)}
-                              </span>
-                              {bottiglia.gradazioneAlcolica && (
-                                <span className="text-xs opacity-75">
-                                  {bottiglia.gradazioneAlcolica}°
-                                </span>
-                              )}
-                            </div>
+                            {/* Selected Badge */}
                             {isSelected && (
-                              <Check className="w-4 h-4 mx-auto mt-1" style={{ color: componente.categoria.colore }} />
+                              <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5 shadow-sm">
+                                <Check className="w-3 h-3" />
+                              </div>
+                            )}
+                            
+                            {/* Content */}
+                            <div className="space-y-1">
+                              <div className="text-xs font-bold leading-tight line-clamp-2" style={{ color: colors.text.primary }}>
+                                {bottiglia.nome}
+                              </div>
+                              
+                              {bottiglia.marca && (
+                                <div className="text-[10px] leading-tight line-clamp-1" style={{ color: colors.text.muted }}>
+                                  {bottiglia.marca}
+                                </div>
+                              )}
+                              
+                              <div className="pt-1 space-y-0.5">
+                                <div className="text-xs font-bold" style={{ color: isSelected ? colors.primary : '#D97B34' }}>
+                                  €{bottiglia.costoPorzione.toFixed(2)}
+                                </div>
+                                
+                                {bottiglia.gradazioneAlcolica && (
+                                  <div className="text-[10px]" style={{ color: colors.text.muted }}>
+                                    {bottiglia.gradazioneAlcolica}°
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Non disponibile overlay */}
+                            {!bottiglia.disponibile && (
+                              <div className="absolute inset-0 bg-gray-100 bg-opacity-60 rounded-lg flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-red-600 bg-white px-1 py-0.5 rounded">
+                                  ESAURITO
+                                </span>
+                              </div>
                             )}
                           </button>
                         );
@@ -415,25 +455,26 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
         {/* Footer */}
         {!loading && !error && ricetta && (
           <div 
-            className="sticky bottom-0 p-4 border-t"
+            className="sticky bottom-0 p-3 border-t bg-white"
             style={{ 
-              backgroundColor: colors.bg.card,
-              borderColor: colors.border.primary 
+              borderColor: colors.border.primary
             }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-bold" style={{ color: colors.text.primary }}>
-                Prezzo Totale:
+            <div className="flex items-center justify-between mb-2.5 px-2">
+              <span className="text-sm font-medium" style={{ color: colors.text.secondary }}>
+                Totale
               </span>
-              <span className="text-xl font-bold" style={{ color: colors.text.accent }}>
-                €{calcolaPrezzoTotale().toFixed(2)}
-              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold" style={{ color: colors.primary }}>
+                  €{calcolaPrezzoTotale().toFixed(2)}
+                </span>
+              </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 rounded-lg font-medium transition-colors border hover:bg-gray-50"
+                className="flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border hover:bg-gray-50 active:scale-95"
                 style={{ 
                   borderColor: colors.border.primary,
                   backgroundColor: 'white',
@@ -445,11 +486,11 @@ export function MixedProductModal({ isOpen, onClose, product, onConfirm }: Mixed
               <button
                 onClick={handleConfirm}
                 disabled={!isValid()}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 ${
-                  !isValid() ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'
+                className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-orange-500 to-orange-600 text-white active:scale-95 ${
+                  !isValid() ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:from-orange-600 hover:to-orange-700'
                 }`}
               >
-                Conferma Ordine
+                Conferma
               </button>
             </div>
           </div>
