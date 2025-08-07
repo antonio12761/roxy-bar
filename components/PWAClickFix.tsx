@@ -8,6 +8,20 @@ export function PWAClickFix() {
     const handleTouchEnd = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       
+      // NON intercettare eventi su elementi form
+      const isFormElement = 
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'OPTION' ||
+        target.tagName === 'LABEL' ||
+        (target as HTMLInputElement).type === 'checkbox' ||
+        (target as HTMLInputElement).type === 'radio';
+      
+      if (isFormElement) {
+        return; // Lascia gestire nativamente
+      }
+      
       // Cerca un elemento cliccabile nella catena dei parent (fino a 5 livelli)
       let clickableElement: HTMLElement | null = target;
       let depth = 0;

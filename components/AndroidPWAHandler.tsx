@@ -23,6 +23,23 @@ export function AndroidPWAHandler() {
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       
+      // NON intercettare eventi su input, checkbox, select, textarea
+      const isFormElement = 
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'OPTION' ||
+        target.tagName === 'LABEL' ||
+        (target as HTMLInputElement).type === 'checkbox' ||
+        (target as HTMLInputElement).type === 'radio' ||
+        target.closest('input') !== null ||
+        target.closest('textarea') !== null ||
+        target.closest('select') !== null;
+      
+      if (isFormElement) {
+        return; // Lascia gestire nativamente
+      }
+      
       // Trova l'elemento cliccabile
       let clickable = target;
       let depth = 0;
@@ -66,6 +83,25 @@ export function AndroidPWAHandler() {
     const handleTouchEnd = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       
+      // NON intercettare eventi su input, checkbox, select, textarea
+      const isFormElement = 
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'OPTION' ||
+        target.tagName === 'LABEL' ||
+        (target as HTMLInputElement).type === 'checkbox' ||
+        (target as HTMLInputElement).type === 'radio' ||
+        target.closest('input') !== null ||
+        target.closest('textarea') !== null ||
+        target.closest('select') !== null;
+      
+      if (isFormElement) {
+        // Lascia che gli elementi form gestiscano i loro eventi nativamente
+        console.log('Android PWA: Skipping form element', target.tagName, (target as HTMLInputElement).type || '');
+        return;
+      }
+      
       // Trova l'elemento cliccabile
       let clickable = target;
       let depth = 0;
@@ -96,7 +132,7 @@ export function AndroidPWAHandler() {
       
       // Se abbiamo trovato un elemento cliccabile, simula il click
       if (foundClickable) {
-        // Previeni eventi multipli
+        // Previeni eventi multipli SOLO per elementi non-form
         e.preventDefault();
         e.stopPropagation();
         
