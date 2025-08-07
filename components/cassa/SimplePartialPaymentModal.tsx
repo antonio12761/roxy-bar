@@ -110,6 +110,7 @@ export function SimplePartialPaymentModal({
   const handleSelectSuggestion = (suggestion: string) => {
     setClienteNome(suggestion);
     setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   if (!isOpen || !order) return null;
@@ -719,7 +720,7 @@ export function SimplePartialPaymentModal({
                         >
                           <User className="h-3 w-3" style={{ color: colors.text.secondary }} />
                           <span>{suggestion}</span>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -785,10 +786,7 @@ export function SimplePartialPaymentModal({
                       setStampaScontrino(e.target.checked);
                       updatePrinterSettings({ defaultEnabled: e.target.checked });
                     }}
-                    className="w-5 h-5 rounded border-2 transition-colors"
-                    style={{
-                      accentColor: colors.button.primary
-                    }}
+                    className="w-5 h-5"
                   />
                   <div className="flex items-center gap-2">
                     <Printer className="h-4 w-4" style={{ color: colors.text.secondary }} />
