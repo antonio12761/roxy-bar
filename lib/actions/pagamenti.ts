@@ -99,7 +99,9 @@ export async function creaPagamento(
     });
     
     const utente = await getCurrentUser();
+    console.log("Utente recuperato:", utente?.id, utente?.ruolo);
     if (!utente) {
+      console.error("ERRORE: Utente non autenticato");
       return { success: false, error: "Utente non autenticato" };
     }
     
@@ -117,33 +119,44 @@ export async function creaPagamento(
 
     // Verifica permessi (CASSA o superiore)
     if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
+      console.error("ERRORE: Permessi insufficienti, ruolo:", utente.ruolo);
       return { success: false, error: "Permessi insufficienti" };
     }
+    console.log("Permessi verificati OK");
 
-    // Recupera l'ordinazione con le righe non pagate
+    // Recupera l'ordinazione con TUTTE le righe per calcolo corretto
+    console.log("Recupero ordinazione:", ordinazioneId);
     const ordinazione = await prisma.ordinazione.findUnique({
       where: { id: ordinazioneId },
       include: {
-        RigaOrdinazione: {
-          where: { isPagato: false }
-        },
+        RigaOrdinazione: true, // Prendi TUTTE le righe per calcolo totale
         Pagamento: true
       }
     });
 
     if (!ordinazione) {
+      console.error("ERRORE: Ordinazione non trovata:", ordinazioneId);
       return { success: false, error: "Ordinazione non trovata" };
     }
+    const righeNonPagate = ordinazione.RigaOrdinazione.filter((r: any) => !r.isPagato);
+    console.log("Ordinazione trovata, totale righe:", ordinazione.RigaOrdinazione.length, "righe non pagate:", righeNonPagate.length);
 
     // Prevent payment if already paid
     if (ordinazione.statoPagamento === "COMPLETAMENTE_PAGATO" || ordinazione.stato === "PAGATO") {
       return { success: false, error: "Ordinazione già pagata completamente" };
     }
 
-    // Calcola totale rimanente
-    const totaleRighe = (ordinazione as any).RigaOrdinazione?.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0) || 0;
+    // Calcola totale rimanente SOLO delle righe NON pagate
+    const totaleRigheNonPagate = righeNonPagate.reduce((sum: number, riga: any) => sum + (riga.prezzo.toNumber() * riga.quantita), 0) || 0;
     const totalePagato = (ordinazione as any).Pagamento?.reduce((sum: number, pag: any) => sum + pag.importo.toNumber(), 0) || 0;
-    const rimanente = totaleRighe - totalePagato;
+    const rimanente = totaleRigheNonPagate; // Il rimanente è solo il totale delle righe non pagate
+    
+    console.log("Calcolo importi:", {
+      totaleRigheNonPagate,
+      totalePagato,
+      rimanente,
+      importoRichiesto: importo
+    });
 
     // Validazione importo - permetti overpayment solo se esplicitamente richiesto
     if (importo > rimanente) {
@@ -163,15 +176,6 @@ export async function creaPagamento(
     if (importo <= 0) {
       return { success: false, error: "L'importo deve essere maggiore di zero" };
     }
-    
-    console.log("Controllo importo:", { 
-      importo, 
-      totaleRighe,
-      totalePagato,
-      rimanente, 
-      numeroRighe: (ordinazione as any).RigaOrdinazione?.length || 0,
-      check: importo > rimanente 
-    });
 
     // TRANSAZIONE ATOMICA per garantire consistenza con LOCK PESSIMISTICO
     let pagamento: any;
@@ -179,7 +183,9 @@ export async function creaPagamento(
     let righeAncoraAperte = 0;
     let totaleRimanente = 0;
     
+    console.log("Inizio transazione database...");
     const result = await prisma.$transaction(async (tx) => {
+      console.log("Dentro transazione, acquisizione lock...");
       // Lock pessimistico con NOWAIT per prevenire deadlock
       const ordinazioneLocked = await tx.$queryRaw`
         SELECT id FROM "Ordinazione" 
@@ -193,8 +199,10 @@ export async function creaPagamento(
       });
       
       if (!ordinazioneLocked || (ordinazioneLocked as any[]).length === 0) {
+        console.error("ERRORE: Lock fallito per ordinazione:", ordinazioneId);
         throw new Error("Impossibile acquisire lock sull'ordinazione");
       }
+      console.log("Lock acquisito con successo");
       // Verifica ancora che l'ordine non sia già completamente pagato
       const ordinazioneAttuale = await tx.ordinazione.findUnique({
         where: { id: ordinazioneId },
@@ -491,8 +499,14 @@ export async function creaPagamento(
     };
     
   } catch (error) {
+    console.error("=== ERRORE CRITICO IN creaPagamento ===");
     console.error("Errore creazione pagamento:", error);
     console.error("Stack trace:", error instanceof Error ? error.stack : "No stack");
+    console.error("Tipo errore:", typeof error);
+    if (error instanceof Error) {
+      console.error("Message:", error.message);
+      console.error("Name:", error.name);
+    }
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Errore interno del server" 
