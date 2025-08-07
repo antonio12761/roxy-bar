@@ -31,21 +31,14 @@ import { ParticleEffect } from "@/components/ui/ParticleEffect";
 import { BrowserNotificationHelper } from "@/lib/utils/notification-helper";
 import { printerService } from "@/lib/bluetooth/printer-service";
 import dynamic from 'next/dynamic';
-import { PWAClickFix } from '@/components/PWAClickFix';
+import { AndroidPWAHandler } from '@/components/AndroidPWAHandler';
 
 // Componenti sempre visibili (non lazy)
 import CassaHeader from "@/components/cassa/CassaHeader";
 import TableCard from "@/components/cassa/TableCard";
 import DebtCard from "@/components/cassa/DebtCard";
-
-// Modal caricati lazy (solo quando necessari)
-const TableDetailsDrawer = dynamic(
-  () => import("@/components/cassa/TableDetailsDrawer"),
-  { 
-    loading: () => <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>,
-    ssr: false 
-  }
-);
+// Import diretto per TableDetailsDrawer - critico per l'UX
+import TableDetailsDrawer from "@/components/cassa/TableDetailsDrawer";
 
 const ClientSelectionModal = dynamic(
   () => import("@/components/cassa/ClientSelectionModal"),
@@ -77,15 +70,9 @@ const CameriereModal = dynamic(
   { ssr: false }
 );
 
-const BluetoothPrinterPanel = dynamic(
-  () => import("@/components/cassa/BluetoothPrinterPanel").then(mod => ({ default: mod.BluetoothPrinterPanel })),
-  { ssr: false }
-);
-
-const DirectReceiptModal = dynamic(
-  () => import("@/components/cassa/DirectReceiptModal").then(mod => ({ default: mod.DirectReceiptModal })),
-  { ssr: false }
-);
+// Import diretti per modal critici dell'header
+import { BluetoothPrinterPanel } from "@/components/cassa/BluetoothPrinterPanel";
+import { DirectReceiptModal } from "@/components/cassa/DirectReceiptModal";
 
 interface OrderItem {
   id: string;
@@ -765,7 +752,7 @@ function CassaPageOptimized() {
   return (
     <CassaErrorBoundary level="page">
       <div className="min-h-screen pb-20 sm:pb-96" style={{ backgroundColor: colors.bg.dark }}>
-        <PWAClickFix />
+        <AndroidPWAHandler />
         <ToastContainer />
         {/* Header */}
         <CassaErrorBoundary level="section" isolate>

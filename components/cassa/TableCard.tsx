@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Users, Package, Clock, ChevronRight, CheckCircle } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
+import { PWAClickable } from "@/components/ui/PWAButton";
 
 interface TableGroup {
   tavoloNumero: string;
@@ -44,8 +45,8 @@ const TableCard = memo(function TableCard({ table, onClick, variant = 'default' 
   const isPartiallyPaid = isPaid && table.rimanenteComplessivo > 0;
 
   return (
-    <div
-      onClick={onClick}
+    <PWAClickable
+      onPWAClick={onClick}
       className={`rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-200 relative ${
         isPaid && !isPartiallyPaid ? 'opacity-75 hover:opacity-100' : 'hover:scale-[1.02] sm:hover:scale-105 active:scale-[0.98]'
       }`}
@@ -176,7 +177,7 @@ const TableCard = memo(function TableCard({ table, onClick, variant = 'default' 
           </div>
         </div>
       )}
-    </div>
+    </PWAClickable>
   );
 }, (prevProps, nextProps) => {
   // Custom comparison per evitare re-render inutili
