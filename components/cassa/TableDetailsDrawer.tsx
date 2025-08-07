@@ -113,7 +113,15 @@ export default function TableDetailsDrawer({
       
       // Carica clienti recenti
       getRecentClienti().then(setRecentClienti);
+      
+      // Blocca scroll del body
+      document.body.classList.add('modal-open');
     }
+    
+    return () => {
+      // Rimuovi blocco scroll quando modal si chiude
+      document.body.classList.remove('modal-open');
+    };
   }, [isOpen, printerSettings]);
 
   // Gestione ricerca clienti con debounce
@@ -181,16 +189,14 @@ export default function TableDetailsDrawer({
   if (!isOpen || !selectedTable) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-    >
-      <div className="w-full h-full sm:max-w-5xl sm:max-h-[90vh] sm:rounded-lg overflow-hidden"
+    <div className="modal-backdrop">
+      <div className="modal-container modal-lg"
         style={{ 
           backgroundColor: colors.bg.card
         }}
       >
         {/* Drawer Header */}
-        <div className="p-4 sm:p-6 border-b" 
+        <div className="modal-header" 
           style={{ 
             borderColor: colors.border.primary,
             background: `linear-gradient(to right, ${colors.bg.card}, ${colors.bg.hover})`
@@ -269,7 +275,7 @@ export default function TableDetailsDrawer({
           </div>
         </div>
 
-        <div className={`p-4 sm:p-6 overflow-y-auto ${isFullscreen ? 'max-h-[calc(100vh-140px)]' : 'max-h-[calc(85vh-100px)] sm:max-h-[calc(90vh-120px)]'}`}>
+        <div className="modal-body">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Orders List */}
             <div className="space-y-4">

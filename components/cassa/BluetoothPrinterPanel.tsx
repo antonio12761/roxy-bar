@@ -46,9 +46,14 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
       setDebugLogs(prev => [...prev.slice(-20), log]); // Mantieni ultimi 20 log
     });
     
+    // Blocca scroll del body
+    document.body.classList.add('modal-open');
+    
     return () => {
       unsubscribe();
       unsubscribeDebug();
+      // Rimuovi blocco scroll quando modal si chiude
+      document.body.classList.remove('modal-open');
     };
   }, [isOpen]);
 
@@ -91,15 +96,14 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
                       'bluetooth' in navigator;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-      <div 
-        className="relative w-full h-full sm:max-w-2xl sm:max-h-[90vh] overflow-y-auto sm:rounded-xl shadow-xl"
+    <div className="modal-backdrop">
+      <div className="modal-container modal-sm"
         style={{ 
           backgroundColor: colors.bg.card
         }}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b" 
+        <div className="modal-header" 
           style={{ 
             borderColor: colors.border.primary,
             backgroundColor: colors.bg.card 
@@ -121,7 +125,7 @@ export function BluetoothPrinterPanel({ isOpen, onClose }: BluetoothPrinterPanel
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="modal-body space-y-4 sm:space-y-6">
           {/* Supporto Bluetooth */}
           {!isSupported && (
             <div 

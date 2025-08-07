@@ -1,0 +1,194 @@
+/* Modal Responsive Fix - Soluzione completa per mobile e desktop */
+
+/* Reset base per html e body */
+html {
+  height: 100%;
+  /* Fix per iOS Safari */
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100%;
+  min-height: 100vh;
+  /* mobile viewport bug fix */
+  min-height: -webkit-fill-available;
+  /* Previene overflow orizzontale */
+  overflow-x: hidden;
+}
+
+/* Modal backdrop - usa position fixed con inset */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  /* Supporto per vecchi browser */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Background scuro */
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Centro contenuto */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Padding per safe areas */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Modal container - fullscreen su mobile */
+.modal-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: white;
+}
+
+/* Modal container - su desktop */
+@media (min-width: 640px) {
+  .modal-container {
+    width: auto;
+    height: auto;
+    max-width: min(90vw, 1024px);
+    max-height: min(90vh, 800px);
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  .modal-container.modal-sm {
+    max-width: min(90vw, 640px);
+  }
+  
+  .modal-container.modal-lg {
+    max-width: min(95vw, 1280px);
+  }
+}
+
+/* Modal header - sempre visibile */
+.modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+  /* Safe area per notch */
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+/* Modal body - scrollabile */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  /* Smooth scrolling su iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Previene scroll bounce su iOS */
+  overscroll-behavior: contain;
+}
+
+/* Modal footer - sempre visibile */
+.modal-footer {
+  flex-shrink: 0;
+  padding: 1rem;
+  border-top: 1px solid #e5e5e5;
+  /* Safe area per home indicator */
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Fix per dispositivi con notch/Dynamic Island */
+@supports (padding: max(0px)) {
+  .modal-container {
+    /* Su iOS fullscreen, gestisci safe areas */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  @media (min-width: 640px) {
+    .modal-container {
+      /* Su desktop non servono safe areas */
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+  }
+}
+
+/* Animazioni smooth */
+.modal-backdrop {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  animation: slideUp 0.3s ease-out;
+}
+
+@media (min-width: 640px) {
+  .modal-container {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Supporto per nuove viewport units (2023+) */
+@supports (height: 100dvh) {
+  .modal-backdrop {
+    height: 100dvh;
+  }
+  
+  .modal-container {
+    max-height: 100dvh;
+  }
+  
+  @media (min-width: 640px) {
+    .modal-container {
+      max-height: min(90dvh, 800px);
+    }
+  }
+}
+
+/* Fix per Android con tastiera aperta */
+.modal-body:focus-within {
+  /* Riduce altezza quando tastiera è aperta */
+  max-height: 50vh;
+}
+
+/* Utilities per bloccare scroll del body quando modal è aperto */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}

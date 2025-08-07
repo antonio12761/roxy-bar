@@ -79,7 +79,15 @@ export function SimplePartialPaymentModal({
       
       // Carica clienti recenti
       getRecentClienti().then(setRecentClienti);
+      
+      // Blocca scroll del body
+      document.body.classList.add('modal-open');
     }
+    
+    return () => {
+      // Rimuovi blocco scroll quando modal si chiude
+      document.body.classList.remove('modal-open');
+    };
   }, [isOpen, order, printerSettings]);
 
   // Gestione ricerca clienti con debounce
@@ -814,7 +822,7 @@ export function SimplePartialPaymentModal({
         </div>
 
         {/* Footer con riepilogo e azioni */}
-        <div className="p-4 sm:p-6 border-t" style={{ borderColor: colors.border.primary }}>
+        <div className="modal-footer" style={{ borderColor: colors.border.primary }}>
           <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
             {/* Riepilogo */}
             <div className="space-y-1">
