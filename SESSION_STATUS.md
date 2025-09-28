@@ -90,6 +90,9 @@
 ## 🔍 COMANDI UTILI PER VERIFICHE
 
 ```bash
+# Avvia Claude con sessione automatica (dalla cartella del progetto)
+./claude
+
 # Verifica errori TypeScript
 node scripts/top/detect-all-typescript-errors.js
 
@@ -104,6 +107,11 @@ npm run ts-node scripts/verifica-sistema-magazzino.ts
 
 # Test notifiche
 npm run ts-node scripts/test-notifiche-prepara-cameriere.ts
+
+# Gestione sessioni
+npm run session:start     # Inizio giornata
+npm run session:quick sync # Sincronizza durante il lavoro
+npm run session:end       # Fine giornata
 ```
 
 ## 📝 NOTE IMPORTANTI

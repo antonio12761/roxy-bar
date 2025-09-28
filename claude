@@ -1,0 +1,6 @@
+#!/bin/bash
+# Launcher locale per Claude con sessione automatica
+# Metti questo file nella root del progetto per un accesso rapido
+
+cd "$(dirname "$0")"
+./scripts/claude-session.sh "$@"
