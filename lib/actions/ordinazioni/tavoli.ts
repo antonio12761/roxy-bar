@@ -109,11 +109,37 @@ export async function getTableOrdersInfo(tableId: number) {
 
 export async function getCustomerNamesForTable(tavoloId: number) {
   try {
+    // Prima verifichiamo se il tavolo ha ordini attivi
+    const hasActiveOrders = await prisma.ordinazione.count({
+      where: {
+        tavoloId: tavoloId,
+        stato: {
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO"]
+        },
+        statoPagamento: {
+          not: "COMPLETAMENTE_PAGATO"
+        }
+      }
+    });
+
+    // Se il tavolo è vuoto (nessun ordine attivo), ritorna array vuoto
+    if (hasActiveOrders === 0) {
+      return {
+        success: true,
+        customerNames: [],
+        lastCustomerName: ""
+      };
+    }
+
+    // Altrimenti cerca i nomi dei clienti degli ordini attivi
     const ordini = await prisma.ordinazione.findMany({
       where: {
         tavoloId: tavoloId,
-        dataApertura: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        stato: {
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO"]
+        },
+        statoPagamento: {
+          not: "COMPLETAMENTE_PAGATO"
         }
       },
       select: {
