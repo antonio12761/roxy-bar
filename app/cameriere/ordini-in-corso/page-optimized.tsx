@@ -209,13 +209,47 @@ export default function OrdiniInCorsoPageOptimized() {
         
         // Filter only active orders and ensure righe is defined
         const activeOrders = serializedData.filter(order => 
-          ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"].includes(order.stato)
+          ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "ORDINATO_ESAURITO"].includes(order.stato)
         ).map(order => ({
-          ...order,
-          righe: order.righe || []
+          id: order.id,
+          numero: order.numero,
+          tavolo: order.Tavolo ? {
+            id: order.Tavolo.id,
+            numero: order.Tavolo.numero,
+            zona: order.Tavolo.zona || null,
+            posti: order.Tavolo.posti,
+            stato: order.Tavolo.stato,
+            note: order.Tavolo.note || null,
+            attivo: order.Tavolo.attivo,
+            createdAt: order.Tavolo.createdAt,
+            updatedAt: order.Tavolo.updatedAt
+          } : null,
+          cameriere: order.User ? { nome: order.User.nome } : { nome: 'N/A' },
+          tipo: order.tipo,
+          stato: order.stato,
+          note: order.note || null,
+          dataApertura: order.dataApertura,
+          totale: order.totale,
+          righe: (order.RigaOrdinazione || []).map(riga => ({
+            id: riga.id,
+            prodotto: {
+              nome: riga.Prodotto?.nome || 'N/A',
+              categoria: riga.Prodotto?.categoria || 'N/A'
+            },
+            quantita: riga.quantita,
+            stato: riga.stato,
+            postazione: riga.postazione || 'N/A',
+            timestampOrdine: riga.createdAt,
+            timestampInizio: riga.timestampInizio || null,
+            timestampPronto: riga.timestampPronto || null
+          }))
         }));
         
         console.log('[Cameriere] Active orders:', activeOrders.length);
+        console.log('[Cameriere] Current table filter:', tableFilter);
+        if (activeOrders.length > 0) {
+          console.log('[Cameriere] First order tavolo:', activeOrders[0].tavolo);
+        }
         
         // Only update state if component is still mounted
         if (!isUnmountingRef.current) {
