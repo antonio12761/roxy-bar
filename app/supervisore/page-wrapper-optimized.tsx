@@ -21,7 +21,15 @@ import {
   Wifi,
   WifiOff,
   Palette,
-  Settings
+  Settings,
+  BarChart3,
+  DollarSign,
+  ShoppingCart,
+  UserCheck,
+  Receipt,
+  Package,
+  FileText,
+  Home
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -117,6 +125,19 @@ export default function SupervisorePageOptimized() {
   const [expandedPaidOrders, setExpandedPaidOrders] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showImpostazioniScontrino, setShowImpostazioniScontrino] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard');
+
+  // Sidebar menu items
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'users', label: 'Utenti', icon: Users },
+    { id: 'orders', label: 'Ordini', icon: ShoppingCart },
+    { id: 'paid', label: 'Pagati', icon: Receipt },
+    { id: 'stats', label: 'Statistiche', icon: BarChart3 },
+    { id: 'revenue', label: 'Incassi', icon: DollarSign },
+    { id: 'products', label: 'Prodotti', icon: Package },
+    { id: 'reports', label: 'Report', icon: FileText },
+  ];
 
   // Use optimized SSE hook
   const {
@@ -580,123 +601,222 @@ export default function SupervisorePageOptimized() {
   }
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: colors.bg.main }}>
-      
-      {/* Header */}
-      <div className="mb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <Shield className="h-6 w-6 text-purple-400" />
-              <h1 className="text-xl font-bold text-foreground">Pannello Supervisore</h1>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Gestione e monitoraggio del sistema Roxy Bar
+    <div className="min-h-screen flex" style={{ backgroundColor: colors.bg.main }}>
+      {/* Sidebar */}
+      <div className="w-64 h-screen sticky top-0 border-r" style={{ 
+        backgroundColor: colors.bg.card,
+        borderColor: colors.border.primary 
+      }}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b" style={{ borderColor: colors.border.primary }}>
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6" style={{ color: colors.accent.primary }} />
+            <div>
+              <h2 className="font-bold" style={{ color: colors.text.primary }}>Supervisore</h2>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Pannello Controllo</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Connection Status */}
-            <div className="flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className={`text-sm ${getConnectionColor()}`}>
-                {connectionHealth.latency}ms
-              </span>
-            </div>
-            
-            {/* Theme Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowThemeMenu(!showThemeMenu)}
-                className="p-2 rounded-lg transition-colors"
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.hover;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <Palette className="h-5 w-5" style={{ color: colors.text.secondary }} />
-              </button>
+        </div>
 
-              {showThemeMenu && (
-                <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-2 z-50" style={{ 
-                  backgroundColor: colors.bg.card, 
-                  borderColor: colors.border.primary,
-                  borderWidth: '1px',
-                  borderStyle: 'solid'
-                }}>
-                  <h3 className="px-4 py-2 text-sm font-semibold" style={{ color: colors.text.primary }}>
-                    Seleziona tema
-                  </h3>
-                  <div className="max-h-60 overflow-y-auto">
-                    {availableThemes.map((theme) => (
-                      <button
-                        key={theme.id}
-                        onClick={() => {
-                          setTheme(theme.id);
-                          setShowThemeMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm transition-colors duration-200 flex items-center gap-3"
-                        style={{
-                          backgroundColor: currentTheme.id === theme.id ? colors.bg.hover : 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = colors.bg.hover;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = currentTheme.id === theme.id ? colors.bg.hover : 'transparent';
-                        }}
-                      >
-                        <div 
-                          className="w-4 h-4 rounded-full border border-white/30"
-                          style={{
-                            backgroundColor: theme.colors[resolvedMode as 'light' | 'dark'].bg.dark
-                          }}
-                        />
-                        <span style={{ color: colors.text.primary }}>{theme.name}</span>
-                        {currentTheme.id === theme.id && (
-                          <span className="ml-auto text-xs text-green-400">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Settings Button */}
+        {/* Menu Items - 2 columns grid */}
+        <div className="p-4">
+          <div className="grid grid-cols-2 gap-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 border"
+                  style={{
+                    backgroundColor: isActive ? colors.bg.hover : colors.bg.light,
+                    borderColor: isActive ? colors.accent.primary : colors.border.secondary,
+                    borderWidth: isActive ? '2px' : '1px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = colors.bg.hover;
+                      e.currentTarget.style.borderColor = colors.border.primary;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = colors.bg.light;
+                      e.currentTarget.style.borderColor = colors.border.secondary;
+                    }
+                  }}
+                >
+                  <Icon 
+                    className="h-5 w-5 mb-1" 
+                    style={{ 
+                      color: isActive ? colors.accent.primary : colors.text.secondary 
+                    }} 
+                  />
+                  <span 
+                    className="text-xs font-medium"
+                    style={{ 
+                      color: isActive ? colors.text.primary : colors.text.secondary 
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t" style={{ borderColor: colors.border.primary }}>
+          <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setShowImpostazioniScontrino(!showImpostazioniScontrino)}
-              className="p-2 rounded-lg transition-colors"
-              style={{ backgroundColor: 'transparent' }}
+              onClick={() => setShowThemeMenu(!showThemeMenu)}
+              className="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 border"
+              style={{
+                backgroundColor: colors.bg.light,
+                borderColor: colors.border.secondary,
+                borderWidth: '1px'
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = colors.bg.hover;
+                e.currentTarget.style.borderColor = colors.border.primary;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.backgroundColor = colors.bg.light;
+                e.currentTarget.style.borderColor = colors.border.secondary;
               }}
-              title="Impostazioni Scontrino"
             >
-              <Settings className="h-5 w-5" style={{ color: colors.text.secondary }} />
+              <Palette className="h-5 w-5 mb-1" style={{ color: colors.text.secondary }} />
+              <span className="text-xs font-medium" style={{ color: colors.text.secondary }}>Tema</span>
             </button>
             
-            <UserDisplay />
+            <button
+              onClick={() => setShowImpostazioniScontrino(!showImpostazioniScontrino)}
+              className="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 border"
+              style={{
+                backgroundColor: showImpostazioniScontrino ? colors.bg.hover : colors.bg.light,
+                borderColor: showImpostazioniScontrino ? colors.accent.primary : colors.border.secondary,
+                borderWidth: showImpostazioniScontrino ? '2px' : '1px'
+              }}
+              onMouseEnter={(e) => {
+                if (!showImpostazioniScontrino) {
+                  e.currentTarget.style.backgroundColor = colors.bg.hover;
+                  e.currentTarget.style.borderColor = colors.border.primary;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showImpostazioniScontrino) {
+                  e.currentTarget.style.backgroundColor = colors.bg.light;
+                  e.currentTarget.style.borderColor = colors.border.secondary;
+                }
+              }}
+            >
+              <Settings className="h-5 w-5 mb-1" style={{ color: showImpostazioniScontrino ? colors.accent.primary : colors.text.secondary }} />
+              <span className="text-xs font-medium" style={{ color: showImpostazioniScontrino ? colors.text.primary : colors.text.secondary }}>Scontrino</span>
+            </button>
+          </div>
+
+          {/* Connection Status */}
+          <div className="mt-3 p-2 rounded-lg" style={{ backgroundColor: colors.bg.light }}>
+            <div className="flex items-center justify-center gap-2">
+              {getConnectionIcon()}
+              <span className={`text-xs font-medium ${getConnectionColor()}`}>
+                Connessione: {connectionHealth.latency}ms
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* Theme Menu Dropdown */}
+        {showThemeMenu && (
+          <div className="absolute bottom-20 left-4 right-4 rounded-lg shadow-lg py-2 z-50" style={{ 
+            backgroundColor: colors.bg.card, 
+            borderColor: colors.border.primary,
+            borderWidth: '1px',
+            borderStyle: 'solid'
+          }}>
+            <h3 className="px-4 py-2 text-sm font-semibold" style={{ color: colors.text.primary }}>
+              Seleziona tema
+            </h3>
+            <div className="max-h-60 overflow-y-auto">
+              {availableThemes.map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => {
+                    setTheme(theme.id);
+                    setShowThemeMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm transition-colors duration-200 flex items-center gap-3"
+                  style={{
+                    backgroundColor: currentTheme.id === theme.id ? colors.bg.hover : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.bg.hover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = currentTheme.id === theme.id ? colors.bg.hover : 'transparent';
+                  }}
+                >
+                  <div 
+                    className="w-4 h-4 rounded-full border border-white/30"
+                    style={{
+                      backgroundColor: theme.colors[resolvedMode as 'light' | 'dark'].bg.dark
+                    }}
+                  />
+                  <span style={{ color: colors.text.primary }}>{theme.name}</span>
+                  {currentTheme.id === theme.id && (
+                    <span className="ml-auto text-xs" style={{ color: colors.accent.success }}>✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Impostazioni Scontrino Modal/Section */}
-      {showImpostazioniScontrino && (
-        <div className="mb-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <ImpostazioniScontrinoComponent />
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
+          {/* Header */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+                  {menuItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+                </h1>
+                <div className="text-xs" style={{ color: colors.text.secondary }}>
+                  {activeSection === 'dashboard' && 'Panoramica generale del sistema'}
+                  {activeSection === 'users' && 'Gestione utenti e permessi'}
+                  {activeSection === 'orders' && 'Ordini attivi in tempo reale'}
+                  {activeSection === 'paid' && 'Storico ordini completati'}
+                  {activeSection === 'stats' && 'Analisi e metriche dettagliate'}
+                  {activeSection === 'revenue' && 'Monitoraggio incassi e vendite'}
+                  {activeSection === 'products' && 'Gestione catalogo prodotti'}
+                  {activeSection === 'reports' && 'Report e documenti'}
+                </div>
+              </div>
+              <UserDisplay />
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Panoramic Overview - Key Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          {/* Impostazioni Scontrino Modal/Section */}
+          {showImpostazioniScontrino && (
+            <div className="mb-4">
+              <div className="rounded-lg p-4 border" style={{ 
+                backgroundColor: colors.bg.card,
+                borderColor: colors.border.primary 
+              }}>
+                <ImpostazioniScontrinoComponent />
+              </div>
+            </div>
+          )}
+
+          {/* Content based on active section */}
+          {activeSection === 'dashboard' && (
+            <>
+              {/* Panoramic Overview - Key Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <div className="bg-card border border-border rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">Utenti Online</h3>
@@ -735,34 +855,83 @@ export default function SupervisorePageOptimized() {
             Incasso di oggi
           </div>
         </div>
-      </div>
+              </div>
 
-      {/* Users Card */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden mb-4">
-        <button
-          onClick={() => toggleCard('users')}
-          className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-white/60" />
-            <div className="text-left">
-              <h3 className="text-sm font-semibold text-foreground">Gestione Utenti</h3>
-              <p className="text-xs text-muted-foreground">
-                {stats.utentiOnline} online • {users.length - stats.utentiOnline} offline
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-white/8 rounded-full animate-pulse" />
-              <span className="text-xs font-medium">{stats.utentiOnline}</span>
-            </div>
-            {isCardExpanded('users') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </div>
-        </button>
-        
-        {isCardExpanded('users') && (
-          <div className="border-t border-border p-4">
+              {/* Quick Access Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="rounded-lg p-4 border" style={{ 
+                  backgroundColor: colors.bg.card,
+                  borderColor: colors.border.primary 
+                }}>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.text.primary }}>Azioni Rapide</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleSyncOrders()}
+                      disabled={isSyncing}
+                      className="p-3 rounded-lg flex flex-col items-center justify-center transition-colors"
+                      style={{
+                        backgroundColor: colors.bg.hover,
+                        opacity: isSyncing ? 0.5 : 1
+                      }}
+                    >
+                      <RefreshCw className={`h-5 w-5 mb-1 ${isSyncing ? 'animate-spin' : ''}`} style={{ color: colors.accent.primary }} />
+                      <span className="text-xs" style={{ color: colors.text.secondary }}>Sincronizza</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveSection('orders')}
+                      className="p-3 rounded-lg flex flex-col items-center justify-center transition-colors"
+                      style={{ backgroundColor: colors.bg.hover }}
+                    >
+                      <ClipboardList className="h-5 w-5 mb-1" style={{ color: colors.accent.primary }} />
+                      <span className="text-xs" style={{ color: colors.text.secondary }}>Ordini</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="rounded-lg p-4 border" style={{ 
+                  backgroundColor: colors.bg.card,
+                  borderColor: colors.border.primary 
+                }}>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.text.primary }}>Stato Sistema</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm" style={{ color: colors.text.secondary }}>Database</span>
+                      <span className="text-sm font-medium" style={{ color: colors.accent.success }}>Connesso</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm" style={{ color: colors.text.secondary }}>SSE</span>
+                      <span className={`text-sm font-medium ${getConnectionColor()}`}>
+                        {connectionHealth.status === 'connected' ? 'Attivo' : 'Disconnesso'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Users Section */}
+          {activeSection === 'users' && (
+            <div className="rounded-lg overflow-hidden border" style={{ 
+              backgroundColor: colors.bg.card,
+              borderColor: colors.border.primary 
+            }}>
+              <div className="p-4 border-b" style={{ borderColor: colors.border.primary }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold" style={{ color: colors.text.primary }}>Gestione Utenti</h3>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>
+                      {stats.utentiOnline} online • {users.length - stats.utentiOnline} offline
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: colors.accent.success }} />
+                    <span className="text-xs font-medium" style={{ color: colors.text.primary }}>{stats.utentiOnline}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Staff Online */}
@@ -885,66 +1054,42 @@ export default function SupervisorePageOptimized() {
               </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Active Orders */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden mb-4">
-        <button
-          onClick={() => toggleCard('orders')}
-          className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <ClipboardList className="h-5 w-5 text-purple-400" />
-            <div className="text-left">
-              <h2 className="text-sm font-semibold">Ordinazioni Attive</h2>
-              <p className="text-xs text-muted-foreground">
-                {activeOrders.length} attivi • Aggiornamento ogni 10s
-              </p>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSyncOrders();
-              }}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Sincronizzazione...' : 'Sincronizza'}
-            </button>
-            
-            {/* Fix Destinazioni Button - Only for first-time setup */}
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  const response = await fetch('/api/fix-destinations');
-                  const result = await response.json();
-                  if (result.success) {
-                    toast.success(`Fix completato! ${result.righeAggiornate} righe aggiornate.`);
-                    loadOrders(); // Ricarica gli ordini
-                  } else {
-                    toast.error('Errore durante il fix: ' + (result.error || 'Errore sconosciuto'));
-                  }
-                } catch (error) {
-                  toast.error('Errore di connessione');
-                }
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors"
-              title="Aggiorna destinazioni BAR → PREPARA (solo prima volta)"
-            >
-              <AlertCircle className="h-3 w-3" />
-              Fix Destinazioni
-            </button>
-            {isCardExpanded('orders') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </div>
-        </button>
-        
-        {isCardExpanded('orders') && (
-          <div className="border-t border-border">
+          )}
+
+          {/* Orders Section */}
+          {activeSection === 'orders' && (
+            <div className="rounded-lg overflow-hidden border" style={{ 
+              backgroundColor: colors.bg.card,
+              borderColor: colors.border.primary 
+            }}>
+              <div className="p-4 border-b" style={{ borderColor: colors.border.primary }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-semibold" style={{ color: colors.text.primary }}>Ordinazioni Attive</h2>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>
+                      {activeOrders.length} attivi • Aggiornamento ogni 10s
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleSyncOrders()}
+                      disabled={isSyncing}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                      style={{
+                        backgroundColor: colors.accent.primary,
+                        color: 'white',
+                        opacity: isSyncing ? 0.5 : 1
+                      }}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                      {isSyncing ? 'Sincronizzazione...' : 'Sincronizza'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
             {activeOrders.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -1037,12 +1182,13 @@ export default function SupervisorePageOptimized() {
               </div>
             )}
           </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Paid Orders */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden mb-4">
-        <button
+          {/* Paid Orders */}
+          {activeSection === 'paid' && (
+            <div className="bg-card border border-border rounded-lg overflow-hidden mb-4">
+              <button
           onClick={() => toggleCard('paid-orders')}
           className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
         >
@@ -1201,11 +1347,13 @@ export default function SupervisorePageOptimized() {
             )}
           </div>
         )}
-      </div>
+            </div>
+          )}
 
-      {/* Statistics */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <button
+          {/* Statistics */}
+          {activeSection === 'stats' && (
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <button
           onClick={() => toggleCard('stats')}
           className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
         >
@@ -1281,8 +1429,10 @@ export default function SupervisorePageOptimized() {
             </div>
           </div>
         )}
+            </div>
+          )}
+        </div>
       </div>
-
     </div>
   );
 }

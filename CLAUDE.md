@@ -1,5 +1,12 @@
 # Bar Roxy Clean - Gestione Bar
 
+## 🚀 AVVIO RAPIDO - LEGGERE SEMPRE
+Per riprendere il lavoro da dove si era interrotto, consultare SEMPRE il file:
+```
+SESSION_STATUS.md
+```
+Questo file contiene lo stato dell'ultima sessione, lavori in corso e TODO.
+
 ## Panoramica Progetto
 Sistema completo di gestione bar con funzionalità per camerieri, preparazione ordini, cassa e supervisore.
 
@@ -131,3 +138,14 @@ Eseguire gli script di rilevamento errori per identificare e correggere tutti gl
 - [ ] Migrare configurazione Prisma da package.json a prisma.config.ts
 - [ ] Rimuovere lockfile duplicati
 - [ ] Aggiungere campo tenantId diretto al modello Ordinazione
+
+## 📋 STATO SESSIONE
+Il file `SESSION_STATUS.md` viene aggiornato alla fine di ogni sessione di lavoro e contiene:
+- Lavori completati nell'ultima sessione
+- Modifiche non ancora committate
+- Problemi noti e loro stato
+- TODO list organizzata per priorità
+- Comandi utili per verifiche rapide
+- Note importanti da ricordare
+
+**IMPORTANTE**: Controllare SEMPRE `SESSION_STATUS.md` all'inizio di ogni sessione per continuare il lavoro in modo efficiente.

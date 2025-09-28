@@ -1,0 +1,32 @@
+# Cursor Rules for Bar Roxy Clean
+
+## INIZIO SESSIONE - SEMPRE
+All'inizio di ogni sessione di lavoro, DEVI SEMPRE:
+1. Leggere il file `SESSION_STATUS.md` per capire lo stato del progetto
+2. Verificare i TODO e i lavori in corso
+3. Continuare da dove si era interrotto l'ultima volta
+
+## FINE SESSIONE - SEMPRE
+Alla fine di ogni sessione di lavoro o quando richiesto, DEVI:
+1. Aggiornare il file `SESSION_STATUS.md` con:
+   - Lavori completati nella sessione
+   - Modifiche non committate
+   - Problemi riscontrati
+   - TODO per la prossima sessione
+   - Note importanti
+
+## REGOLE PROGETTO
+1. Usa sempre TypeScript con strict mode
+2. Segui le convenzioni esistenti nel codice
+3. Testa sempre le modifiche prima di committare
+4. Documenta le nuove funzionalità
+5. Mantieni il codice pulito e leggibile
+
+## COMANDI VERIFICA
+Prima di committare, esegui sempre:
+- `node scripts/top/detect-all-typescript-errors.js`
+- `npm run lint`
+- `npm run build` (se necessario)
+
+## LINGUAGGIO
+Rispondi sempre in ITALIANO, a meno che non sia richiesto diversamente.
