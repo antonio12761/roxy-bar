@@ -172,9 +172,57 @@ export function CustomerNameModal({
       
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
+          {/* Mostra tag dei clienti esistenti al tavolo */}
+          {suggestions && suggestions.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
+                Clienti al tavolo
+              </label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {suggestions.map((name, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      setCustomerName(name);
+                      setShowError(false);
+                      handleSearchCustomers(name).then(results => {
+                        const customer = results.find(c => c.nome === name);
+                        if (customer) {
+                          setSelectedCustomer(customer);
+                        }
+                      });
+                    }}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: customerName === name ? colors.button.primary : colors.bg.hover,
+                      color: customerName === name ? colors.button.primaryText : colors.text.primary,
+                      borderColor: customerName === name ? colors.button.primary : colors.border.primary,
+                      borderWidth: '1px',
+                      borderStyle: 'solid'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (customerName !== name) {
+                        e.currentTarget.style.backgroundColor = colors.bg.active;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (customerName !== name) {
+                        e.currentTarget.style.backgroundColor = colors.bg.hover;
+                      }
+                    }}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <div className="h-px w-full" style={{ backgroundColor: colors.border.primary }} />
+            </div>
+          )}
+          
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
-              Nome Cliente
+              {suggestions && suggestions.length > 0 ? 'Oppure cerca un altro cliente' : 'Nome Cliente'}
             </label>
             <p className="text-xs mb-2" style={{ color: colors.text.muted }}>
               Seleziona un cliente esistente o aggiungi un nuovo nome
