@@ -16,7 +16,8 @@ const rolePermissions = {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  console.log(`[MIDDLEWARE] ${request.method} ${path}`);
+  // Removed verbose logging - uncomment for debugging
+  // console.log(`[MIDDLEWARE] ${request.method} ${path}`);
   
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/api/sse', '/api/login'];
@@ -39,18 +40,10 @@ export async function middleware(request: NextRequest) {
   const cookieName = process.env.SESSION_COOKIE_NAME || 'bar-roxy-session';
   const sessionCookie = request.cookies.get(cookieName);
   
-  console.log(`[MIDDLEWARE] Session cookie trovato: ${sessionCookie ? 'SI' : 'NO'}`);
-  if (sessionCookie) {
-    console.log(`[MIDDLEWARE] Cookie value starts with: ${sessionCookie.value.substring(0, 20)}...`);
-  } else {
-    // Debug: check all cookies
-    const allCookies = request.cookies.getAll();
-    console.log(`[MIDDLEWARE] Available cookies: ${allCookies.map(c => c.name).join(', ')}`);
-    console.log(`[MIDDLEWARE] Looking for cookie: ${cookieName}`);
-  }
+  // Removed verbose cookie logging - uncomment for debugging
+  // console.log(`[MIDDLEWARE] Session cookie trovato: ${sessionCookie ? 'SI' : 'NO'}`);
   
   if (!sessionCookie) {
-    console.log(`[MIDDLEWARE] Redirect a login per ${path}`);
     // No session, redirect to login
     return NextResponse.redirect(new URL('/login', request.url));
   }

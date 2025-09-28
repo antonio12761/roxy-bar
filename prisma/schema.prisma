@@ -319,6 +319,8 @@ model Fornitore {
   OrdineFornitore   OrdineFornitore[]
   ProdottoFornitore ProdottoFornitore[]
   Spesa             Spesa[]
+  FattureFornitore  FatturaFornitore[]
+  ProdottiPreferiti ProdottoMagazzino[]
 
   @@index([attivo])
   @@index([nome])
@@ -575,6 +577,7 @@ model OrdineFornitore {
   Fornitore           Fornitore             @relation(fields: [fornitoreId], references: [id])
   User                User?                 @relation(fields: [gestitoDa], references: [id])
   RigaOrdineFornitore RigaOrdineFornitore[]
+  FatturaFornitore    FatturaFornitore[]
 
   @@index([dataOrdine])
   @@index([fornitoreId])
@@ -761,6 +764,15 @@ model Prodotto {
   RicettaMiscelata        RicettaMiscelata?
   RigaOrdinazione         RigaOrdinazione[]
   RigaOrdineFornitore     RigaOrdineFornitore[]
+  GiacenzeUbicazione      GiacenzaUbicazione[]
+  RigheFattura            RigaFatturaFornitore[]
+  RigheDistinta           RigaDistintaPrelievo[]
+  MovimentiTrasferimento  MovimentoTrasferimento[]
+  ProdottoMagazzino       ProdottoMagazzino?
+  ConfigurazioniConversione ConfigurazioneConversione[]
+  TrackingVendite         TrackingVendita[]
+  LottiProdotto           LottoProdotto[]
+  AnalisiVendite          AnalisiVenditePeriodo[]
 
   @@index([categoriaMenuId])
   @@index([categoria])
@@ -975,6 +987,8 @@ model RigaOrdinazione {
   Product                                                Product?                  @relation(fields: [newProductId], references: [id])
   Ordinazione                                            Ordinazione               @relation(fields: [ordinazioneId], references: [id], onDelete: Cascade)
   Prodotto                                               Prodotto                  @relation(fields: [prodottoId], references: [id])
+  MovimentiTrasferimento                                 MovimentoTrasferimento[]
+  TrackingVendita                                        TrackingVendita?
 
   @@index([clienteBeneficiarioId])
   @@index([clienteOrdinanteId])
@@ -1133,10 +1147,10 @@ model Tavolo {
   id                Int                 @id @default(autoincrement())
   numero            String              @unique
   zona              String?
-  posti             Int                 @default(4)
   stato             StatoTavolo         @default(LIBERO)
   note              String?
   attivo            Boolean             @default(true)
+  visibile          Boolean             @default(true)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   forma             FormaTavolo         @default(QUADRATO)
@@ -1172,6 +1186,7 @@ model GruppoTavoli {
   colore      String?
   ordinamento Int      @default(0)
   attivo      Boolean  @default(true)
+  visibile    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   icona       String?  @default("Folder")
@@ -1307,6 +1322,12 @@ model User {
   UserPermission                                        UserPermission[]
   UserSession                                           UserSession[]
   UserShift                                             UserShift[]
+  DistinteCreate                                        DistintaPrelievo[]      @relation("DistintaCreataDa")
+  DistintePrelevate                                     DistintaPrelievo[]      @relation("DistintaPrelievataDa")
+  DistinteApprovate                                     DistintaPrelievo[]      @relation("DistintaApprovataDa")
+  FattureFornitore                                      FatturaFornitore[]
+  MovimentiTrasferimento                                MovimentoTrasferimento[]
+  MovimentiLotto                                        MovimentoLotto[]
 
   @@index([tenantId, attivo])
   @@index([tenantId])
@@ -2250,4 +2271,399 @@ enum TipoCategoriaIngrediente {
   BITTER
   LIQUORE
   ALTRO
+}
+
+// Nuovi enum per il sistema magazzino-bar
+enum TipoUbicazione {
+  MAGAZZINO
+  BAR
+  CUCINA
+  CANTINA
+  DISPENSA
+}
+
+enum StatoFattura {
+  DA_REGISTRARE
+  REGISTRATA
+  DA_PAGARE
+  PAGATA
+  ANNULLATA
+  CONTESTATA
+}
+
+enum StatoDistinta {
+  BOZZA
+  DA_APPROVARE
+  APPROVATA
+  IN_PRELIEVO
+  PRELEVATA
+  RICEVUTA
+  ANNULLATA
+}
+
+enum TipoMovimentoTrasferimento {
+  CARICO_FORNITORE
+  TRASFERIMENTO
+  VENDITA
+  RETTIFICA_POSITIVA
+  RETTIFICA_NEGATIVA
+  SCARTO
+  RESO_FORNITORE
+}
+
+enum UnitaAcquisto {
+  CARTONE
+  CASSA
+  BANCALE
+  BOTTIGLIA
+  FUSTO
+  TANICA
+  KG
+  LITRO
+  BUSTA
+  SCATOLA
+  CONFEZIONE
+  PEZZO
+}
+
+enum UnitaMisuraContenuto {
+  PEZZI
+  ML
+  LITRI
+  GRAMMI
+  KG
+}
+
+enum UnitaVendita {
+  BOTTIGLIA
+  LATTINA
+  BICCHIERE
+  CALICE
+  FLUTE
+  SHOT
+  TAZZINA
+  TAZZA
+  PORZIONE
+  DOSE
+  PIATTO
+  PANINO
+  FETTA
+  PEZZO
+}
+
+enum TipoMovimentoLotto {
+  CARICO
+  VENDITA
+  TRASFERIMENTO
+  RETTIFICA
+  SCADENZA
+  DANNEGGIATO
+}
+
+enum TipoPeriodo {
+  GIORNO
+  SETTIMANA
+  MESE
+  TRIMESTRE
+  ANNO
+}
+
+// Nuovi modelli per il sistema magazzino-bar
+model Ubicazione {
+  id                  String                     @id @default(cuid())
+  codice              String                     @unique
+  nome                String
+  tipo                TipoUbicazione
+  descrizione         String?
+  capacitaMassima     Int?
+  temperaturaMin      Decimal?                   @db.Decimal(5, 2)
+  temperaturaMax      Decimal?                   @db.Decimal(5, 2)
+  principale          Boolean                    @default(false)
+  attivo              Boolean                    @default(true)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  GiacenzeUbicazione  GiacenzaUbicazione[]
+  MovimentiDa         MovimentoTrasferimento[]   @relation("UbicazioneOrigine")
+  MovimentiA          MovimentoTrasferimento[]   @relation("UbicazioneDestinazione")
+  DistintaPrelievoDestinazione DistintaPrelievo[]   @relation("DistintaDestinazioneUbicazione")
+
+  @@index([tipo])
+  @@index([attivo])
+}
+
+model GiacenzaUbicazione {
+  id                      String                     @id @default(cuid())
+  prodottoId              Int
+  ubicazioneId            String
+  quantita                Decimal                    @db.Decimal(10, 2)
+  quantitaRiservata       Decimal                    @default(0) @db.Decimal(10, 2)
+  scorteMinime            Decimal?                   @db.Decimal(10, 2)
+  puntoRiordino           Decimal?                   @db.Decimal(10, 2)
+  ultimoMovimento         DateTime?
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  Prodotto                Prodotto                   @relation(fields: [prodottoId], references: [id])
+  Ubicazione              Ubicazione                 @relation(fields: [ubicazioneId], references: [id])
+  MovimentiTrasferimento  MovimentoTrasferimento[]
+
+  @@unique([prodottoId, ubicazioneId])
+  @@index([prodottoId])
+  @@index([ubicazioneId])
+  @@index([quantita])
+}
+
+model FatturaFornitore {
+  id                     String                      @id @default(cuid())
+  numeroFattura          String                      @unique
+  fornitoreId            Int
+  dataFattura            DateTime
+  dataScadenza           DateTime?
+  importoTotale          Decimal                     @db.Decimal(10, 2)
+  importoIva             Decimal                     @db.Decimal(10, 2)
+  importoPagato          Decimal                     @default(0) @db.Decimal(10, 2)
+  stato                  StatoFattura                @default(DA_REGISTRARE)
+  ordineFornitoreId      String?
+  note                   String?
+  allegati               String[]
+  registrataDa           String?
+  dataRegistrazione      DateTime?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  Fornitore              Fornitore                   @relation(fields: [fornitoreId], references: [id])
+  OrdineFornitore        OrdineFornitore?            @relation(fields: [ordineFornitoreId], references: [id])
+  User                   User?                       @relation(fields: [registrataDa], references: [id])
+  RigheFattura           RigaFatturaFornitore[]
+  MovimentiTrasferimento MovimentoTrasferimento[]
+
+  @@index([fornitoreId])
+  @@index([stato])
+  @@index([dataFattura])
+  @@index([dataScadenza])
+}
+
+model RigaFatturaFornitore {
+  id                  String                  @id @default(cuid())
+  fatturaId           String
+  prodottoId          Int
+  quantita            Decimal                 @db.Decimal(10, 2)
+  unitaAcquisto       UnitaAcquisto
+  prezzoUnitario      Decimal                 @db.Decimal(10, 2)
+  imponibile          Decimal                 @db.Decimal(10, 2)
+  aliquotaIva         Decimal                 @db.Decimal(5, 2)
+  importoIva          Decimal                 @db.Decimal(10, 2)
+  totaleRiga          Decimal                 @db.Decimal(10, 2)
+  lotto               String?
+  dataScadenza        DateTime?
+  note                String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  FatturaFornitore    FatturaFornitore        @relation(fields: [fatturaId], references: [id], onDelete: Cascade)
+  Prodotto            Prodotto                @relation(fields: [prodottoId], references: [id])
+
+  @@index([fatturaId])
+  @@index([prodottoId])
+}
+
+model DistintaPrelievo {
+  id                      String                   @id @default(cuid())
+  numero                  String                   @unique
+  dataCreazione           DateTime                 @default(now())
+  dataPrelievo            DateTime?
+  ubicazioneDestinazioneId String
+  stato                   StatoDistinta            @default(BOZZA)
+  creataDa                String
+  prelievataDa            String?
+  approvataDA             String?
+  dataApprovazione        DateTime?
+  dataCompletamento       DateTime?
+  note                    String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  UbicazioneDestinazione  Ubicazione               @relation("DistintaDestinazioneUbicazione", fields: [ubicazioneDestinazioneId], references: [id])
+  CreataDaUser            User                     @relation("DistintaCreataDa", fields: [creataDa], references: [id])
+  PrelievataDaUser        User?                    @relation("DistintaPrelievataDa", fields: [prelievataDa], references: [id])
+  ApprovataDaUser         User?                    @relation("DistintaApprovataDa", fields: [approvataDA], references: [id])
+  RigheDistinta           RigaDistintaPrelievo[]
+
+  @@index([stato])
+  @@index([dataCreazione])
+  @@index([ubicazioneDestinazioneId])
+}
+
+model RigaDistintaPrelievo {
+  id                  String                @id @default(cuid())
+  distintaId          String
+  prodottoId          Int
+  quantitaRichiesta   Decimal               @db.Decimal(10, 2)
+  quantitaPrelevata   Decimal               @default(0) @db.Decimal(10, 2)
+  ubicazioneOrigineId String?
+  lotto               String?
+  note                String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  DistintaPrelievo    DistintaPrelievo      @relation(fields: [distintaId], references: [id], onDelete: Cascade)
+  Prodotto            Prodotto              @relation(fields: [prodottoId], references: [id])
+
+  @@index([distintaId])
+  @@index([prodottoId])
+}
+
+model MovimentoTrasferimento {
+  id                      String                        @id @default(cuid())
+  tipo                    TipoMovimentoTrasferimento
+  prodottoId              Int
+  quantita                Decimal                       @db.Decimal(10, 2)
+  ubicazioneOrigineId     String?
+  ubicazioneDestinazioneId String?
+  giacenzaUbicazioneId    String?
+  dataMovimento           DateTime                      @default(now())
+  eseguitoDa              String
+  fatturaId               String?
+  rigaOrdinazioneId       String?
+  lotto                   String?
+  costoUnitario           Decimal?                      @db.Decimal(10, 2)
+  note                    String?
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
+  Prodotto                Prodotto                      @relation(fields: [prodottoId], references: [id])
+  UbicazioneOrigine       Ubicazione?                   @relation("UbicazioneOrigine", fields: [ubicazioneOrigineId], references: [id])
+  UbicazioneDestinazione  Ubicazione?                   @relation("UbicazioneDestinazione", fields: [ubicazioneDestinazioneId], references: [id])
+  GiacenzaUbicazione      GiacenzaUbicazione?           @relation(fields: [giacenzaUbicazioneId], references: [id])
+  User                    User                          @relation(fields: [eseguitoDa], references: [id])
+  FatturaFornitore        FatturaFornitore?             @relation(fields: [fatturaId], references: [id])
+  RigaOrdinazione         RigaOrdinazione?              @relation(fields: [rigaOrdinazioneId], references: [id])
+
+  @@index([tipo, dataMovimento])
+  @@index([prodottoId])
+  @@index([ubicazioneOrigineId])
+  @@index([ubicazioneDestinazioneId])
+  @@index([dataMovimento])
+}
+
+model ProdottoMagazzino {
+  id                        String                      @id @default(cuid())
+  prodottoId                Int                         @unique
+  unitaAcquisto             UnitaAcquisto               @default(PEZZO)
+  quantitaPerUnita          Decimal                     @db.Decimal(10, 2)
+  unitaMisuraContenuto      UnitaMisuraContenuto
+  unitaVendita              UnitaVendita                @default(PEZZO)
+  fattoreConversione        Decimal                     @db.Decimal(10, 4)
+  costoMedioAcquisto        Decimal?                    @db.Decimal(10, 2)
+  ultimoCostoAcquisto       Decimal?                    @db.Decimal(10, 2)
+  margineDefault            Decimal?                    @db.Decimal(5, 2)
+  fornitorePreferito        Int?
+  tempoConsegnaGiorni       Int?
+  quantitaOrdineMinimoUnita Int?
+  multipliOrdinamento       Int?
+  gestisciScorte            Boolean                     @default(true)
+  tracciabilitaLotti        Boolean                     @default(false)
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  Prodotto                  Prodotto                    @relation(fields: [prodottoId], references: [id])
+  FornitorePreferito        Fornitore?                  @relation(fields: [fornitorePreferito], references: [id])
+  ConfigurazioniConversione ConfigurazioneConversione[]
+
+  @@index([prodottoId])
+  @@index([fornitorePreferito])
+}
+
+model ConfigurazioneConversione {
+  id                    String             @id @default(cuid())
+  prodottoMagazzinoId   String
+  prodottoVenditaId     Int
+  fattoreConversione    Decimal            @db.Decimal(10, 4)
+  descrizione           String?
+  attivo                Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  ProdottoMagazzino     ProdottoMagazzino  @relation(fields: [prodottoMagazzinoId], references: [id])
+  ProdottoVendita       Prodotto           @relation(fields: [prodottoVenditaId], references: [id])
+
+  @@unique([prodottoMagazzinoId, prodottoVenditaId])
+  @@index([prodottoMagazzinoId])
+  @@index([prodottoVenditaId])
+}
+
+model TrackingVendita {
+  id                  String           @id @default(cuid())
+  rigaOrdinazioneId   String           @unique
+  prodottoId          Int
+  quantitaVenduta     Decimal          @db.Decimal(10, 2)
+  unitaVendita        UnitaVendita
+  prezzoVendita       Decimal          @db.Decimal(10, 2)
+  costoVendita        Decimal?         @db.Decimal(10, 2)
+  margine             Decimal?         @db.Decimal(10, 2)
+  dataVendita         DateTime
+  ubicazioneVendita   String?
+  createdAt           DateTime         @default(now())
+  RigaOrdinazione     RigaOrdinazione  @relation(fields: [rigaOrdinazioneId], references: [id])
+  Prodotto            Prodotto         @relation(fields: [prodottoId], references: [id])
+
+  @@index([prodottoId, dataVendita])
+  @@index([dataVendita])
+}
+
+model LottoProdotto {
+  id                    String              @id @default(cuid())
+  prodottoId            Int
+  codiceLotto           String
+  dataScadenza          DateTime?
+  quantitaIniziale      Decimal             @db.Decimal(10, 2)
+  quantitaDisponibile   Decimal             @db.Decimal(10, 2)
+  costoAcquisto         Decimal             @db.Decimal(10, 2)
+  fatturaRiferimento    String?
+  dataRicezione         DateTime
+  ubicazioneDefault     String?
+  stato                 String              @default("ATTIVO")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  Prodotto              Prodotto            @relation(fields: [prodottoId], references: [id])
+  MovimentiLotto        MovimentoLotto[]
+
+  @@unique([prodottoId, codiceLotto])
+  @@index([prodottoId])
+  @@index([dataScadenza])
+  @@index([stato])
+}
+
+model MovimentoLotto {
+  id                String               @id @default(cuid())
+  lottoId           String
+  tipo              TipoMovimentoLotto
+  quantita          Decimal              @db.Decimal(10, 2)
+  riferimentoId     String?
+  tipoRiferimento   String?
+  dataMovimento     DateTime             @default(now())
+  eseguitoDa        String
+  note              String?
+  createdAt         DateTime             @default(now())
+  LottoProdotto     LottoProdotto        @relation(fields: [lottoId], references: [id])
+  User              User                 @relation(fields: [eseguitoDa], references: [id])
+
+  @@index([lottoId, dataMovimento])
+  @@index([tipo])
+}
+
+model AnalisiVenditePeriodo {
+  id                    String       @id @default(cuid())
+  prodottoId            Int
+  periodo               TipoPeriodo
+  dataInizio            DateTime
+  dataFine              DateTime
+  quantitaVenduta       Decimal      @db.Decimal(10, 2)
+  ricavoTotale          Decimal      @db.Decimal(10, 2)
+  costoTotale           Decimal?     @db.Decimal(10, 2)
+  marginePercentuale    Decimal?     @db.Decimal(5, 2)
+  numeroTransazioni     Int
+  prezzoMedio           Decimal      @db.Decimal(10, 2)
+  quantitaMediaOrdine   Decimal      @db.Decimal(10, 2)
+  giorniAttivita        Int
+  velocitaRotazione     Decimal?     @db.Decimal(10, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  Prodotto              Prodotto     @relation(fields: [prodottoId], references: [id])
+
+  @@unique([prodottoId, periodo, dataInizio])
+  @@index([prodottoId, periodo])
+  @@index([dataInizio, dataFine])
 }

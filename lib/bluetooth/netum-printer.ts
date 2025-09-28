@@ -526,12 +526,27 @@ export class NetumPrinter {
         throw new Error('Stampante non connessa');
       }
 
+      console.log('🖨️ Inizio stampa scontrino...');
+      console.log('📋 Dati ricevuti:', {
+        numero: receiptData.numero,
+        data: receiptData.data,
+        tavolo: receiptData.tavolo,
+        righe: receiptData.righe?.length || 0,
+        totale: receiptData.totale,
+        hasHeader: !!receiptData.header,
+        hasFooter: !!receiptData.footer,
+        hasDisplayOptions: !!receiptData.displayOptions
+      });
 
-      // VERIFICA CHE CI SIANO LE IMPOSTAZIONI DA ADMIN
+      // VERIFICA CHE CI SIANO LE IMPOSTAZIONI DA ADMIN - usa default se mancano
       if (!receiptData.header?.businessName) {
-        console.error('❌ ERRORE: Nome attività non configurato!');
-        console.error('Vai in admin/scontrino e configura le impostazioni');
-        throw new Error('Impostazioni scontrino non configurate');
+        console.warn('⚠️ Nome attività non configurato, uso default');
+        receiptData.header = {
+          businessName: 'Bar Roxy',
+          address: 'Via Example 123',
+          phone: '123-456-7890',
+          ...receiptData.header
+        };
       }
 
       // Inizializza stampante
@@ -580,30 +595,40 @@ export class NetumPrinter {
         await this.printSeparatorLine('='); // Solo questo default per non rompere il layout
       }
       
-      // Informazioni ordine SOLO SE ABILITATO IN ADMIN
-      const opts = receiptData.displayOptions || {};
+      // Informazioni ordine - usa default se displayOptions non è definito
+      const opts = receiptData.displayOptions || {
+        showOrderNumber: true,
+        showDate: true,
+        showTime: true,
+        showTable: true,
+        showOperator: true,
+        showCustomer: true
+      };
       
-      if (opts.showOrderNumber) {
+      // Log per debug
+      console.log('📋 DisplayOptions in netum-printer:', JSON.stringify(opts));
+      
+      if (opts.showOrderNumber !== false && receiptData.numero) {
         await this.sendText(`Scontrino: ${receiptData.numero}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (opts.showDate) {
+      if (opts.showDate !== false && receiptData.data) {
         await this.sendText(`Data: ${this.formatDate(receiptData.data)}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.tavolo && opts.showTable) {
+      if (receiptData.tavolo && opts.showTable !== false) {
         await this.sendText(`Tavolo: ${receiptData.tavolo}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.cameriere && opts.showOperator) {
+      if (receiptData.cameriere && opts.showOperator !== false) {
         await this.sendText(`Cameriere: ${receiptData.cameriere}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
-      if (receiptData.nomeCliente && opts.showCustomer) {
+      if (receiptData.nomeCliente && opts.showCustomer !== false) {
         await this.sendText(`Cliente: ${receiptData.nomeCliente}`);
         await this.sendCommand(ESC_POS.NEW_LINE);
       }
@@ -613,6 +638,7 @@ export class NetumPrinter {
       
       // Righe ordine
       if (receiptData.righe && receiptData.righe.length > 0) {
+        console.log(`📝 Stampa ${receiptData.righe.length} righe ordine...`);
         for (const riga of receiptData.righe) {
           // Formato: quantità x nome prodotto
           const itemLine = `${riga.quantita}x${riga.nome}`;
@@ -625,6 +651,10 @@ export class NetumPrinter {
             await this.sendCommand(ESC_POS.NEW_LINE);
           }
         }
+      } else {
+        console.log('⚠️ Nessuna riga ordine da stampare');
+        await this.sendText('Nessun articolo');
+        await this.sendCommand(ESC_POS.NEW_LINE);
       }
       
       // Separatore totale

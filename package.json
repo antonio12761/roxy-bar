@@ -17,9 +17,9 @@
     "products:export": "node scripts/export-products-csv.js",
     "products:import": "node scripts/import-products-csv.js",
     "session-update": "tsx scripts/update-session-status.ts",
-    "session:start": "./scripts/session-start.sh",
-    "session:end": "./scripts/session-end.sh",
-    "session:sync": "./scripts/session-sync.sh",
+    "session:start": "cs start",
+    "session:end": "cs end",
+    "session:sync": "cs sync",
     "session:quick": "./scripts/session-quick.sh"
   },
   "dependencies": {
