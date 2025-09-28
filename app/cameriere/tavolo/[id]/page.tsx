@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Coffee, Plus, Minus, ShoppingCart, Users, Clock, Wifi, WifiOff, Bell, ArrowLeft, X, Gift, Edit3, Receipt, StickyNote, Hash } from "lucide-react";
 // Removed old useSSE import - now using SSE context
 import { creaOrdinazione, getTavoli, getProdotti, getCustomerNamesForTable, getOrdinazioniAttiveTavolo } from "@/lib/actions/ordinazioni";
+import { getCategorieMenu } from "@/lib/actions/ordinazioni/prodotti";
 import { syncProductAvailability } from "@/lib/actions/sync-product-availability";
 import { addRecentProduct, getRecentProducts } from "@/lib/actions/prodotti-recenti";
 import { aggiungiProdottoAltroTavolo } from "@/lib/actions/contributi";
@@ -549,9 +550,10 @@ export default function TavoloPage() {
       console.log(`[Tavolo ${tavoloId}] loadData called at ${new Date().toISOString()} after debounce`);
       setIsLoading(true);
       try {
-        const [tavoliData, prodottiData, previousCustomers] = await Promise.all([
+        const [tavoliData, prodottiData, categorieData, previousCustomers] = await Promise.all([
           getTavoli(),
           getProdotti(),
+          getCategorieMenu(),
           getCustomerNamesForTable(tavoloId),
           loadInventarioLimitato()
         ]);
@@ -585,6 +587,7 @@ export default function TavoloPage() {
           return prev;
         });
         setProducts(prodottiData);
+        setCategorieMenu(categorieData);
         setCustomerSeats(currentTable.posti);
         
         // Load recent products from database
@@ -602,19 +605,16 @@ export default function TavoloPage() {
         setSelectedQuantities(initialQuantities);
         
         // Set customer name suggestions from previous orders at this table
-        if (previousCustomers.success && previousCustomers.customerNames.length > 0) {
+        if (previousCustomers.success) {
+          // Usa sempre il risultato dal server, anche se è un array vuoto
           setCustomerNameSuggestions(previousCustomers.customerNames);
           // Se c'è un ultimo cliente, usa quello come valore iniziale
           if (previousCustomers.lastCustomerName) {
             setCustomerName(previousCustomers.lastCustomerName);
           }
-        } else {
-          // Fallback to localStorage suggestions if no previous customers
-          const savedNames = localStorage.getItem('customerNames');
-          if (savedNames) {
-            setCustomerNameSuggestions(JSON.parse(savedNames));
-          }
         }
+        // Non fare fallback a localStorage per i suggestions del tavolo
+        // L'autocomplete userà comunque la lista generale dei clienti
       } catch (error) {
         console.error("Errore caricamento dati:", error);
       } finally {
@@ -852,8 +852,42 @@ export default function TavoloPage() {
     };
   }, []); // Remove products.length and order from dependencies
 
-  // Get unique categories
-  const categories = Array.from(new Set(products.map(p => p.categoria))).sort();
+  // Get unique categories with correct ordering
+  const [categorieMenu, setCategorieMenu] = useState<any[]>([]);
+  
+  // Create a map of category names to their order
+  const categoryOrder = useMemo(() => {
+    const orderMap = new Map();
+    categorieMenu.forEach((cat, index) => {
+      orderMap.set(cat.nome, index);
+    });
+    return orderMap;
+  }, [categorieMenu]);
+  
+  // Get all unique categories from products and order them correctly
+  const categories = useMemo(() => {
+    const allCategories = Array.from(new Set(products.map(p => p.categoria)));
+    
+    // Sort categories: first by their order in categorieMenu, then alphabetically for those not in menu
+    return allCategories.sort((a, b) => {
+      const orderA = categoryOrder.get(a);
+      const orderB = categoryOrder.get(b);
+      
+      // Both have order: sort by order
+      if (orderA !== undefined && orderB !== undefined) {
+        return orderA - orderB;
+      }
+      
+      // Only A has order: A comes first
+      if (orderA !== undefined) return -1;
+      
+      // Only B has order: B comes first
+      if (orderB !== undefined) return 1;
+      
+      // Neither has order: sort alphabetically
+      return a.localeCompare(b);
+    });
+  }, [products, categoryOrder]);
 
   // Get products for selected category
   const categoryProducts = selectedCategory 
