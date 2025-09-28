@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import GestioneTavoli from '@/components/admin/tavoli/GestioneTavoli';
+import GestioneTavoliDraggable from '@/components/admin/tavoli/GestioneTavoliDraggable';
 
 export default function TavoliPage() {
-  return <GestioneTavoli />;
+  return <GestioneTavoliDraggable />;
 }

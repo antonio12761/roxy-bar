@@ -3,21 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Square, Circle, Folder, FolderOpen, Table, ArrowLeft, Home, Utensils, Coffee, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Sofa, Music, Cigarette, GlassWater, Soup, Pizza, IceCream, Cake } from 'lucide-react';
+import { Plus, Edit, Trash2, Square, Circle, Folder, FolderOpen, Table, ArrowLeft, Home, Utensils, Coffee, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Sofa, Music, Cigarette, GlassWater, Soup, Pizza, IceCream, Cake, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { getTavoliAdmin, creaTavolo, aggiornaTavolo, eliminaTavolo, aggiornaVisibilitaTavolo } from '@/lib/actions/tavoli';
+import { getGruppiTavoli, creaGruppoTavoli, aggiornaGruppoTavoli, eliminaGruppoTavoli, aggiornaVisibilitaGruppo } from '@/lib/actions/gruppi-tavoli';
 
 interface Tavolo {
   id: number;
   numero: string;
   nome?: string;
   zona?: string;
-  posti: number;
   stato: 'LIBERO' | 'OCCUPATO' | 'RISERVATO' | 'IN_PULIZIA';
   forma: 'QUADRATO' | 'ROTONDO';
   gruppoId?: number;
   posizioneX: number;
   posizioneY: number;
   ordinamento: number;
+  visibile?: boolean;
   GruppoTavoli?: GruppoTavoli;
   Ordinazione?: any[];
 }
@@ -29,6 +31,7 @@ interface GruppoTavoli {
   colore?: string;
   icona?: string;
   ordinamento: number;
+  visibile?: boolean;
   _count?: {
     Tavolo: number;
   };
@@ -90,6 +93,7 @@ export default function GestioneTavoli() {
   
   const [gruppi, setGruppi] = useState<GruppoTavoli[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set());
   
   // Dialog states
   const [showTavoloDialog, setShowTavoloDialog] = useState(false);
@@ -103,7 +107,6 @@ export default function GestioneTavoli() {
     numero: '',
     nome: '',
     zona: '',
-    posti: 4,
     forma: 'QUADRATO' as 'QUADRATO' | 'ROTONDO',
     gruppoId: null as number | null
   });
@@ -121,15 +124,20 @@ export default function GestioneTavoli() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/admin/gruppi-tavoli');
-      const data = await response.json();
+      // Fetch gruppi with tavoli using server action
+      console.log('Fetching gruppi tavoli...');
+      const gruppiResult = await getGruppiTavoli();
+      console.log('Risultato gruppi:', gruppiResult);
       
-      if (response.ok) {
-        setGruppi(data.gruppi || []);
+      if (gruppiResult.success && gruppiResult.gruppi) {
+        console.log('Gruppi ricevuti:', gruppiResult.gruppi.length);
+        setGruppi(gruppiResult.gruppi);
       } else {
-        toast.error(data.error || 'Errore nel caricamento dei dati');
+        console.error('Errore nel caricamento:', gruppiResult.error);
+        toast.error(gruppiResult.error || 'Errore nel caricamento dei dati');
       }
     } catch (error) {
+      console.error('Errore nel caricamento:', error);
       toast.error('Errore di connessione');
     } finally {
       setIsLoading(false);
@@ -138,24 +146,18 @@ export default function GestioneTavoli() {
 
   const handleCreateTavolo = async () => {
     try {
-      const response = await fetch('/api/admin/tavoli', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...tavoloForm,
-          gruppoId: selectedGruppoId
-        })
+      const result = await creaTavolo({
+        ...tavoloForm,
+        gruppoId: selectedGruppoId || undefined
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Tavolo creato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Tavolo creato con successo');
         setShowTavoloDialog(false);
         resetTavoloForm();
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nella creazione');
+        toast.error(result.error || 'Errore nella creazione');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -166,25 +168,19 @@ export default function GestioneTavoli() {
     if (!editingTavolo) return;
     
     try {
-      const response = await fetch('/api/admin/tavoli', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingTavolo.id,
-          ...tavoloForm
-        })
+      const result = await aggiornaTavolo({
+        id: editingTavolo.id,
+        ...tavoloForm
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Tavolo aggiornato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Tavolo aggiornato con successo');
         setShowTavoloDialog(false);
         setEditingTavolo(null);
         resetTavoloForm();
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nell\'aggiornamento');
+        toast.error(result.error || 'Errore nell\'aggiornamento');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -195,17 +191,13 @@ export default function GestioneTavoli() {
     if (!confirm('Sei sicuro di voler eliminare questo tavolo?')) return;
     
     try {
-      const response = await fetch(`/api/admin/tavoli?id=${id}`, {
-        method: 'DELETE'
-      });
+      const result = await eliminaTavolo(id);
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Tavolo eliminato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Tavolo eliminato con successo');
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nell\'eliminazione');
+        toast.error(result.error || 'Errore nell\'eliminazione');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -214,21 +206,15 @@ export default function GestioneTavoli() {
 
   const handleCreateGruppo = async () => {
     try {
-      const response = await fetch('/api/admin/gruppi-tavoli', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gruppoForm)
-      });
+      const result = await creaGruppoTavoli(gruppoForm);
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Gruppo creato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Gruppo creato con successo');
         setShowGruppoDialog(false);
         resetGruppoForm();
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nella creazione');
+        toast.error(result.error || 'Errore nella creazione');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -239,25 +225,19 @@ export default function GestioneTavoli() {
     if (!editingGruppo) return;
     
     try {
-      const response = await fetch('/api/admin/gruppi-tavoli', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingGruppo.id,
-          ...gruppoForm
-        })
+      const result = await aggiornaGruppoTavoli({
+        id: editingGruppo.id,
+        ...gruppoForm
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Gruppo aggiornato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Gruppo aggiornato con successo');
         setShowGruppoDialog(false);
         setEditingGruppo(null);
         resetGruppoForm();
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nell\'aggiornamento');
+        toast.error(result.error || 'Errore nell\'aggiornamento');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -268,17 +248,43 @@ export default function GestioneTavoli() {
     if (!confirm('Sei sicuro di voler eliminare questo gruppo?')) return;
     
     try {
-      const response = await fetch(`/api/admin/gruppi-tavoli?id=${id}`, {
-        method: 'DELETE'
-      });
+      const result = await eliminaGruppoTavoli(id);
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Gruppo eliminato con successo');
+      if (result.success) {
+        toast.success(result.message || 'Gruppo eliminato con successo');
         fetchData();
       } else {
-        toast.error(data.error || 'Errore nell\'eliminazione');
+        toast.error(result.error || 'Errore nell\'eliminazione');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    }
+  };
+
+  const handleToggleVisibilitaGruppo = async (id: number, visibile: boolean) => {
+    try {
+      const result = await aggiornaVisibilitaGruppo(id, visibile);
+      
+      if (result.success) {
+        toast.success(result.message);
+        fetchData();
+      } else {
+        toast.error(result.error || 'Errore nell\'aggiornamento');
+      }
+    } catch (error) {
+      toast.error('Errore di connessione');
+    }
+  };
+
+  const handleToggleVisibilitaTavolo = async (id: number, visibile: boolean) => {
+    try {
+      const result = await aggiornaVisibilitaTavolo(id, visibile);
+      
+      if (result.success) {
+        toast.success(result.message);
+        fetchData();
+      } else {
+        toast.error(result.error || 'Errore nell\'aggiornamento');
       }
     } catch (error) {
       toast.error('Errore di connessione');
@@ -290,7 +296,6 @@ export default function GestioneTavoli() {
       numero: '',
       nome: '',
       zona: '',
-      posti: 4,
       forma: 'QUADRATO',
       gruppoId: null
     });
@@ -304,6 +309,18 @@ export default function GestioneTavoli() {
       icona: 'Folder'
     });
   };
+  
+  const toggleGroupCollapse = (groupId: number) => {
+    setCollapsedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
 
   const openEditTavolo = (tavolo: Tavolo) => {
     setEditingTavolo(tavolo);
@@ -311,7 +328,6 @@ export default function GestioneTavoli() {
       numero: tavolo.numero,
       nome: tavolo.nome || '',
       zona: tavolo.zona || '',
-      posti: tavolo.posti,
       forma: tavolo.forma,
       gruppoId: tavolo.gruppoId ?? null
     });
@@ -420,6 +436,16 @@ export default function GestioneTavoli() {
               >
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleGroupCollapse(gruppo.id)}
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {collapsedGroups.has(gruppo.id) ? (
+                        <ChevronRight className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                      )}
+                    </button>
                     {renderIcon(gruppo.icona || 'Folder', gruppo.colore || '#3B82F6')}
                     <div>
                       <h3 className="text-xl font-semibold" style={{ color: colors.text.primary }}>{gruppo.nome}</h3>
@@ -451,6 +477,19 @@ export default function GestioneTavoli() {
                       Aggiungi Tavolo
                     </button>
                     <button
+                      onClick={() => handleToggleVisibilitaGruppo(gruppo.id, !(gruppo.visibile !== false))}
+                      className="p-2 rounded-lg transition-colors duration-200"
+                      title={gruppo.visibile !== false ? "Nascondi gruppo" : "Mostra gruppo"}
+                      style={{ 
+                        backgroundColor: 'transparent',
+                        color: gruppo.visibile !== false ? colors.text.primary : colors.text.muted
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.hover}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      {gruppo.visibile !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <button
                       onClick={() => openEditGruppo(gruppo)}
                       className="p-2 rounded-lg transition-colors duration-200"
                       style={{ 
@@ -477,56 +516,270 @@ export default function GestioneTavoli() {
                   </div>
                 </div>
 
-                {gruppo.Tavolo && gruppo.Tavolo.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {gruppo.Tavolo.map(tavolo => (
-                      <div
-                        key={tavolo.id}
-                        className="rounded-lg p-4 transition-all duration-200 hover:scale-105"
-                        style={{ 
-                          backgroundColor: colors.bg.card,
-                          borderColor: colors.border.primary, 
-                          borderWidth: '1px', 
-                          borderStyle: 'solid' 
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.border.secondary}
-                        onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border.primary}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            {tavolo.forma === 'ROTONDO' ? (
-                              <Circle className="w-5 h-5" style={{ color: colors.text.secondary }} />
-                            ) : (
-                              <Square className="w-5 h-5" style={{ color: colors.text.secondary }} />
-                            )}
-                            <h4 className="font-semibold" style={{ color: colors.text.primary }}>Tavolo {tavolo.numero}</h4>
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => openEditTavolo(tavolo)}
-                              className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTavolo(tavolo.id)}
-                              className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
-                              style={{ color: colors.text.error }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                {!collapsedGroups.has(gruppo.id) && (
+                  gruppo.Tavolo && gruppo.Tavolo.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {gruppo.Tavolo.map(tavolo => (
+                        const num = parseInt(t.numero);
+                        return num >= 11 && num <= 15;
+                      }).length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 pl-2" style={{ color: colors.text.secondary }}>
+                            Tavoli 11-15
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {gruppo.Tavolo.filter(t => {
+                              const num = parseInt(t.numero);
+                              return num >= 11 && num <= 15;
+                            })
+                            .sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
+                            .map(tavolo => (
+                              <div
+                                key={tavolo.id}
+                                className="rounded-lg p-4 transition-all duration-200 hover:scale-105"
+                                style={{ 
+                                  backgroundColor: colors.bg.card,
+                                  borderColor: colors.border.primary, 
+                                  borderWidth: '1px', 
+                                  borderStyle: 'solid' 
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.border.secondary}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border.primary}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {tavolo.forma === 'ROTONDO' ? (
+                                      <Circle className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    ) : (
+                                      <Square className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    )}
+                                    <h4 className="font-semibold" style={{ color: colors.text.primary }}>Tavolo {tavolo.numero}</h4>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => handleToggleVisibilitaTavolo(tavolo.id, !(tavolo.visibile !== false))}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      title={tavolo.visibile !== false ? "Nascondi tavolo" : "Mostra tavolo"}
+                                      style={{ color: tavolo.visibile !== false ? colors.text.secondary : colors.text.muted }}
+                                    >
+                                      {tavolo.visibile !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                    </button>
+                                    <button
+                                      onClick={() => openEditTavolo(tavolo)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.secondary }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTavolo(tavolo.id)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.error }}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {tavolo.nome && (
+                                  <p className="text-sm mb-1" style={{ color: colors.text.secondary }}>{tavolo.nome}</p>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        {tavolo.nome && (
-                          <p className="text-sm mb-1" style={{ color: colors.text.secondary }}>{tavolo.nome}</p>
-                        )}
-                        <div className="text-sm">
-                          <span style={{ color: colors.text.muted }}>{tavolo.posti} posti</span>
+                      )}
+                      
+                      {/* Sottogruppo 21-25 */}
+                      {gruppo.Tavolo.filter(t => {
+                        const num = parseInt(t.numero);
+                        return num >= 21 && num <= 25;
+                      }).length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 pl-2" style={{ color: colors.text.secondary }}>
+                            Tavoli 21-25
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {gruppo.Tavolo.filter(t => {
+                              const num = parseInt(t.numero);
+                              return num >= 21 && num <= 25;
+                            })
+                            .sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
+                            .map(tavolo => (
+                              <div
+                                key={tavolo.id}
+                                className="rounded-lg p-4 transition-all duration-200 hover:scale-105"
+                                style={{ 
+                                  backgroundColor: colors.bg.card,
+                                  borderColor: colors.border.primary, 
+                                  borderWidth: '1px', 
+                                  borderStyle: 'solid' 
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.border.secondary}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border.primary}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {tavolo.forma === 'ROTONDO' ? (
+                                      <Circle className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    ) : (
+                                      <Square className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    )}
+                                    <h4 className="font-semibold" style={{ color: colors.text.primary }}>Tavolo {tavolo.numero}</h4>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => handleToggleVisibilitaTavolo(tavolo.id, !(tavolo.visibile !== false))}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      title={tavolo.visibile !== false ? "Nascondi tavolo" : "Mostra tavolo"}
+                                      style={{ color: tavolo.visibile !== false ? colors.text.secondary : colors.text.muted }}
+                                    >
+                                      {tavolo.visibile !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                    </button>
+                                    <button
+                                      onClick={() => openEditTavolo(tavolo)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.secondary }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTavolo(tavolo.id)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.error }}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {tavolo.nome && (
+                                  <p className="text-sm mb-1" style={{ color: colors.text.secondary }}>{tavolo.nome}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      
+                      {/* Sottogruppo 31-35 */}
+                      {gruppo.Tavolo.filter(t => {
+                        const num = parseInt(t.numero);
+                        return num >= 31 && num <= 35;
+                      }).length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 pl-2" style={{ color: colors.text.secondary }}>
+                            Tavoli 31-35
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {gruppo.Tavolo.filter(t => {
+                              const num = parseInt(t.numero);
+                              return num >= 31 && num <= 35;
+                            })
+                            .sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
+                            .map(tavolo => (
+                              <div
+                                key={tavolo.id}
+                                className="rounded-lg p-4 transition-all duration-200 hover:scale-105"
+                                style={{ 
+                                  backgroundColor: colors.bg.card,
+                                  borderColor: colors.border.primary, 
+                                  borderWidth: '1px', 
+                                  borderStyle: 'solid' 
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.border.secondary}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border.primary}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {tavolo.forma === 'ROTONDO' ? (
+                                      <Circle className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    ) : (
+                                      <Square className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                                    )}
+                                    <h4 className="font-semibold" style={{ color: colors.text.primary }}>Tavolo {tavolo.numero}</h4>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => handleToggleVisibilitaTavolo(tavolo.id, !(tavolo.visibile !== false))}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      title={tavolo.visibile !== false ? "Nascondi tavolo" : "Mostra tavolo"}
+                                      style={{ color: tavolo.visibile !== false ? colors.text.secondary : colors.text.muted }}
+                                    >
+                                      {tavolo.visibile !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                    </button>
+                                    <button
+                                      onClick={() => openEditTavolo(tavolo)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.secondary }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTavolo(tavolo.id)}
+                                      className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                      style={{ color: colors.text.error }}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {tavolo.nome && (
+                                  <p className="text-sm mb-1" style={{ color: colors.text.secondary }}>{tavolo.nome}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : gruppo.nome === "Gazebo" ? (
+                    // Visualizzazione speciale per Gazebo con sottogruppi mantenuta nella vista cameriere
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {gruppo.Tavolo.map(tavolo => (
+                        <div
+                          key={tavolo.id}
+                          className="rounded-lg p-4 transition-all duration-200 hover:scale-105"
+                          style={{ 
+                            backgroundColor: colors.bg.card,
+                            borderColor: colors.border.primary, 
+                            borderWidth: '1px', 
+                            borderStyle: 'solid' 
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.border.secondary}
+                          onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border.primary}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              {tavolo.forma === 'ROTONDO' ? (
+                                <Circle className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                              ) : (
+                                <Square className="w-5 h-5" style={{ color: colors.text.secondary }} />
+                              )}
+                              <h4 className="font-semibold" style={{ color: colors.text.primary }}>Tavolo {tavolo.numero}</h4>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openEditTavolo(tavolo)}
+                                className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                style={{ color: colors.text.secondary }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTavolo(tavolo.id)}
+                                className="h-8 w-8 p-0 rounded transition-opacity duration-200 hover:opacity-80"
+                                style={{ color: colors.text.error }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {tavolo.nome && (
+                            <p className="text-sm mb-1" style={{ color: colors.text.secondary }}>{tavolo.nome}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className="text-center py-8 rounded-lg" style={{ backgroundColor: colors.bg.dark }}>
                     <Table className="w-12 h-12 mx-auto mb-2" style={{ color: colors.text.muted }} />
@@ -620,26 +873,6 @@ export default function GestioneTavoli() {
                 </select>
               </div>
               
-              <div>
-                <label htmlFor="posti" className="block text-sm font-medium mb-1" style={{ color: colors.text.secondary }}>
-                  Numero Posti
-                </label>
-                <input
-                  id="posti"
-                  type="number"
-                  min="1"
-                  value={tavoloForm.posti}
-                  onChange={(e) => setTavoloForm({ ...tavoloForm, posti: parseInt(e.target.value) || 4 })}
-                  className="w-full p-3 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ 
-                    backgroundColor: colors.bg.input, 
-                    borderColor: colors.border.primary, 
-                    color: colors.text.primary, 
-                    borderWidth: '1px', 
-                    borderStyle: 'solid' 
-                  }}
-                />
-              </div>
             </div>
             
             <div className="flex justify-end gap-3 mt-6">
