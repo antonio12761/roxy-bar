@@ -1,0 +1,327 @@
+// ESTENSIONE SCHEMA PER GESTIONE SEPARATA MAGAZZINO/BAR
+// Questo file contiene i nuovi modelli da aggiungere al sistema
+// per gestire il flusso: Fornitore → Magazzino → Bar
+
+// ====================================
+// 1. GESTIONE UBICAZIONI
+// ====================================
+
+model Ubicazione {
+  id          Int                      @id @default(autoincrement())
+  codice      String                   @unique
+  nome        String
+  descrizione String?
+  tipo        TipoUbicazione           @default(MAGAZZINO)
+  attiva      Boolean                  @default(true)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  
+  // Relazioni
+  GiacenzeUbicazione GiacenzaUbicazione[]
+  DistintePrelievo   DistintaPrelievo[]     @relation("UbicazioneOrigine")
+  DistinteRicevute   DistintaPrelievo[]     @relation("UbicazioneDestino")
+  MovimentiOrigine   MovimentoTrasferimento[] @relation("UbicazioneOrigine")
+  MovimentiDestino   MovimentoTrasferimento[] @relation("UbicazioneDestino")
+  
+  @@index([tipo])
+  @@index([attiva])
+}
+
+enum TipoUbicazione {
+  MAGAZZINO    // Magazzino centrale
+  BAR          // Bar/punto vendita
+  CUCINA       // Cucina
+  CANTINA      // Cantina vini
+  DISPENSA     // Dispensa
+}
+
+// ====================================
+// 2. GIACENZE PER UBICAZIONE
+// ====================================
+
+model GiacenzaUbicazione {
+  id                   Int      @id @default(autoincrement())
+  prodottoId          Int
+  ubicazioneId        Int
+  giacenzaAttuale     Float    @default(0)
+  giacenzaMinima      Float    @default(0)
+  unitaMisura         String   @default("pz")
+  ultimoCarico        DateTime?
+  ultimoScarico       DateTime?
+  ultimoInventario    DateTime?
+  notificaInviata     Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relazioni
+  Prodotto            Prodotto              @relation(fields: [prodottoId], references: [id])
+  Ubicazione          Ubicazione            @relation(fields: [ubicazioneId], references: [id])
+  MovimentiTrasferimento MovimentoTrasferimento[]
+  RigheDistinta       RigaDistintaPrelievo[]
+  
+  @@unique([prodottoId, ubicazioneId])
+  @@index([prodottoId])
+  @@index([ubicazioneId])
+  @@index([giacenzaAttuale])
+}
+
+// ====================================
+// 3. FATTURE FORNITORI
+// ====================================
+
+model FatturaFornitore {
+  id                  String   @id
+  fornitoreId         Int
+  numeroFattura       String
+  dataFattura         DateTime
+  dataScadenza        DateTime?
+  importoTotale       Decimal  @db.Decimal(10, 2)
+  importoNetto        Decimal  @db.Decimal(10, 2)
+  importoIva          Decimal  @db.Decimal(10, 2)
+  stato               StatoFattura @default(DA_REGISTRARE)
+  ordineFornitoreId   String?
+  noteFattura         String?
+  fileAllegato        String?  // Path del file PDF
+  registrataDa        String?
+  dataRegistrazione   DateTime?
+  pagataDa            String?
+  dataPagamento       DateTime?
+  metodoPagamento     String?
+  riferimentoPagamento String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relazioni
+  Fornitore           Fornitore             @relation(fields: [fornitoreId], references: [id])
+  OrdineFornitore     OrdineFornitore?      @relation(fields: [ordineFornitoreId], references: [id])
+  UserRegistrazione   User?                 @relation("FattureRegistrate", fields: [registrataDa], references: [id])
+  UserPagamento       User?                 @relation("FatturePagate", fields: [pagataDa], references: [id])
+  RigheFattura        RigaFatturaFornitore[]
+  MovimentiInventario MovimentoInventario[]
+  
+  @@index([fornitoreId])
+  @@index([stato])
+  @@index([dataFattura])
+  @@index([ordineFornitoreId])
+}
+
+enum StatoFattura {
+  DA_REGISTRARE
+  REGISTRATA
+  DA_PAGARE
+  PAGATA
+  ANNULLATA
+  CONTESTATA
+}
+
+model RigaFatturaFornitore {
+  id                  String   @id
+  fatturaId           String
+  prodottoId          Int
+  descrizione         String
+  quantita            Float
+  unitaMisura         String
+  prezzoUnitario      Decimal  @db.Decimal(10, 4)
+  scontoPercentuale   Float    @default(0)
+  importoNetto        Decimal  @db.Decimal(10, 2)
+  aliquotaIva         Float
+  importoIva          Decimal  @db.Decimal(10, 2)
+  importoTotale       Decimal  @db.Decimal(10, 2)
+  lotto               String?
+  scadenzaLotto       DateTime?
+  createdAt           DateTime @default(now())
+  
+  // Relazioni
+  FatturaFornitore    FatturaFornitore      @relation(fields: [fatturaId], references: [id])
+  Prodotto            Prodotto              @relation(fields: [prodottoId], references: [id])
+  
+  @@index([fatturaId])
+  @@index([prodottoId])
+}
+
+// ====================================
+// 4. DISTINTE DI PRELIEVO
+// ====================================
+
+model DistintaPrelievo {
+  id                    String   @id
+  numero                Int      @unique @default(autoincrement())
+  dataCreazione         DateTime @default(now())
+  ubicazioneOrigineId   Int
+  ubicazioneDestinoId   Int
+  stato                 StatoDistinta @default(BOZZA)
+  richiedentId          String
+  approvataDa           String?
+  dataApprovazione      DateTime?
+  prelevataDa           String?
+  dataPrelievo          DateTime?
+  ricevutaDa            String?
+  dataRicezione         DateTime?
+  noteRichiesta         String?
+  notePrelievo          String?
+  noteRicezione         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relazioni
+  UbicazioneOrigine     Ubicazione            @relation("UbicazioneOrigine", fields: [ubicazioneOrigineId], references: [id])
+  UbicazioneDestino     Ubicazione            @relation("UbicazioneDestino", fields: [ubicazioneDestinoId], references: [id])
+  Richiedente           User                  @relation("DistinteRichieste", fields: [richiedentId], references: [id])
+  Approvatore           User?                 @relation("DistinteApprovate", fields: [approvataDa], references: [id])
+  Prelevatore           User?                 @relation("DistintePrelevate", fields: [prelevataDa], references: [id])
+  Ricevente             User?                 @relation("DistinteRicevute", fields: [ricevutaDa], references: [id])
+  Righe                 RigaDistintaPrelievo[]
+  MovimentiTrasferimento MovimentoTrasferimento[]
+  
+  @@index([numero])
+  @@index([stato])
+  @@index([ubicazioneOrigineId])
+  @@index([ubicazioneDestinoId])
+  @@index([dataCreazione])
+}
+
+enum StatoDistinta {
+  BOZZA            // In preparazione
+  DA_APPROVARE     // In attesa approvazione
+  APPROVATA        // Approvata, pronta per prelievo
+  IN_PRELIEVO      // In fase di prelievo
+  PRELEVATA        // Prelevata, in transito
+  RICEVUTA         // Ricevuta a destinazione
+  ANNULLATA        // Annullata
+}
+
+model RigaDistintaPrelievo {
+  id                    String   @id
+  distintaId            String
+  prodottoId            Int
+  quantitaRichiesta     Float
+  quantitaPrelevata     Float?
+  quantitaRicevuta      Float?
+  unitaMisura           String
+  noteRiga              String?
+  giacenzaUbicazioneId  Int?     // Riferimento diretto alla giacenza specifica
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relazioni
+  DistintaPrelievo      DistintaPrelievo      @relation(fields: [distintaId], references: [id])
+  Prodotto              Prodotto              @relation(fields: [prodottoId], references: [id])
+  GiacenzaUbicazione    GiacenzaUbicazione?   @relation(fields: [giacenzaUbicazioneId], references: [id])
+  
+  @@index([distintaId])
+  @@index([prodottoId])
+}
+
+// ====================================
+// 5. MOVIMENTI DI TRASFERIMENTO
+// ====================================
+
+model MovimentoTrasferimento {
+  id                    String   @id
+  tipoMovimento         TipoMovimentoTrasferimento
+  prodottoId            Int
+  ubicazioneOrigineId   Int?     // Null per carichi da fornitore
+  ubicazioneDestinoId   Int?     // Null per scarichi/vendite
+  giacenzaUbicazioneId  Int?     // Riferimento diretto alla giacenza
+  quantita              Float
+  unitaMisura           String
+  distintaPrelievoId    String?
+  fatturaFornitoreId    String?
+  rigaOrdinazioneId     String?  // Per scarichi diretti da vendite
+  operatoreId           String
+  dataMovimento         DateTime @default(now())
+  note                  String?
+  createdAt             DateTime @default(now())
+  
+  // Relazioni
+  Prodotto              Prodotto              @relation(fields: [prodottoId], references: [id])
+  UbicazioneOrigine     Ubicazione?           @relation("UbicazioneOrigine", fields: [ubicazioneOrigineId], references: [id])
+  UbicazioneDestino     Ubicazione?           @relation("UbicazioneDestino", fields: [ubicazioneDestinoId], references: [id])
+  GiacenzaUbicazione    GiacenzaUbicazione?   @relation(fields: [giacenzaUbicazioneId], references: [id])
+  DistintaPrelievo      DistintaPrelievo?     @relation(fields: [distintaPrelievoId], references: [id])
+  FatturaFornitore      FatturaFornitore?     @relation(fields: [fatturaFornitoreId], references: [id])
+  RigaOrdinazione       RigaOrdinazione?      @relation(fields: [rigaOrdinazioneId], references: [id])
+  Operatore             User                  @relation(fields: [operatoreId], references: [id])
+  
+  @@index([tipoMovimento])
+  @@index([prodottoId])
+  @@index([ubicazioneOrigineId])
+  @@index([ubicazioneDestinoId])
+  @@index([dataMovimento])
+}
+
+enum TipoMovimentoTrasferimento {
+  CARICO_FORNITORE      // Carico da fattura fornitore
+  TRASFERIMENTO         // Trasferimento tra ubicazioni
+  VENDITA               // Scarico per vendita
+  RETTIFICA_POSITIVA    // Rettifica inventario positiva
+  RETTIFICA_NEGATIVA    // Rettifica inventario negativa
+  SCARTO                // Prodotto scartato/scaduto
+  RESO_FORNITORE        // Reso a fornitore
+}
+
+// ====================================
+// 6. CONFIGURAZIONE PRODOTTI
+// ====================================
+
+// Estensione al modello Prodotto esistente per gestione magazzino
+model ProdottoMagazzino {
+  id                    Int      @id @default(autoincrement())
+  prodottoId            Int      @unique
+  codiceFornitore       String?
+  codiceBarre           String?  @unique
+  unitaAcquisto         String   @default("pz")    // cartone, cassa, bottiglia
+  pezziPerUnita         Int      @default(1)       // es. 24 bottiglie per cartone
+  pesoUnitario          Float?   // in kg
+  volumeUnitario        Float?   // in litri
+  temperaturaStoccaggio String?  // ambiente, frigo, freezer
+  giorniScadenza        Int?     // giorni dalla data di produzione
+  stockMinimoMagazzino  Float    @default(0)
+  stockMassimoMagazzino Float?
+  leadTimeGiorni        Int      @default(1)       // tempo di riordino
+  fornitorePreferito    Int?
+  categoriaFiscale      String?  // per gestione IVA
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relazioni
+  Prodotto              Prodotto              @relation(fields: [prodottoId], references: [id])
+  Fornitore             Fornitore?            @relation(fields: [fornitorePreferito], references: [id])
+  
+  @@index([prodottoId])
+  @@index([codiceBarre])
+}
+
+// ====================================
+// 7. AGGIORNAMENTI AI MODELLI ESISTENTI
+// ====================================
+
+// Da aggiungere al modello User esistente:
+// DistinteRichieste     DistintaPrelievo[]    @relation("DistinteRichieste")
+// DistinteApprovate     DistintaPrelievo[]    @relation("DistinteApprovate")
+// DistintePrelevate     DistintaPrelievo[]    @relation("DistintePrelevate")
+// DistinteRicevute      DistintaPrelievo[]    @relation("DistinteRicevute")
+// FattureRegistrate     FatturaFornitore[]    @relation("FattureRegistrate")
+// FatturePagate         FatturaFornitore[]    @relation("FatturePagate")
+// MovimentiTrasferimento MovimentoTrasferimento[]
+
+// Da aggiungere al modello Prodotto esistente:
+// GiacenzeUbicazione    GiacenzaUbicazione[]
+// RigheFattura          RigaFatturaFornitore[]
+// RigheDistinta         RigaDistintaPrelievo[]
+// MovimentiTrasferimento MovimentoTrasferimento[]
+// ProdottoMagazzino     ProdottoMagazzino?
+
+// Da aggiungere al modello Fornitore esistente:
+// FattureFornitore      FatturaFornitore[]
+// ProdottiPreferiti     ProdottoMagazzino[]
+
+// Da aggiungere al modello OrdineFornitore esistente:
+// FatturaFornitore      FatturaFornitore[]
+
+// Da aggiungere al modello RigaOrdinazione esistente:
+// MovimentiTrasferimento MovimentoTrasferimento[]
+
+// Da aggiungere al modello MovimentoInventario esistente:
+// FatturaFornitore      FatturaFornitore?     @relation(fields: [fatturaFornitoreId], references: [id])
+// fatturaFornitoreId    String?

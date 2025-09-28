@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Package, AlertCircle, RefreshCw, Save } from "lucide-react";
 import { updateProductAvailability } from "@/lib/actions/inventory-management";
-// import { getCurrentUser } from "@/lib/auth-multi-tenant";
+import { getInventarioProdotti, aggiornaQuantitaProdotto } from "@/lib/actions/inventario";
+import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 interface ProdottoInventario {
   id: number;
@@ -33,24 +34,27 @@ export default function InventarioPage() {
   }, []);
 
   const loadUser = async () => {
-    // const user = await getCurrentUser();
-    // setCurrentUser(user);
-    setCurrentUser(null);
+    const user = await getCurrentUser();
+    setCurrentUser(user);
   };
 
   const loadInventario = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/inventario");
-      const data = await response.json();
-      setProdotti(data.prodotti || []);
+      const result = await getInventarioProdotti();
       
-      // Inizializza le quantità
-      const initialQuantities: Record<number, number> = {};
-      data.prodotti?.forEach((p: ProdottoInventario) => {
-        initialQuantities[p.id] = p.quantitaDisponibile;
-      });
-      setQuantities(initialQuantities);
+      if (result.success && result.data) {
+        setProdotti(result.data);
+        
+        // Inizializza le quantità
+        const initialQuantities: Record<number, number> = {};
+        result.data.forEach((p: ProdottoInventario) => {
+          initialQuantities[p.id] = p.quantitaDisponibile;
+        });
+        setQuantities(initialQuantities);
+      } else {
+        toast.error(result.error || "Impossibile caricare l'inventario");
+      }
     } catch (error) {
       console.error("Errore caricamento inventario:", error);
       toast.error("Impossibile caricare l'inventario");
@@ -60,22 +64,14 @@ export default function InventarioPage() {
   };
 
   const handleUpdateQuantity = async (prodottoId: number, nome: string) => {
-    if (!currentUser) {
-      toast.error("Utente non autenticato");
-      return;
-    }
-
     try {
-      const result = await updateProductAvailability(
-        prodottoId,
-        quantities[prodottoId],
-        currentUser.id,
-        currentUser.nome || currentUser.username,
-        "Aggiornamento manuale da supervisore"
+      const result = await aggiornaQuantitaProdotto(
+        prodottoId.toString(),
+        quantities[prodottoId]
       );
 
       if (result.success) {
-        toast.success(`Quantità di ${nome} aggiornata con successo`);
+        toast.success(result.message || `Quantità di ${nome} aggiornata con successo`);
         setEditingProduct(null);
         loadInventario();
       } else {
