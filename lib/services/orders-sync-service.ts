@@ -204,8 +204,8 @@ class OrdersSyncService {
             },
             {
               stato: "CONSEGNATO",
-              dataChiusura: {
-                gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
+              statoPagamento: {
+                not: "COMPLETAMENTE_PAGATO"
               }
             }
           ]
@@ -253,13 +253,13 @@ class OrdersSyncService {
         OR: [
           {
             stato: {
-              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "ORDINATO_ESAURITO"]
             }
           },
           {
             stato: "CONSEGNATO",
-            dataChiusura: {
-              gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
+            statoPagamento: {
+              not: "COMPLETAMENTE_PAGATO"
             }
           }
         ]
@@ -320,7 +320,7 @@ class OrdersSyncService {
         OR: [
           {
             stato: {
-              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO"]
+              in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "ORDINATO_ESAURITO"]
             },
             createdAt: {
               gt: this.lastSyncTimestamp
@@ -328,11 +328,11 @@ class OrdersSyncService {
           },
           {
             stato: "CONSEGNATO",
+            statoPagamento: {
+              not: "COMPLETAMENTE_PAGATO"
+            },
             createdAt: {
               gt: this.lastSyncTimestamp
-            },
-            dataChiusura: {
-              gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Ultimi 2 ore
             }
           }
         ]
