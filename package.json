@@ -16,7 +16,11 @@
     "seed:users": "node scripts/seed-users.ts",
     "products:export": "node scripts/export-products-csv.js",
     "products:import": "node scripts/import-products-csv.js",
-    "session-update": "tsx scripts/update-session-status.ts"
+    "session-update": "tsx scripts/update-session-status.ts",
+    "session:start": "./scripts/session-start.sh",
+    "session:end": "./scripts/session-end.sh",
+    "session:sync": "./scripts/session-sync.sh",
+    "session:quick": "./scripts/session-quick.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
