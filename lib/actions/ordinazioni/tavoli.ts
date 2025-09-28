@@ -13,7 +13,11 @@ export async function getTavoli() {
     
     const tavoli = await prisma.tavolo.findMany({
       where: {
-        attivo: true
+        attivo: true,
+        visibile: true,
+        GruppoTavoli: {
+          visibile: true
+        }
       },
       include: {
         GruppoTavoli: true,
@@ -33,9 +37,11 @@ export async function getTavoli() {
           take: 1
         }
       },
-      orderBy: {
-        numero: 'asc'
-      }
+      orderBy: [
+        { GruppoTavoli: { ordinamento: 'asc' } },
+        { ordinamento: 'asc' },
+        { numero: 'asc' }
+      ]
     });
     
     const tavoliMapped = tavoli.map(tavolo => ({
@@ -116,38 +122,48 @@ export async function getCustomerNamesForTable(tavoloId: number) {
         dataApertura: true
       },
       orderBy: {
-        dataApertura: 'asc'
+        dataApertura: 'desc' // Cambiato in desc per avere l'ultimo ordine per primo
       },
       take: 10
     });
 
     const customerNames = new Set<string>();
+    let lastCustomerName = "";
     
-    ordini.forEach(ordine => {
+    ordini.forEach((ordine, index) => {
+      let customerName = "";
+      
       if (ordine.nomeCliente) {
-        customerNames.add(ordine.nomeCliente);
+        customerName = ordine.nomeCliente;
       }
       else if (ordine.note) {
         const match = ordine.note.match(/Cliente:\s*([^-]+)/);
         if (match && match[1]) {
-          const nome = match[1].trim();
-          if (nome) {
-            customerNames.add(nome);
-          }
+          customerName = match[1].trim();
+        }
+      }
+      
+      if (customerName) {
+        customerNames.add(customerName);
+        // Il primo ordine (più recente) determina l'ultimo cliente
+        if (index === 0) {
+          lastCustomerName = customerName;
         }
       }
     });
 
     return {
       success: true,
-      customerNames: Array.from(customerNames)
+      customerNames: Array.from(customerNames),
+      lastCustomerName: lastCustomerName // Aggiungiamo l'ultimo cliente che ha ordinato
     };
   } catch (error: any) {
     console.error("Errore nomi clienti:", error.message);
     return { 
       success: false, 
       error: "Errore durante il recupero dei nomi dei clienti",
-      customerNames: []
+      customerNames: [],
+      lastCustomerName: ""
     };
   }
 }

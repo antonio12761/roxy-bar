@@ -102,6 +102,18 @@ export interface SSEEventMap {
     timestamp: string;
   };
   
+  'payment:request': {
+    requestId: string;
+    orderId: string;
+    tableNumber?: string;
+    orderType?: string;
+    amount: number;
+    customerName?: string;
+    waiterName?: string;
+    paymentMethod: string;
+    timestamp: string;
+  };
+  
   'order:sent': {
     orderId: string;
     tableNumber?: string | number;
@@ -257,6 +269,16 @@ export interface SSEEventMap {
   'table:updated': {
     tableNumber: string;
     newStatus: string;
+  };
+  
+  'tables:reordered': {
+    groups: Array<{
+      id: number;
+      name: string;
+      ordinamento: number;
+    }>;
+    updatedBy: string;
+    timestamp: string;
   };
   
   // Product events
@@ -516,6 +538,28 @@ export interface SSEEventMap {
   'queue:check': {
     tenantId: string;
   };
+  
+  // Groups reordering event
+  'groups:reordered': {
+    groups: Array<{ id: number; nome: string; ordinamento: number }>;
+    updatedBy: string;
+    timestamp: string;
+  };
+  
+  // Visibility events
+  'groups:visibility:update': {
+    gruppoId: number;
+    visibile: boolean;
+    updatedBy: string;
+    timestamp: string;
+  };
+  
+  'tables:visibility:update': {
+    tavoloId: number;
+    visibile: boolean;
+    updatedBy: string;
+    timestamp: string;
+  };
 }
 
 // Helper type to extract event names
@@ -576,6 +620,7 @@ export const SSEEventChannels: Partial<Record<SSEEventName, SSEChannel[]>> = {
   'payment:update': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
   'payment:cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER, SSEChannels.STATION_WAITER],
   'payment:partial-cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_CASHIER],
+  'payment:request': [SSEChannels.STATION_CASHIER, SSEChannels.NOTIFICATIONS],
   'order:cancelled': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
   'order:merged': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE, SSEChannels.STATION_WAITER],
   'merge:request': [SSEChannels.ORDERS, SSEChannels.STATION_PREPARE],
@@ -590,4 +635,8 @@ export const SSEEventChannels: Partial<Record<SSEEventName, SSEChannel[]>> = {
   'notification:new': [SSEChannels.NOTIFICATIONS],
   'system:announcement': [SSEChannels.SYSTEM],
   'station:request': [SSEChannels.NOTIFICATIONS],
+  'tables:reordered': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
+  'groups:reordered': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
+  'groups:visibility:update': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
+  'tables:visibility:update': [SSEChannels.ORDERS, SSEChannels.STATION_WAITER],
 };

@@ -731,15 +731,16 @@ export async function getTavoli() {
   "use server";
   
   try {
-    // Fetching tables from database
+    console.log("[getTavoli] Starting...");
     
     // Verifica autenticazione
     const utente = await getCurrentUser();
     if (!utente) {
-      // User not authenticated
+      console.log("[getTavoli] No user authenticated");
       return [];
     }
-    // User authenticated
+    
+    console.log("[getTavoli] User:", utente.nome);
     
     const tavoli = await prisma.tavolo.findMany({
       where: {
@@ -754,35 +755,24 @@ export async function getTavoli() {
             }
           },
           select: {
+            id: true,
+            stato: true,
+            numero: true,
             nomeCliente: true,
-            note: true
+            note: true,
+            dataApertura: true
           },
           orderBy: {
-            dataApertura: 'asc'
-          },
-          take: 1
+            dataApertura: 'desc'
+          }
         }
       },
       orderBy: {
         numero: 'asc'
       }
     });
-
-    // Tables loaded
     
-    if (tavoli.length === 0) {
-      // No active tables found
-      // Verifica se ci sono tavoli inattivi
-      const tavoliTotali = await prisma.tavolo.count();
-      // Total tables in database
-      
-      // Debug: mostra alcuni tavoli per capire il problema
-      const tuttiTavoli = await prisma.tavolo.findMany({
-        take: 5,
-        orderBy: { numero: 'asc' }
-      });
-      // Sample tables from database
-    }
+    console.log("[getTavoli] Found", tavoli.length, "tables");
     
     // Aggiungi le informazioni del cliente
     const tavoliMapped = tavoli.map(tavolo => ({
@@ -793,15 +783,15 @@ export async function getTavoli() {
                     : null)
     }));
     
-    // Tables processed
-    if (tavoliMapped.length > 0) {
-      // First table sample
-    }
+    console.log("[getTavoli] Returning", tavoliMapped.length, "mapped tables");
     
     // Serializza i dati per evitare problemi con Decimal
-    return serializeDecimalData(tavoliMapped);
+    const result = serializeDecimalData(tavoliMapped);
+    console.log("[getTavoli] After serialization:", Array.isArray(result) ? result.length : "not array");
+    
+    return result;
   } catch (error: any) {
-    console.error("Errore recupero tavoli:", error.message);
+    console.error("[getTavoli] Error:", error.message, error);
     return [];
   }
 }

@@ -101,7 +101,9 @@ export async function validateStateTransition(
           );
         }
         
-        // Log della transizione per audit con debounce
+        // Log della transizione disabilitato per ridurre rumore
+        // Decommentare solo per debug specifico delle transizioni di stato
+        /*
         const transitionKey = `${ordinazioneAttuale.id}:${statoAttuale}→${nuovoStato}`;
         const now = Date.now();
         const lastLogged = recentTransitions.get(transitionKey);
@@ -123,6 +125,7 @@ export async function validateStateTransition(
             }
           }
         }
+        */
       }
     }
   }

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
+import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 
 export async function getSupervisoreStats() {
   try {
@@ -154,12 +155,19 @@ export async function getSupervisoreUsers() {
     console.log(`[getSupervisoreUsers] Utente corrente:`, user);
     if (!user || user.ruolo !== 'SUPERVISORE') {
       console.log(`[getSupervisoreUsers] Accesso negato - Utente: ${user?.nome || 'null'}, Ruolo: ${user?.ruolo || 'null'}`);
-      return [];
+      return {
+        success: false,
+        error: "Non autorizzato",
+        data: []
+      };
     }
 
+    console.log("[getSupervisoreUsers] Recupero utenti...");
+    
+    // Recupera tutti gli utenti con informazioni sullo stato online
     const users = await prisma.user.findMany({
       where: {
-        attivo: true
+        attivo: true,
       },
       include: {
         Session: {
@@ -179,24 +187,38 @@ export async function getSupervisoreUsers() {
       }
     });
 
-    console.log(`[getSupervisoreUsers] Trovati ${users.length} utenti nel database`);
+    console.log(`[getSupervisoreUsers] Trovati ${users.length} utenti`);
+    
+    // Determina lo stato online basandosi sulle sessioni attive
+    const usersWithStatus = users.map(user => {
+      const hasActiveSession = user.Session.length > 0;
+      const lastSession = user.Session[0];
+      
+      console.log(`[getSupervisoreUsers] ${user.nome} - Sessioni attive: ${user.Session.length}, Online: ${hasActiveSession}`);
+      
+      return {
+        id: user.id,
+        nome: user.nome,
+        ruolo: user.ruolo,
+        online: hasActiveSession,
+        bloccato: user.bloccato || false,
+        lastActivity: lastSession?.createdAt || user.ultimoAccesso,
+        currentTable: null // Questo potrebbe essere implementato in futuro
+      };
+    });
 
-    const mappedUsers = users.map(user => ({
-      id: user.id,
-      nome: user.nome,
-      ruolo: user.ruolo,
-      online: user.Session.length > 0,
-      bloccato: user.bloccato || false,
-      lastActivity: user.Session[0]?.createdAt || user.ultimoAccesso,
-      currentTable: null // Questo potrebbe essere implementato in futuro
-    }));
-
-    console.log(`[getSupervisoreUsers] Utenti mappati:`, mappedUsers);
-    return mappedUsers;
+    return serializeDecimalData({
+      success: true,
+      data: usersWithStatus
+    });
 
   } catch (error) {
     console.error("Errore nel recupero degli utenti:", error);
-    return [];
+    return {
+      success: false,
+      error: "Errore nel recupero degli utenti",
+      data: []
+    };
   }
 }
 

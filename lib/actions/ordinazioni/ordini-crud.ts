@@ -136,7 +136,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
                   note: p.note,
                   glassesCount: p.glassesCount,
                   stato: "INSERITO",
-                  postazione: "PREPARA",
+                  postazione: prodotto?.postazione || "PREPARA",
                   updatedAt: new Date(),
                 }
               });
@@ -353,7 +353,7 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
                 note: p.note,
                 glassesCount: p.glassesCount,
                 stato: "INSERITO",
-                postazione: "PREPARA",
+                postazione: prodottoInfo?.postazione || "PREPARA",
                 updatedAt: new Date(),
               };
             })
@@ -553,55 +553,152 @@ export async function cancellaOrdiniAttivi() {
 
     const count = await prisma.ordinazione.count();
 
-    // Ordine corretto di cancellazione per rispettare le foreign key:
-    // 1. Prima cancella tutti i pagamenti dei debiti
-    await prisma.pagamentoDebito.deleteMany({});
-    
-    // 2. Poi cancella tutti i debiti
-    await prisma.debito.deleteMany({});
-    
-    // 3. Cancella tutti i pagamenti (che hanno riferimenti alle ordinazioni)
-    await prisma.pagamento.deleteMany({});
-    
-    // 4. Cancella tutti gli ordini esauriti (che hanno riferimenti alle ordinazioni)
-    await prisma.ordineEsaurito.deleteMany({});
-    
-    // 5. Infine cancella tutti gli ordini
-    await prisma.ordinazione.deleteMany({});
-
-    await prisma.tavolo.updateMany({
-      where: {
-        stato: "OCCUPATO"
-      },
-      data: {
-        stato: "LIBERO"
+    // SOLUZIONE DEFINITIVA: Disabilita temporaneamente i vincoli e cancella tutto
+    try {
+      await prisma.$transaction(async (tx) => {
+        // PostgreSQL: Disabilita temporaneamente i check dei constraint
+        await tx.$executeRawUnsafe('SET CONSTRAINTS ALL DEFERRED');
+        
+        // Ora cancella nell'ordine inverso delle dipendenze, ma senza preoccuparsi dei vincoli
+        await tx.$executeRawUnsafe('DELETE FROM "PaymentHistory"');
+        await tx.$executeRawUnsafe('DELETE FROM "MovimentoContoScalare"');
+        await tx.$executeRawUnsafe('DELETE FROM "PagamentoDebito"');
+        await tx.$executeRawUnsafe('DELETE FROM "Pagamento"');
+        await tx.$executeRawUnsafe('DELETE FROM "Debito"');
+        await tx.$executeRawUnsafe('DELETE FROM "OrdineEsaurito"');
+        await tx.$executeRawUnsafe('DELETE FROM "RigaOrdinazione"');
+        await tx.$executeRawUnsafe('DELETE FROM "Ordinazione"');
+        await tx.$executeRawUnsafe('UPDATE "Tavolo" SET stato = \'LIBERO\' WHERE stato = \'OCCUPATO\'');
+        
+        console.log("Tutte le tabelle sono state pulite con successo");
+      });
+    } catch (e) {
+      console.log("Primo tentativo fallito, provo approccio alternativo:", e);
+      
+      // APPROCCIO ALTERNATIVO: Cancella prima tutti i record che hanno FK verso Pagamento
+      // poi cancella Pagamento stesso
+      
+      // Prima trova TUTTI i pagamenti
+      const allPagamenti = await prisma.pagamento.findMany({
+        select: { id: true }
+      });
+      
+      console.log(`Trovati ${allPagamenti.length} pagamenti da gestire`);
+      
+      // Per ogni pagamento, cancella prima le sue dipendenze
+      for (const pag of allPagamenti) {
+        // Cancella PaymentHistory per questo pagamento
+        await prisma.paymentHistory.deleteMany({
+          where: { pagamentoId: pag.id }
+        });
+        
+        // Cancella MovimentoContoScalare per questo pagamento
+        await prisma.movimentoContoScalare.deleteMany({
+          where: { pagamentoId: pag.id }
+        });
+        
+        // Cancella PagamentoDebito per questo pagamento
+        await prisma.pagamentoDebito.deleteMany({
+          where: { pagamentoId: pag.id }
+        });
       }
-    });
+      
+      console.log("Dipendenze dei pagamenti cancellate");
+      
+      // Ora cancella i pagamenti stessi
+      await prisma.pagamento.deleteMany({});
+      console.log("Pagamenti cancellati");
+      
+      // Cancella il resto
+      await prisma.debito.deleteMany({});
+      await prisma.ordineEsaurito.deleteMany({});
+      await prisma.rigaOrdinazione.deleteMany({});
+      await prisma.movimentoContoScalare.deleteMany({}); // Eventuali rimanenti senza pagamentoId
+      await prisma.ordinazione.deleteMany({});
+      
+      // Reset tavoli
+      await prisma.tavolo.updateMany({
+        where: { stato: "OCCUPATO" },
+        data: { stato: "LIBERO" }
+      });
+      
+      console.log("Pulizia completata con approccio alternativo");
+    }
 
+    // Invalida la cache
     ordersCache.invalidate();
 
+    // Notifica tramite SSE
     sseService.emit('system:reset', {
       message: 'Tutti gli ordini sono stati cancellati',
       resetBy: utente.nome || utente.id,
       timestamp: new Date().toISOString()
     }, { broadcast: true });
 
+    // Revalida tutti i path
     revalidatePath("/prepara");
     revalidatePath("/cameriere");
+    revalidatePath("/cameriere/nuova-ordinazione");
+    revalidatePath("/cameriere/ordini-in-corso");
     revalidatePath("/cucina");
     revalidatePath("/supervisore");
     revalidatePath("/cassa");
 
     return { 
       success: true, 
-      message: `Cancellati ${count} ordini totali` 
+      message: `Sistema resettato con successo. Cancellati ${count} ordini.` 
     };
+    
   } catch (error: any) {
-    console.error("Errore cancellazione ordini:", error.message);
-    return { 
-      success: false, 
-      error: "Errore durante la cancellazione degli ordini" 
-    };
+    console.error("Errore finale nella cancellazione ordini:", error);
+    
+    // ULTIMA RISORSA: Prova TRUNCATE con RESTART IDENTITY
+    try {
+      console.log("Tentativo finale con TRUNCATE RESTART IDENTITY...");
+      
+      // TRUNCATE resetta anche le sequenze e bypassa molti controlli
+      await prisma.$executeRawUnsafe(`
+        TRUNCATE TABLE 
+          "PaymentHistory",
+          "MovimentoContoScalare",
+          "PagamentoDebito",
+          "Pagamento",
+          "Debito",
+          "OrdineEsaurito",
+          "RigaOrdinazione",
+          "Ordinazione"
+        RESTART IDENTITY CASCADE
+      `);
+      
+      await prisma.$executeRawUnsafe('UPDATE "Tavolo" SET stato = \'LIBERO\' WHERE stato = \'OCCUPATO\'');
+      
+      ordersCache.invalidate();
+      
+      sseService.emit('system:reset', {
+        message: 'Sistema completamente resettato',
+        resetBy: utente?.nome || utente?.id || 'system',
+        timestamp: new Date().toISOString()
+      }, { broadcast: true });
+      
+      revalidatePath("/prepara");
+      revalidatePath("/cameriere");
+      revalidatePath("/cameriere/nuova-ordinazione");
+      revalidatePath("/cameriere/ordini-in-corso");
+      revalidatePath("/cucina");
+      revalidatePath("/supervisore");
+      revalidatePath("/cassa");
+      
+      return { 
+        success: true, 
+        message: "Sistema completamente resettato (TRUNCATE forzato)" 
+      };
+    } catch (truncateError: any) {
+      console.error("Anche TRUNCATE ha fallito:", truncateError);
+      return {
+        success: false,
+        error: "Impossibile cancellare gli ordini. Il database potrebbe richiedere un intervento manuale."
+      };
+    }
   }
 }
 

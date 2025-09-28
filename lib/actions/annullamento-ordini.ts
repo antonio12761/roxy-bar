@@ -8,15 +8,6 @@ import { notificationManager } from "@/lib/notifications/NotificationManager";
 import { canRequestCancellation } from "@/lib/middleware/state-validation";
 import { nanoid } from "nanoid";
 
-// Helper per autenticazione
-async function getAuthenticatedUser() {
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new Error("Utente non autenticato");
-  }
-  return user;
-}
-
 export interface RichiestaAnnullamentoData {
   ordinazioneId: string;
   motivo: string;
@@ -142,6 +133,38 @@ export async function approvaRichiestaAnnullamento(richiestaId: string) {
           elaboratoDa: utente.nome || utente.id,
           elaboratoAt: new Date()
         }
+      });
+
+      // Prima trova tutti i pagamenti dell'ordinazione
+      const pagamenti = await tx.pagamento.findMany({
+        where: { ordinazioneId: richiesta.ordinazioneId },
+        select: { id: true }
+      });
+
+      // Elimina PaymentHistory collegati a questi pagamenti
+      if (pagamenti.length > 0) {
+        await tx.paymentHistory.deleteMany({
+          where: { 
+            pagamentoId: { 
+              in: pagamenti.map(p => p.id) 
+            }
+          }
+        });
+      }
+
+      // Ora elimina i pagamenti
+      await tx.pagamento.deleteMany({
+        where: { ordinazioneId: richiesta.ordinazioneId }
+      });
+
+      // Elimina anche MovimentoConto correlati
+      await tx.movimentoConto.deleteMany({
+        where: { ordinazioneId: richiesta.ordinazioneId }
+      });
+
+      // Elimina MovimentoContoScalare correlati
+      await tx.movimentoContoScalare.deleteMany({
+        where: { ordinazioneId: richiesta.ordinazioneId }
       });
 
       // Annulla l'ordinazione
@@ -339,6 +362,38 @@ export async function annullaOrdineDiretto(ordinazioneId: string, motivo: string
       if (ordinazione.stato === 'PAGATO') {
         return { success: false, error: "Non puoi annullare un ordine già pagato" };
       }
+
+      // Prima trova tutti i pagamenti dell'ordinazione
+      const pagamenti = await tx.pagamento.findMany({
+        where: { ordinazioneId: ordinazioneId },
+        select: { id: true }
+      });
+
+      // Elimina PaymentHistory collegati a questi pagamenti
+      if (pagamenti.length > 0) {
+        await tx.paymentHistory.deleteMany({
+          where: { 
+            pagamentoId: { 
+              in: pagamenti.map(p => p.id) 
+            }
+          }
+        });
+      }
+
+      // Ora elimina i pagamenti
+      await tx.pagamento.deleteMany({
+        where: { ordinazioneId: ordinazioneId }
+      });
+
+      // Elimina anche MovimentoConto correlati
+      await tx.movimentoConto.deleteMany({
+        where: { ordinazioneId: ordinazioneId }
+      });
+
+      // Elimina MovimentoContoScalare correlati
+      await tx.movimentoContoScalare.deleteMany({
+        where: { ordinazioneId: ordinazioneId }
+      });
 
       // Annulla l'ordinazione
       const ordinazioneAnnullata = await tx.ordinazione.update({

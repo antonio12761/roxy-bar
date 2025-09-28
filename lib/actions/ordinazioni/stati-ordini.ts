@@ -140,7 +140,15 @@ export async function aggiornaStatoOrdinazione(
       timestamp: new Date().toISOString()
     };
     
-    if (nuovoStato === "CONSEGNATO") {
+    if (nuovoStato === "PRONTO") {
+      eventData = {
+        orderId: ordinazione.id,
+        orderNumber: ordinazione.numero,
+        tableNumber: ordinazione.Tavolo?.numero || undefined,
+        readyItems: [],
+        timestamp: new Date().toISOString()
+      };
+    } else if (nuovoStato === "CONSEGNATO") {
       eventData = {
         orderId: ordinazione.id,
         orderNumber: ordinazione.numero,
@@ -155,17 +163,6 @@ export async function aggiornaStatoOrdinazione(
       skipRateLimit: true,
       tenantId: utente.tenantId,
       queueIfOffline: true
-    });
-    
-    const delays = [100, 250, 500, 1000, 2000];
-    delays.forEach(delay => {
-      setTimeout(() => {
-        sseService.emit(sseEvent as keyof SSEEventMap, eventData, {
-          broadcast: true,
-          skipRateLimit: true,
-          tenantId: utente.tenantId
-        });
-      }, delay);
     });
 
     revalidatePath("/prepara");
@@ -266,6 +263,8 @@ export async function aggiornaStatoRiga(
       sseService.emit('order:item:update', {
         itemId: result.riga.id,
         orderId: result.riga.Ordinazione.id,
+        orderNumber: result.riga.Ordinazione.numero,
+        tableNumber: tableNumber,
         status: nuovoStato as 'INSERITO' | 'IN_LAVORAZIONE' | 'PRONTO' | 'CONSEGNATO',
         previousStatus: result.riga.stato,
         timestamp: new Date().toISOString()

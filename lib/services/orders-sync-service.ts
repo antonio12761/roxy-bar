@@ -187,8 +187,11 @@ class OrdersSyncService {
    * Ottieni ordini con fallback cache
    */
   async getOrders(): Promise<any[]> {
-    // TEMPORARY: Bypass cache for debugging
-    console.log('[OrdersSync] Getting orders - bypassing cache for debugging');
+    // Check cache first for better performance
+    const cachedOrders = ordersCache.getActiveOrders();
+    if (cachedOrders.length > 0 && !ordersCache.needsFullRefresh()) {
+      return cachedOrders;
+    }
     
     try {
       const orders = await prisma.ordinazione.findMany({
@@ -217,7 +220,12 @@ class OrdersSyncService {
         orderBy: { dataApertura: 'asc' }
       });
       
-      console.log(`[OrdersSync] Found ${orders.length} orders directly from database`);
+      // Update cache with fresh data
+      for (const order of orders) {
+        const serializedOrder = serializeDecimalData(order);
+        ordersCache.set(order.id, serializedOrder);
+      }
+      
       return serializeDecimalData(orders);
     } catch (error) {
       console.error('[OrdersSync] Error getting orders:', error);
