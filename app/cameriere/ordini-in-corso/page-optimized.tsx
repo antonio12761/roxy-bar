@@ -647,7 +647,27 @@ export default function OrdiniInCorsoPageOptimized() {
               borderStyle: 'solid'
             }}
           >
-            <p style={{ color: colors.text.muted }}>Nessun ordine attivo</p>
+            <p style={{ color: colors.text.muted }}>
+              {tableFilter 
+                ? `Nessun ordine attivo per il Tavolo ${tableFilter}`
+                : "Nessun ordine attivo"
+              }
+            </p>
+            {tableFilter && (
+              <button
+                onClick={() => {
+                  setTableFilter(null);
+                  window.history.pushState({}, '', '/cameriere/ordini-in-corso');
+                }}
+                className="mt-4 px-4 py-2 rounded-lg text-sm"
+                style={{
+                  backgroundColor: colors.bg.hover,
+                  color: colors.text.primary
+                }}
+              >
+                Mostra tutti gli ordini
+              </button>
+            )}
           </div>
         ) : (
           filteredOrders.map((order: Order) => {
