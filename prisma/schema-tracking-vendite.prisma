@@ -1,0 +1,285 @@
+// ESTENSIONE PER TRACKING DETTAGLIATO VENDITE
+// Questo schema aggiunge il tracking preciso delle vendite
+// collegando unità di acquisto → unità di vendita
+
+// ====================================
+// 1. CONFIGURAZIONE CONVERSIONI
+// ====================================
+
+model ConfigurazioneConversione {
+  id                    Int      @id @default(autoincrement())
+  prodottoId            Int      @unique
+  
+  // Unità di acquisto (come si compra)
+  unitaAcquisto         UnitaAcquisto
+  quantitaAcquisto      Float    @default(1)     // es. 1 cartone, 1 bottiglia, 1 kg
+  
+  // Contenuto unità acquisto
+  contenutoAcquisto     Float                    // es. 24 (pezzi), 700 (ml), 1000 (g)
+  unitaMisuraContenuto  UnitaMisuraContenuto    // PEZZI, ML, GRAMMI, LITRI
+  
+  // Unità di vendita (come si vende)
+  unitaVendita          UnitaVendita
+  quantitaVendita       Float                    // es. 1 bottiglia, 40 ml, 7 g
+  
+  // Calcolo automatico fattore conversione
+  // es. cartone 24 pz → 24 bottiglie (fattore 24)
+  // es. bottiglia 700ml → 17.5 porzioni da 40ml (fattore 17.5)
+  fattoreConversione    Float                    // contenutoAcquisto / quantitaVendita
+  
+  // Configurazioni aggiuntive
+  percentualeScarto     Float    @default(0)     // % di scarto/perdita stimata
+  note                  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relazioni
+  Prodotto              Prodotto                @relation(fields: [prodottoId], references: [id])
+  TrackerVendite        TrackingVendita[]
+  
+  @@index([prodottoId])
+}
+
+enum UnitaAcquisto {
+  // Contenitori multipli
+  CARTONE              // Cartone di bottiglie/lattine
+  CASSA                // Cassa di bottiglie (vino)
+  BANCALE              // Bancale/pallet
+  
+  // Contenitori singoli
+  BOTTIGLIA            // Bottiglia singola
+  FUSTO                // Fusto birra/vino
+  TANICA               // Tanica olio/altri liquidi
+  
+  // Peso/Volume
+  KG                   // Kilogrammi
+  LITRO                // Litri
+  
+  // Confezioni
+  BUSTA                // Busta/sacco
+  SCATOLA              // Scatola
+  CONFEZIONE           // Confezione generica
+  
+  // Unità
+  PEZZO                // Pezzo singolo
+}
+
+enum UnitaMisuraContenuto {
+  PEZZI                // Numero di pezzi
+  ML                   // Millilitri
+  LITRI                // Litri
+  GRAMMI               // Grammi
+  KG                   // Kilogrammi
+}
+
+enum UnitaVendita {
+  // Bevande
+  BOTTIGLIA            // Bottiglia intera
+  LATTINA              // Lattina intera
+  BICCHIERE            // Bicchiere (birra/vino)
+  CALICE               // Calice vino
+  FLUTE                // Flute spumante
+  SHOT                 // Shot liquori
+  TAZZINA              // Tazzina caffè
+  TAZZA                // Tazza tè/cioccolata
+  
+  // Porzioni
+  PORZIONE             // Porzione generica
+  DOSE                 // Dose cocktail (ml)
+  
+  // Food
+  PIATTO               // Piatto/porzione cibo
+  PANINO               // Panino/sandwich
+  FETTA                // Fetta (torta/pizza)
+  
+  // Unità
+  PEZZO                // Pezzo singolo
+}
+
+// ====================================
+// 2. TRACKING VENDITE DETTAGLIATO
+// ====================================
+
+model TrackingVendita {
+  id                    String   @id
+  rigaOrdinazioneId     String
+  prodottoId            Int
+  configurazioneId      Int
+  
+  // Quantità venduta
+  quantitaVenduta       Float                    // es. 1 bottiglia, 2 caffè
+  unitaVendita          UnitaVendita
+  
+  // Conversione in unità acquisto
+  consumoUnitaAcquisto  Float                    // es. 0.042 cartoni (1/24)
+  unitaAcquisto         UnitaAcquisto
+  
+  // Costi calcolati al momento della vendita
+  costoUnitarioAcquisto Decimal  @db.Decimal(10, 4) // costo per unità acquisto
+  costoTotaleVendita    Decimal  @db.Decimal(10, 4) // costo della quantità venduta
+  prezzoVendita         Decimal  @db.Decimal(10, 2) // prezzo al cliente
+  margine               Decimal  @db.Decimal(10, 2) // prezzoVendita - costoTotaleVendita
+  marginePercentuale    Float                       // % margine
+  
+  // Tracciamento ubicazione e lotto
+  ubicazioneId          Int
+  lottoId               String?                     // per FIFO e tracciabilità
+  
+  // Timestamp
+  dataVendita           DateTime @default(now())
+  
+  // Relazioni
+  RigaOrdinazione       RigaOrdinazione         @relation(fields: [rigaOrdinazioneId], references: [id])
+  Prodotto              Prodotto                @relation(fields: [prodottoId], references: [id])
+  Configurazione        ConfigurazioneConversione @relation(fields: [configurazioneId], references: [id])
+  Ubicazione            Ubicazione              @relation(fields: [ubicazioneId], references: [id])
+  Lotto                 LottoProdotto?          @relation(fields: [lottoId], references: [id])
+  
+  @@index([rigaOrdinazioneId])
+  @@index([prodottoId])
+  @@index([dataVendita])
+  @@index([ubicazioneId])
+}
+
+// ====================================
+// 3. GESTIONE LOTTI (FIFO)
+// ====================================
+
+model LottoProdotto {
+  id                    String   @id
+  prodottoId            Int
+  numeroLotto           String
+  dataAcquisto          DateTime
+  dataScadenza          DateTime?
+  
+  // Quantità in unità di acquisto
+  quantitaAcquistata    Float
+  quantitaRimanente     Float
+  unitaAcquisto         UnitaAcquisto
+  
+  // Riferimenti acquisto
+  fatturaFornitoreId    String?
+  costoUnitario         Decimal  @db.Decimal(10, 4)
+  
+  // Ubicazione attuale
+  ubicazioneId          Int
+  
+  // Stato
+  attivo                Boolean  @default(true)
+  esaurito              Boolean  @default(false)
+  scaduto               Boolean  @default(false)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relazioni
+  Prodotto              Prodotto                @relation(fields: [prodottoId], references: [id])
+  FatturaFornitore      FatturaFornitore?       @relation(fields: [fatturaFornitoreId], references: [id])
+  Ubicazione            Ubicazione              @relation(fields: [ubicazioneId], references: [id])
+  TrackingVendite       TrackingVendita[]
+  MovimentiLotto        MovimentoLotto[]
+  
+  @@unique([prodottoId, numeroLotto])
+  @@index([dataScadenza])
+  @@index([esaurito])
+  @@index([ubicazioneId])
+}
+
+model MovimentoLotto {
+  id                    String   @id
+  lottoId               String
+  tipoMovimento         TipoMovimentoLotto
+  quantita              Float
+  quantitaDopoMovimento Float
+  riferimentoId         String?  // ID fattura, distinta, riga ordinazione
+  note                  String?
+  operatoreId           String
+  dataMovimento         DateTime @default(now())
+  
+  // Relazioni
+  Lotto                 LottoProdotto           @relation(fields: [lottoId], references: [id])
+  Operatore             User                    @relation(fields: [operatoreId], references: [id])
+  
+  @@index([lottoId])
+  @@index([dataMovimento])
+}
+
+enum TipoMovimentoLotto {
+  CARICO               // Carico iniziale da fattura
+  VENDITA              // Scarico per vendita
+  TRASFERIMENTO        // Trasferimento tra ubicazioni
+  RETTIFICA            // Rettifica inventario
+  SCADENZA             // Prodotto scaduto
+  DANNEGGIATO          // Prodotto danneggiato
+}
+
+// ====================================
+// 4. ANALISI E REPORTISTICA
+// ====================================
+
+model AnalisiVenditePeriodo {
+  id                    String   @id
+  prodottoId            Int
+  periodo               DateTime // Giorno/Settimana/Mese
+  tipoPeriodo           TipoPeriodo
+  
+  // Vendite in unità di vendita
+  quantitaVenduta       Float
+  unitaVendita          UnitaVendita
+  numeroVendite         Int
+  
+  // Consumo in unità di acquisto
+  consumoTotale         Float
+  unitaAcquisto         UnitaAcquisto
+  
+  // Analisi economica
+  costoTotale           Decimal  @db.Decimal(10, 2)
+  ricavoTotale          Decimal  @db.Decimal(10, 2)
+  margineTotale         Decimal  @db.Decimal(10, 2)
+  marginePercentuale    Float
+  
+  // Metriche aggiuntive
+  venditaMedia          Float    // Media per vendita
+  piccoGiornaliero      Float    // Max vendite in un giorno
+  giornoSettimana       Int?     // 0=Dom, 1=Lun, etc.
+  
+  createdAt             DateTime @default(now())
+  
+  // Relazioni
+  Prodotto              Prodotto                @relation(fields: [prodottoId], references: [id])
+  
+  @@unique([prodottoId, periodo, tipoPeriodo])
+  @@index([prodottoId])
+  @@index([periodo])
+}
+
+enum TipoPeriodo {
+  GIORNO
+  SETTIMANA
+  MESE
+  TRIMESTRE
+  ANNO
+}
+
+// ====================================
+// 5. AGGIORNAMENTI AI MODELLI ESISTENTI
+// ====================================
+
+// Da aggiungere al modello Prodotto:
+// ConfigurazioneConversione ConfigurazioneConversione?
+// TrackingVendite          TrackingVendita[]
+// LottiProdotto            LottoProdotto[]
+// AnalisiVendite           AnalisiVenditePeriodo[]
+
+// Da aggiungere al modello RigaOrdinazione:
+// TrackingVendita          TrackingVendita?
+
+// Da aggiungere al modello Ubicazione:
+// TrackingVendite          TrackingVendita[]
+// LottiProdotto            LottoProdotto[]
+
+// Da aggiungere al modello FatturaFornitore:
+// LottiProdotto            LottoProdotto[]
+
+// Da aggiungere al modello User:
+// MovimentiLotto           MovimentoLotto[]

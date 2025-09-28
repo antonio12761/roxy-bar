@@ -1,6 +1,15 @@
 #!/bin/bash
-# Launcher locale per Claude con sessione automatica
-# Metti questo file nella root del progetto per un accesso rapido
+# Claude launcher per roxy_bar
+# Generato da Claude Session Manager
 
-cd "$(dirname "$0")"
-./scripts/claude-session.sh "$@"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Trova lo script claude-session.sh nella directory globale
+GLOBAL_SCRIPT="/Users/antoniocolaizzi/Documents/roxy_bar/claude-session-global/scripts/claude-session.sh"
+
+if [ -f "$GLOBAL_SCRIPT" ]; then
+    exec "$GLOBAL_SCRIPT"
+else
+    echo "Errore: Script claude-session.sh non trovato"
+    exit 1
+fi
