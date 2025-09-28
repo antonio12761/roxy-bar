@@ -482,7 +482,7 @@ export default function OrdiniInCorsoPageOptimized() {
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <h1 className="text-xl font-semibold" style={{ color: colors.text.primary }}>
-                Ordini in Corso
+                {tableFilter ? `Ordini Tavolo ${tableFilter}` : 'Ordini in Corso'}
               </h1>
             </div>
           </div>
@@ -526,7 +526,9 @@ export default function OrdiniInCorsoPageOptimized() {
             >
               <ArrowLeft className="h-5 w-5" style={{ color: colors.text.secondary }} />
             </Link>
-            <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>Ordini in Corso</h1>
+            <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+              {tableFilter ? `Ordini Tavolo ${tableFilter}` : 'Ordini in Corso'}
+            </h1>
           </div>
           
           <div className="flex items-center gap-2">
@@ -634,6 +636,83 @@ export default function OrdiniInCorsoPageOptimized() {
           </button>
         </div>
       </div>
+
+      {/* Stati aggregati per tavolo */}
+      {tableFilter && filteredOrders.length > 0 && (
+        <div className="px-6 mb-4">
+          <div 
+            className="p-4 rounded-lg"
+            style={{ 
+              backgroundColor: colors.bg.card,
+              borderColor: colors.border.primary,
+              borderWidth: '1px',
+              borderStyle: 'solid'
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
+              Riepilogo Tavolo {tableFilter}
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(() => {
+                const stats = {
+                  ordinato: 0,
+                  inPreparazione: 0,
+                  pronto: 0,
+                  consegnato: 0
+                };
+                
+                filteredOrders.forEach(order => {
+                  order.righe?.forEach(item => {
+                    switch(item.stato) {
+                      case 'INSERITO': stats.ordinato++; break;
+                      case 'IN_LAVORAZIONE': stats.inPreparazione++; break;
+                      case 'PRONTO': stats.pronto++; break;
+                      case 'CONSEGNATO': stats.consegnato++; break;
+                    }
+                  });
+                });
+                
+                return (
+                  <>
+                    <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
+                      <div className="text-2xl font-bold" style={{ color: colors.text.muted }}>
+                        {stats.ordinato}
+                      </div>
+                      <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                        In attesa
+                      </div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
+                      <div className="text-2xl font-bold" style={{ color: colors.accent }}>
+                        {stats.inPreparazione}
+                      </div>
+                      <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                        In preparazione
+                      </div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
+                      <div className="text-2xl font-bold" style={{ color: colors.button.success }}>
+                        {stats.pronto}
+                      </div>
+                      <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                        Pronti
+                      </div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.bg.hover }}>
+                      <div className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+                        {stats.consegnato}
+                      </div>
+                      <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                        Consegnati
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Orders List */}
       <div className="px-6 space-y-4">

@@ -24,25 +24,30 @@ export const OrderItem: React.FC<OrderItemProps> = ({ item, isUpdating, onStatus
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
 
   const getStatoBadge = (stato: string) => {
-    if (stato === "INSERITO") return null;
-    
     const stateMap = {
-      "IN_LAVORAZIONE": { label: "In preparazione", color: colors.button.primary },
-      "PRONTO": { label: "Pronto", color: colors.button.success },
-      "CONSEGNATO": { label: "Consegnato", color: colors.text.muted },
-      "ANNULLATO": { label: "Annullato", color: colors.text.error }
+      "INSERITO": { label: "In attesa", color: colors.bg.hover, textColor: colors.text.secondary, icon: '⏳' },
+      "IN_LAVORAZIONE": { label: "In preparazione", color: colors.button.primary, textColor: 'white', icon: '👨‍🍳' },
+      "PRONTO": { label: "Pronto", color: colors.button.success, textColor: 'white', icon: '✅' },
+      "CONSEGNATO": { label: "Consegnato", color: colors.text.muted, textColor: 'white', icon: '✓' },
+      "ANNULLATO": { label: "Annullato", color: colors.text.error, textColor: 'white', icon: '✗' }
     };
     
-    const config = stateMap[stato as keyof typeof stateMap] || { label: stato, color: colors.text.muted };
+    const config = stateMap[stato as keyof typeof stateMap] || { 
+      label: stato, 
+      color: colors.text.muted, 
+      textColor: 'white',
+      icon: '•' 
+    };
     
     return (
       <span 
-        className="px-2 py-1 rounded-full text-xs font-medium"
+        className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
         style={{ 
           backgroundColor: config.color,
-          color: 'white'
+          color: config.textColor
         }}
       >
+        <span className="text-xs">{config.icon}</span>
         {config.label}
       </span>
     );
