@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect, useMemo } from "react";
 import { Coffee, Gift, Folder, Home, Utensils, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Filter, RefreshCw } from "lucide-react";
 // Removed old useSSE import - now using SSE context
-import { getTavoli, getCustomerNamesForTable, getProdotti } from "@/lib/actions/ordinazioni";
+import { getCustomerNamesForTable, getProdotti } from "@/lib/actions/ordinazioni";
 import { creaOrdinazionePerAltri } from "@/lib/actions/ordinaPerAltri";
 import { getTablesWithOutOfStockOrders } from "@/lib/actions/gestione-esauriti";
+import { getUnifiedTavoliList } from "@/lib/actions/unified-tavoli-reader";
 import Link from "next/link";
 import { ClientClock } from "@/components/ClientClock";
 import { OrdinaPerAltriModal } from "@/components/cameriere/OrdinaPerAltriModal";
@@ -513,7 +514,7 @@ export default function NuovaOrdinazionePage() {
       
       // Load from API only if not cached
       const [tavoliData, prodottiData, outOfStockData] = await Promise.all([
-        getTavoli(),
+        getUnifiedTavoliList(),
         getProdotti(),
         getTablesWithOutOfStockOrders()
       ]);
@@ -525,15 +526,41 @@ export default function NuovaOrdinazionePage() {
         const groupsOrder: string[] = [];
         const seenGroups = new Set<string>();
         tavoliData.forEach((table: any) => {
-          const groupName = table.GruppoTavoli?.nome || 'Senza Gruppo';
+          const groupName = table.gruppoNome || 'Senza Gruppo';
           if (!seenGroups.has(groupName)) {
             seenGroups.add(groupName);
             groupsOrder.push(groupName);
           }
         });
         // console.log("[loadData] Groups order from server:", groupsOrder);
+        
+        // Adapt unified data to match existing structure
+        const adaptedTables = tavoliData.map(table => ({
+          id: table.id,
+          numero: table.numero,
+          nome: table.nome,
+          descrizione: table.descrizione,
+          posizione: table.posizione,
+          posti: table.posti,
+          stato: table.stato,
+          ordinamento: table.ordinamento,
+          attivo: true,
+          visibile: true,
+          createdAt: null,
+          updatedAt: null,
+          clienteNome: table.clienteNome,
+          GruppoTavoli: {
+            id: table.gruppoId,
+            nome: table.gruppoNome,
+            colore: table.gruppoColore,
+            icona: table.gruppoIcona,
+            ordinamento: table.gruppoOrdinamento
+          },
+          Ordinazione: table.ordiniAttivi ? [{}] : []
+        }));
+        
         // Merge out of stock info with tables
-        const tablesWithOutOfStock = tavoliData.map(table => {
+        const tablesWithOutOfStock = adaptedTables.map(table => {
           const outOfStockInfo = outOfStockData?.success && outOfStockData.tables?.find(
             (ost: any) => ost.table.id === table.id
           );
@@ -785,6 +812,7 @@ export default function NuovaOrdinazionePage() {
     // Sottoscrivi agli eventi groups:reordered per aggiornare l'ordine dei gruppi
     const unsubGroupsReordered = sseContext.subscribe('groups:reordered', (data: any) => {
       console.log('[NuovaOrdinazione] Ordine gruppi aggiornato:', data);
+      console.log('[NuovaOrdinazione] Nuovo ordine gruppi:', data.groups?.map((g: any) => `${g.nome} (ord=${g.ordinamento})`).join(', '));
       
       // Ricarica i dati silenziosamente per riflettere il nuovo ordine
       setTimeout(() => {

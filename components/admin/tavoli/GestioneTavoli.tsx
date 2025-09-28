@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Square, Circle, Folder, FolderOpen, Table, ArrowLeft, Home, Utensils, Coffee, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Sofa, Music, Cigarette, GlassWater, Soup, Pizza, IceCream, Cake, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getTavoliAdmin, creaTavolo, aggiornaTavolo, eliminaTavolo, aggiornaVisibilitaTavolo } from '@/lib/actions/tavoli';
-import { getGruppiTavoli, creaGruppoTavoli, aggiornaGruppoTavoli, eliminaGruppoTavoli, aggiornaVisibilitaGruppo } from '@/lib/actions/gruppi-tavoli';
+import { creaGruppoTavoli, aggiornaGruppoTavoli, eliminaGruppoTavoli, aggiornaVisibilitaGruppo } from '@/lib/actions/gruppi-tavoli';
+import { getUnifiedGruppiTavoli } from '@/lib/actions/unified-tavoli-reader';
 
 interface Tavolo {
   id: number;
@@ -124,14 +125,42 @@ export default function GestioneTavoli() {
 
   const fetchData = async () => {
     try {
-      // Fetch gruppi with tavoli using server action
+      // Fetch gruppi with tavoli using unified reader (includeInvisible = true for admin)
       console.log('Fetching gruppi tavoli...');
-      const gruppiResult = await getGruppiTavoli();
+      const gruppiResult = await getUnifiedGruppiTavoli(true);
       console.log('Risultato gruppi:', gruppiResult);
       
       if (gruppiResult.success && gruppiResult.gruppi) {
         console.log('Gruppi ricevuti:', gruppiResult.gruppi.length);
-        setGruppi(gruppiResult.gruppi);
+        // Adapt unified data to match existing structure
+        const adaptedGruppi = gruppiResult.gruppi.map(gruppo => ({
+          id: gruppo.id,
+          nome: gruppo.nome,
+          descrizione: gruppo.descrizione,
+          colore: gruppo.colore,
+          icona: gruppo.icona,
+          ordinamento: gruppo.ordinamento,
+          visibile: true, // Admin vede tutti i gruppi
+          attivo: true,
+          _count: { Tavolo: gruppo.numeroTavoli },
+          Tavolo: gruppo.tavoli.map(tavolo => ({
+            id: tavolo.id,
+            numero: tavolo.numero.toString(),
+            nome: tavolo.nome,
+            descrizione: tavolo.descrizione,
+            zona: '',
+            stato: tavolo.stato as any,
+            forma: 'QUADRATO' as const,
+            gruppoId: tavolo.gruppoId,
+            posizioneX: 0,
+            posizioneY: 0,
+            ordinamento: tavolo.ordinamento,
+            visibile: true,
+            attivo: true,
+            Ordinazione: []
+          }))
+        }));
+        setGruppi(adaptedGruppi);
       } else {
         console.error('Errore nel caricamento:', gruppiResult.error);
         toast.error(gruppiResult.error || 'Errore nel caricamento dei dati');
