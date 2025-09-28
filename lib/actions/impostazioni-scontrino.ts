@@ -1,17 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+"use server";
+
 import prisma from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
+import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
+import { revalidatePath } from "next/cache";
 
-export async function GET(request: NextRequest) {
+export async function getImpostazioniScontrino() {
   try {
     const user = await getCurrentUser();
     
     // Permetti lettura a CASSA per stampare con le impostazioni corrette
     if (!user || !["SUPERVISORE", "ADMIN", "CASSA", "CAMERIERE"].includes(user.ruolo)) {
-      return NextResponse.json(
-        { error: "Non autorizzato" },
-        { status: 401 }
-      );
+      return {
+        success: false,
+        error: "Non autorizzato"
+      };
     }
 
     // Recupera le impostazioni attive
@@ -21,6 +24,7 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: "desc" }
     });
     console.log("GET - Impostazioni trovate:", impostazioni ? "SI" : "NO");
+    
     if (impostazioni) {
       console.log("GET - ID:", impostazioni.id);
       console.log("GET - Nome attività:", impostazioni.nomeAttivita);
@@ -57,39 +61,42 @@ export async function GET(request: NextRequest) {
       console.log("GET - Impostazioni di default create con successo");
     }
 
-    return NextResponse.json({ success: true, data: impostazioni });
+    return serializeDecimalData({
+      success: true,
+      data: impostazioni
+    });
   } catch (error) {
     console.error("Errore nel recupero impostazioni:", error);
-    return NextResponse.json(
-      { error: "Errore nel recupero delle impostazioni" },
-      { status: 500 }
-    );
+    return {
+      success: false,
+      error: "Errore nel recupero delle impostazioni"
+    };
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function aggiornaImpostazioniScontrino(
+  id: string,
+  updateData: any
+) {
   try {
     const user = await getCurrentUser();
     
     if (!user || (user.ruolo !== "SUPERVISORE" && user.ruolo !== "ADMIN")) {
-      return NextResponse.json(
-        { error: "Non autorizzato" },
-        { status: 401 }
-      );
+      return {
+        success: false,
+        error: "Non autorizzato"
+      };
     }
 
-    const body = await request.json();
-    const { id, ...updateData } = body;
-
-    console.log("PUT - Dati ricevuti:", JSON.stringify(body, null, 2));
+    console.log("PUT - Dati ricevuti:", JSON.stringify({ id, ...updateData }, null, 2));
     console.log("PUT - ID:", id);
     console.log("PUT - UpdateData keys:", Object.keys(updateData));
 
     if (!id) {
-      return NextResponse.json(
-        { error: "ID impostazioni mancante" },
-        { status: 400 }
-      );
+      return {
+        success: false,
+        error: "ID impostazioni mancante"
+      };
     }
 
     // IMPORTANTE: Assicurati che rimanga attivo!
@@ -109,32 +116,34 @@ export async function PUT(request: NextRequest) {
       telefono: impostazioniAggiornate.telefono
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate cache
+    revalidatePath("/admin/scontrino");
+    revalidatePath("/cassa");
+
+    return serializeDecimalData({
+      success: true,
       data: impostazioniAggiornate,
       message: "Impostazioni aggiornate con successo"
     });
   } catch (error) {
     console.error("Errore nell'aggiornamento impostazioni:", error);
-    return NextResponse.json(
-      { error: "Errore nell'aggiornamento delle impostazioni" },
-      { status: 500 }
-    );
+    return {
+      success: false,
+      error: "Errore nell'aggiornamento delle impostazioni"
+    };
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function creaImpostazioniScontrino(data: any) {
   try {
     const user = await getCurrentUser();
     
     if (!user || (user.ruolo !== "SUPERVISORE" && user.ruolo !== "ADMIN")) {
-      return NextResponse.json(
-        { error: "Non autorizzato" },
-        { status: 401 }
-      );
+      return {
+        success: false,
+        error: "Non autorizzato"
+      };
     }
-
-    const body = await request.json();
 
     // Disattiva tutte le impostazioni esistenti
     await prisma.impostazioniScontrino.updateMany({
@@ -145,22 +154,26 @@ export async function POST(request: NextRequest) {
     // Crea nuove impostazioni
     const nuoveImpostazioni = await prisma.impostazioniScontrino.create({
       data: {
-        ...body,
+        ...data,
         attivo: true,
         modificatoDa: user.id
       }
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate cache
+    revalidatePath("/admin/scontrino");
+    revalidatePath("/cassa");
+
+    return serializeDecimalData({
+      success: true,
       data: nuoveImpostazioni,
       message: "Impostazioni create con successo"
     });
   } catch (error) {
     console.error("Errore nella creazione impostazioni:", error);
-    return NextResponse.json(
-      { error: "Errore nella creazione delle impostazioni" },
-      { status: 500 }
-    );
+    return {
+      success: false,
+      error: "Errore nella creazione delle impostazioni"
+    };
   }
 }

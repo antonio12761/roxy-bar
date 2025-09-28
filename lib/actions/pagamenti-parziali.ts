@@ -38,8 +38,8 @@ export async function creaPagamentiParziali(
     //   };
     // }
 
-    // Verifica permessi (CASSA o superiore)
-    if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
+    // Verifica permessi (CAMERIERE, CASSA o superiore)
+    if (!["ADMIN", "MANAGER", "CASSA", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 

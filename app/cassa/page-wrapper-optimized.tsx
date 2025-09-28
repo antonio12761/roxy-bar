@@ -10,13 +10,15 @@ import {
   CreditCard,
   CheckCircle,
   Plus,
-  ShoppingBag
+  ShoppingBag,
+  Bell
 } from "lucide-react";
 import { getOrdinazioniPerStato, generaScontrino } from "@/lib/actions/cassa";
 import { creaPagamento } from "@/lib/actions/pagamenti";
 import { creaPagamentiParziali } from "@/lib/actions/pagamenti-parziali";
 import { creaDebito, getClientiConDebiti } from "@/lib/actions/debiti";
 import { creaDebitoDiretto, getDebitiAperti } from "@/lib/actions/debiti-direct";
+import { getRichiestePagamentoPendenti } from "@/lib/actions/richieste-pagamento";
 import { useSSE } from "@/contexts/sse-context";
 import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { useCassaState } from "@/hooks/useCassaState";
@@ -72,6 +74,7 @@ const CameriereModal = dynamic(
 // Import diretti per modal critici dell'header
 import { BluetoothPrinterPanel } from "@/components/cassa/BluetoothPrinterPanel";
 import { DirectReceiptModal } from "@/components/cassa/DirectReceiptModal";
+import PaymentRequestsPanel from "@/components/cassa/PaymentRequestsPanel";
 
 interface OrderItem {
   id: string;
@@ -128,6 +131,9 @@ function CassaPageOptimized() {
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
   const toast = useToast();
   
+  // Stato per tracciare richieste scontrini pendenti
+  const [pendingReceiptRequests, setPendingReceiptRequests] = useState<Map<string, any>>(new Map());
+  
   // Usa il nuovo hook ottimizzato per lo stato
   const {
     tableGroupsRitirate,
@@ -148,6 +154,8 @@ function CassaPageOptimized() {
   const [selectedTable, setSelectedTable] = useState<TableGroup | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"POS" | "CONTANTI" | "MISTO">("POS");
+  const [showPaymentRequests, setShowPaymentRequests] = useState(false);
+  const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showPartialPaymentModal, setShowPartialPaymentModal] = useState(false);
@@ -406,6 +414,54 @@ function CassaPageOptimized() {
           // Usa helper sicuro per notifiche
           BrowserNotificationHelper.show("Richiesta Scontrino", {
             body: notification.message,
+            icon: '/icon-192.png'
+          });
+        }
+        // Gestione richieste pre-pagamento (stampa scontrini)
+        if (notification.type === 'prepayment:requested') {
+          const data = notification.data || notification;
+          setPendingReceiptRequests(prev => {
+            const newMap = new Map(prev);
+            const key = data.tableNumber || data.orderId;
+            newMap.set(key, {
+              ordinazioneId: data.orderId,
+              tavoloNumero: data.tableNumber,
+              totale: data.amount,
+              modalitaPagamento: data.paymentMethod,
+              clienteNome: data.customerName,
+              cameriereNome: data.waiterName,
+              timestamp: data.timestamp,
+              datiScontrino: data.details?.datiScontrino
+            });
+            return newMap;
+          });
+          
+          // Notifica
+          BrowserNotificationHelper.show("Richiesta Stampa Scontrini", {
+            body: `${data.waiterName} - Tavolo ${data.tableNumber} - €${data.amount?.toFixed(2)} - ${data.paymentMethod}`,
+            icon: '/icon-192.png'
+          });
+        }
+        // Gestione richieste di pagamento dai camerieri
+        if (notification.title === 'Richiesta Pagamento' || notification.type === 'payment:request') {
+          const newRequest = {
+            id: notification.id || Date.now().toString(),
+            orderId: notification.orderId,
+            tableNumber: notification.tableNumber,
+            orderType: notification.orderType || 'TAVOLO',
+            amount: notification.amount,
+            customerName: notification.customerName,
+            waiterName: notification.waiterName || 'Cameriere',
+            paymentMethod: notification.paymentMethod || 'POS',
+            timestamp: new Date(),
+            status: 'pending' as const
+          };
+          setPaymentRequests(prev => [...prev, newRequest]);
+          setShowPaymentRequests(true);
+          
+          // Notifica browser
+          BrowserNotificationHelper.show("Nuova Richiesta Pagamento", {
+            body: `Tavolo ${notification.tableNumber} - €${notification.amount?.toFixed(2)}`,
             icon: '/icon-192.png'
           });
         }
@@ -747,10 +803,37 @@ function CassaPageOptimized() {
     }
   }, []);
 
+  // Funzione per caricare richieste di pagamento pendenti
+  const loadPaymentRequests = useCallback(async () => {
+    try {
+      const result = await getRichiestePagamentoPendenti();
+      if (result.success && result.richieste) {
+        // Trasforma le richieste nel formato atteso dal pannello
+        const requests = result.richieste.map((r: any) => ({
+          id: r.id,
+          orderId: r.ordinazioneId,
+          tableNumber: r.tavoloNumero,
+          orderType: 'TAVOLO',
+          amount: r.totale,
+          customerName: r.clienteNome,
+          waiterName: r.cameriereNome,
+          paymentMethod: r.modalitaPagamento,
+          timestamp: new Date(r.timestampCreazione),
+          status: 'pending'
+        }));
+        setPaymentRequests(requests);
+      }
+    } catch (error) {
+      console.error('Errore caricamento richieste pagamento:', error);
+    }
+  }, []);
+
   // Initial load - usa la versione non debounced per caricamento iniziale
   useEffect(() => {
     loadOrdersDeduplicated();
-  }, [loadOrdersDeduplicated]);
+    // Carica anche le richieste di pagamento pendenti
+    loadPaymentRequests();
+  }, [loadOrdersDeduplicated, loadPaymentRequests]);
   
   // Reload on reconnection
   useEffect(() => {
@@ -811,8 +894,10 @@ function CassaPageOptimized() {
         }}
         onShowBluetoothPanel={() => openModal('bluetooth')}
         onShowDirectReceipt={() => openModal('directReceipt')}
+        onShowPaymentRequests={() => setShowPaymentRequests(true)}
         showHistory={showHistory}
         showScontrinoQueue={showScontrinoQueue}
+        paymentRequestsCount={paymentRequests.length}
           />
         </CassaErrorBoundary>
 
@@ -845,6 +930,16 @@ function CassaPageOptimized() {
             }}
           />
         )}
+        {/* Payment Requests Panel */}
+        <PaymentRequestsPanel
+          isOpen={showPaymentRequests}
+          onClose={() => setShowPaymentRequests(false)}
+          onRequestProcessed={() => {
+            loadOrders();
+            // Ricarica le richieste
+            loadPaymentRequests();
+          }}
+        />
         {showTableDrawer && selectedTable && (
           <TableDetailsDrawer
             isOpen={showTableDrawer}
@@ -853,6 +948,7 @@ function CassaPageOptimized() {
             paymentMethod={paymentMethod}
             paymentMode={paymentMode}
             isProcessingPayment={isProcessingPayment}
+            pendingReceiptRequest={pendingReceiptRequests.get(selectedTable.tavoloNumero)}
             onClose={() => {
               setShowTableDrawer(false);
               setSelectedTable(null);
@@ -879,6 +975,46 @@ function CassaPageOptimized() {
             onCreateDebt={() => setShowClientModal(true)}
             onTriggerParticles={triggerParticles}
             onRefreshData={loadOrders}
+            onConfirmReceipt={async () => {
+              const pendingRequest = pendingReceiptRequests.get(selectedTable.tavoloNumero);
+              if (!pendingRequest) return;
+              
+              try {
+                // Importa la funzione dinamicamente
+                const { confermaStampaScontrini } = await import('@/lib/actions/conferma-stampa-scontrini');
+                
+                const result = await confermaStampaScontrini(
+                  pendingRequest.ordinazioneId,
+                  pendingRequest.modalitaPagamento,
+                  {
+                    righe: pendingRequest.datiScontrino?.righe || [],
+                    totale: pendingRequest.totale,
+                    tavoloNumero: pendingRequest.tavoloNumero,
+                    clienteNome: pendingRequest.clienteNome,
+                    cameriereNome: pendingRequest.cameriereNome
+                  }
+                );
+                
+                if (result.success) {
+                  toast.success(
+                    `✅ Scontrino non fiscale stampato!\n` +
+                    `📋 Emettere ora lo scontrino fiscale ${pendingRequest.modalitaPagamento}`
+                  );
+                  
+                  // Rimuovi la richiesta dopo la conferma
+                  setPendingReceiptRequests(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(selectedTable.tavoloNumero);
+                    return newMap;
+                  });
+                } else {
+                  toast.error(result.error || 'Errore nella stampa');
+                }
+              } catch (error) {
+                console.error('Errore conferma stampa:', error);
+                toast.error('Errore durante la conferma');
+              }
+            }}
           />
         )}
         
@@ -926,6 +1062,7 @@ function CassaPageOptimized() {
                     <TableCard
                       key={table.tavoloNumero}
                       table={table}
+                      hasPendingReceipt={pendingReceiptRequests.has(table.tavoloNumero)}
                       onClick={() => {
                         setSelectedTable(table);
                         openModal('tableDrawer');
@@ -951,6 +1088,7 @@ function CassaPageOptimized() {
                     <TableCard
                       key={table.tavoloNumero}
                       table={table}
+                      hasPendingReceipt={pendingReceiptRequests.has(table.tavoloNumero)}
                       onClick={() => {
                         setSelectedTable(table);
                         openModal('tableDrawer');

@@ -61,6 +61,8 @@ interface TableDetailsDrawerProps {
   onCreateDebt: () => void;
   onTriggerParticles: (element: HTMLElement | null) => void;
   onRefreshData?: () => void; // Nuovo prop per refresh incrementale
+  pendingReceiptRequest?: any; // Richiesta scontrino pendente
+  onConfirmReceipt?: () => void; // Callback per conferma stampa scontrino
 }
 
 export default function TableDetailsDrawer({
@@ -80,7 +82,9 @@ export default function TableDetailsDrawer({
   onPayByClient,
   onCreateDebt,
   onTriggerParticles,
-  onRefreshData
+  onRefreshData,
+  pendingReceiptRequest,
+  onConfirmReceipt
 }: TableDetailsDrawerProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
@@ -600,6 +604,55 @@ export default function TableDetailsDrawer({
                         }
                         return null;
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pending Receipt Request */}
+                {pendingReceiptRequest && (
+                  <div className="p-4 rounded-lg border-2 animate-pulse" 
+                    style={{ 
+                      backgroundColor: (colors.text.info || '#3b82f6') + '10',
+                      borderColor: colors.text.info || '#3b82f6'
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Printer className="h-5 w-5" style={{ color: colors.text.info || '#3b82f6' }} />
+                        <div>
+                          <div className="font-medium" style={{ color: colors.text.primary }}>
+                            Richiesta Stampa Scontrini
+                          </div>
+                          <div className="text-sm" style={{ color: colors.text.secondary }}>
+                            Da {pendingReceiptRequest.cameriereNome} • {pendingReceiptRequest.modalitaPagamento}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold" style={{ color: colors.text.primary }}>
+                          €{pendingReceiptRequest.totale.toFixed(2)}
+                        </div>
+                        <div className="text-xs" style={{ color: colors.text.muted }}>
+                          {new Date(pendingReceiptRequest.timestamp).toLocaleTimeString('it-IT', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onConfirmReceipt}
+                      className="w-full py-2 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: colors.text.success,
+                        color: 'white'
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Conferma e Stampa Scontrini
+                    </button>
+                    <div className="mt-2 text-xs text-center" style={{ color: colors.text.muted }}>
+                      Verrà stampato lo scontrino non fiscale. Emettere poi lo scontrino fiscale.
                     </div>
                   </div>
                 )}

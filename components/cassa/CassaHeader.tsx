@@ -11,7 +11,8 @@ import {
   Info,
   Menu,
   X,
-  ShoppingBag
+  ShoppingBag,
+  Bell
 } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 import { SSEConnectionStatus } from "@/components/SSEConnectionStatus";
@@ -30,8 +31,10 @@ interface CassaHeaderProps {
   onShowMultiPayment?: () => void;
   onShowBluetoothPanel?: () => void;
   onShowDirectReceipt?: () => void;
+  onShowPaymentRequests?: () => void;
   showHistory: boolean;
   showScontrinoQueue: boolean;
+  paymentRequestsCount?: number;
 }
 
 export default function CassaHeader({ 
@@ -42,8 +45,10 @@ export default function CassaHeader({
   onShowMultiPayment,
   onShowBluetoothPanel,
   onShowDirectReceipt,
+  onShowPaymentRequests,
   showHistory,
-  showScontrinoQueue
+  showScontrinoQueue,
+  paymentRequestsCount = 0
 }: CassaHeaderProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
@@ -183,6 +188,36 @@ export default function CassaHeader({
           <ThemeSelector />
               
           {/* Actions */}
+          {onShowPaymentRequests && (
+            <button
+              onClick={onShowPaymentRequests}
+              className="relative px-3 py-1.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm"
+              style={{ 
+                backgroundColor: paymentRequestsCount > 0 ? colors.status?.warning + '20' || '#FFA50020' : colors.bg.hover,
+                color: paymentRequestsCount > 0 ? colors.status?.warning || '#FFA500' : colors.text.primary,
+                cursor: 'pointer',
+                border: paymentRequestsCount > 0 ? `2px solid ${colors.status?.warning || '#FFA500'}` : 'none'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = paymentRequestsCount > 0 ? colors.status?.warning + '30' || '#FFA50030' : colors.bg.darker}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = paymentRequestsCount > 0 ? colors.status?.warning + '20' || '#FFA50020' : colors.bg.hover}
+              title="Richieste di Pagamento"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="hidden lg:inline">Richieste</span>
+              {paymentRequestsCount > 0 && (
+                <span 
+                  className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full text-xs font-bold flex items-center justify-center animate-pulse"
+                  style={{ 
+                    backgroundColor: colors.text.error,
+                    color: 'white'
+                  }}
+                >
+                  {paymentRequestsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {onShowDirectReceipt && (
             <button
               onClick={onShowDirectReceipt}

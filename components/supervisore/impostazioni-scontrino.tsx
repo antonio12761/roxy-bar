@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import ScontrinoPreviewV2 from "./scontrino-preview-v2";
 import LogoUploadGuide from "./logo-upload-guide";
+import { getImpostazioniScontrino, aggiornaImpostazioniScontrino, creaImpostazioniScontrino } from "@/lib/actions/impostazioni-scontrino";
 
 interface ImpostazioniScontrino {
   id?: string;
@@ -123,15 +124,17 @@ export default function ImpostazioniScontrinoComponent() {
 
   const loadImpostazioni = async () => {
     try {
-      const response = await fetch("/api/impostazioni-scontrino");
-      const result = await response.json();
+      const result = await getImpostazioniScontrino();
       
       if (result.success && result.data) {
         console.log("✅ Impostazioni caricate con ID:", result.data.id);
         console.log("   Nome:", result.data.nomeAttivita);
         setImpostazioni(result.data);
       } else {
-        console.error("❌ Nessuna impostazione trovata");
+        console.error("❌ Errore:", result.error || "Nessuna impostazione trovata");
+        if (result.error) {
+          toast.error(result.error);
+        }
       }
     } catch (error) {
       console.error("Errore caricamento impostazioni:", error);
@@ -144,25 +147,22 @@ export default function ImpostazioniScontrinoComponent() {
   const saveImpostazioni = async () => {
     setIsSaving(true);
     try {
-      const method = impostazioni.id ? "PUT" : "POST";
-      
       console.log("🔵 SALVATAGGIO IMPOSTAZIONI");
-      console.log("Metodo:", method);
       console.log("ID:", impostazioni.id);
       console.log("Nome attività:", impostazioni.nomeAttivita);
       console.log("Indirizzo:", impostazioni.indirizzo);
       console.log("Telefono:", impostazioni.telefono);
       console.log("Dati completi:", JSON.stringify(impostazioni, null, 2));
       
-      const response = await fetch("/api/impostazioni-scontrino", {
-        method,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(impostazioni)
-      });
-
-      const result = await response.json();
+      let result;
+      if (impostazioni.id) {
+        // Aggiorna impostazioni esistenti
+        const { id, ...updateData } = impostazioni;
+        result = await aggiornaImpostazioniScontrino(id, updateData);
+      } else {
+        // Crea nuove impostazioni
+        result = await creaImpostazioniScontrino(impostazioni);
+      }
       
       if (result.success) {
         if (result.data) {

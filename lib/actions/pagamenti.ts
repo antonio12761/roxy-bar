@@ -117,8 +117,8 @@ export async function creaPagamento(
     //   };
     // }
 
-    // Verifica permessi (CASSA o superiore)
-    if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
+    // Verifica permessi (CAMERIERE, CASSA o superiore)
+    if (!["ADMIN", "MANAGER", "CASSA", "CAMERIERE"].includes(utente.ruolo)) {
       console.error("ERRORE: Permessi insufficienti, ruolo:", utente.ruolo);
       return { success: false, error: "Permessi insufficienti" };
     }
@@ -666,8 +666,8 @@ export async function creaPagamentoRigheSpecifiche(
       return { success: false, error: "Utente non autenticato" };
     }
 
-    // Verifica permessi (CASSA o superiore)
-    if (!["ADMIN", "MANAGER", "CASSA"].includes(utente.ruolo)) {
+    // Verifica permessi (CAMERIERE, CASSA o superiore)
+    if (!["ADMIN", "MANAGER", "CASSA", "CAMERIERE"].includes(utente.ruolo)) {
       return { success: false, error: "Permessi insufficienti" };
     }
 
@@ -928,3 +928,4 @@ export async function creaPagamentoRigheSpecifiche(
     };
   }
 }
+

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Users, Package, Clock, ChevronRight, CheckCircle } from 'lucide-react';
+import { Users, Package, Clock, ChevronRight, CheckCircle, Printer } from 'lucide-react';
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface TableGroup {
@@ -17,9 +17,10 @@ interface TableCardProps {
   table: TableGroup;
   onClick: () => void;
   variant?: 'default' | 'paid' | 'paying';
+  hasPendingReceipt?: boolean; // Indica se c'è una richiesta scontrino pendente
 }
 
-const TableCard = memo(function TableCard({ table, onClick, variant = 'default' }: TableCardProps) {
+const TableCard = memo(function TableCard({ table, onClick, variant = 'default', hasPendingReceipt = false }: TableCardProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
 
@@ -96,6 +97,19 @@ const TableCard = memo(function TableCard({ table, onClick, variant = 'default' 
           }}
         >
           Parzialmente pagato
+        </div>
+      )}
+      
+      {/* Indicatore richiesta stampa scontrino */}
+      {hasPendingReceipt && (
+        <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full text-xs font-medium shadow-md animate-pulse flex items-center gap-1"
+          style={{ 
+            backgroundColor: colors.text.info || '#3b82f6',
+            color: colors.bg.card || '#ffffff'
+          }}
+        >
+          <Printer className="h-3 w-3" />
+          Scontrino
         </div>
       )}
       <div className="flex items-center justify-between mb-3">
