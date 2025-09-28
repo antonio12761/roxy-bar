@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { 
   Utensils,
   ClipboardList,
@@ -32,53 +33,54 @@ export default function CameriereSidebar({ isOpen, onClose }: CameriereSidebarPr
   const pathname = usePathname();
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const menuItems: MenuItem[] = [
     {
-      title: "🍽️ Tavoli & Ordini",
-      description: "Gestisci tavoli e crea nuovi ordini",
+      title: "Tavoli",
+      description: "Gestisci tavoli",
       icon: Utensils,
       href: "/cameriere/nuova-ordinazione"
     },
     {
-      title: "📋 Ordini Attivi",
-      description: "Monitora ordini in corso",
+      title: "Ordini",
+      description: "In corso",
       icon: ClipboardList,
       href: "/cameriere/ordini-in-corso"
     },
     {
-      title: "💳 Gestione Conti",
-      description: "Conti clienti e pagamenti",
+      title: "Conti",
+      description: "Pagamenti",
       icon: CreditCard,
       href: "/cameriere/gestione-conti"
     },
     {
-      title: "⚡ Azioni Rapide",
-      description: "Scorciatoie per azioni frequenti",
+      title: "Rapide",
+      description: "Scorciatoie",
       icon: Zap,
       href: "/cameriere/azioni-rapide"
     },
     {
-      title: "📊 Riepilogo Turno",
-      description: "Statistiche e riepilogo del turno",
+      title: "Riepilogo",
+      description: "Statistiche",
       icon: BarChart3,
       href: "/cameriere/riepilogo-turno"
     },
     {
-      title: "🔄 Cambia Tavolo",
-      description: "Sposta clienti tra tavoli",
+      title: "Sposta",
+      description: "Cambia tavolo",
       icon: ArrowLeftRight,
       href: "/cameriere/cambia-tavolo"
     },
     {
-      title: "➗ Dividi Conto",
-      description: "Dividi il conto tra più persone",
+      title: "Dividi",
+      description: "Split conto",
       icon: Split,
       href: "/cameriere/dividi-conto"
     },
     {
-      title: "🚨 Richiedi Aiuto",
-      description: "Invia notifica a colleghi",
+      title: "Aiuto",
+      description: "Assistenza",
       icon: Bell,
       href: "/cameriere/richiedi-aiuto"
     }
@@ -133,63 +135,60 @@ export default function CameriereSidebar({ isOpen, onClose }: CameriereSidebarPr
             </div>
           </div>
 
-          {/* Navigation Items - Centered */}
-          <nav className="flex-1 flex items-center justify-center p-4">
-            <ul className="space-y-4 w-full max-w-md">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+          {/* Navigation Items - Grid Layout */}
+          <nav className="flex-1 p-6">
+            <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                const isHovered = hoveredItem === item.href;
 
-              return (
-                <li key={item.href}>
+                return (
                   <Link
+                    key={item.href}
                     href={item.href}
                     onClick={onClose}
                     className={`
-                      flex items-center gap-4 px-4 py-4 rounded-xl
-                      transition-all duration-200
-                      ${isActive ? 'font-medium' : ''}
+                      flex flex-col items-center justify-center p-4 rounded-xl
+                      transition-all duration-200 border-2
+                      ${isActive ? 'shadow-lg' : 'hover:shadow-md'}
                     `}
                     style={{
-                      backgroundColor: isActive ? colors.bg.hover : 'transparent',
-                      color: isActive ? colors.text.primary : colors.text.secondary
+                      backgroundColor: isActive ? colors.bg.hover : (isHovered ? colors.bg.hover : colors.bg.light),
+                      borderColor: isActive ? colors.border.primary : (isHovered ? colors.border.primary : colors.border.secondary),
+                      transform: isHovered && !isActive ? 'scale(1.02)' : 'scale(1)'
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = colors.bg.hover;
-                        e.currentTarget.style.color = colors.text.primary;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = colors.text.secondary;
-                      }
-                    }}
+                    onMouseEnter={() => setHoveredItem(item.href)}
+                    onMouseLeave={() => setHoveredItem(null)}
                   >
-                    <Icon className="h-6 w-6 flex-shrink-0" />
-                    <div className="flex-1 text-left">
-                      <div className="text-base font-medium">{item.title}</div>
+                    <Icon 
+                      className="h-8 w-8 mb-2 transition-colors" 
+                      style={{ 
+                        color: isActive || isHovered ? colors.text.primary : colors.text.secondary 
+                      }}
+                    />
+                    <div className="text-center">
                       <div 
-                        className="text-sm mt-0.5"
+                        className="text-sm font-semibold transition-colors"
                         style={{ 
-                          color: isActive ? colors.text.secondary : colors.text.muted 
+                          color: isActive || isHovered ? colors.text.primary : colors.text.secondary 
+                        }}
+                      >
+                        {item.title}
+                      </div>
+                      <div 
+                        className="text-xs mt-0.5 transition-colors"
+                        style={{ 
+                          color: isActive ? colors.text.secondary : (isHovered ? colors.text.secondary : colors.text.muted)
                         }}
                       >
                         {item.description}
                       </div>
                     </div>
-                    {isActive && (
-                      <ChevronRight 
-                        className="h-4 w-4 flex-shrink-0" 
-                        style={{ color: colors.text.primary }}
-                      />
-                    )}
                   </Link>
-                </li>
-              );
-            })}
-            </ul>
+                );
+              })}
+            </div>
           </nav>
         </div>
       </aside>

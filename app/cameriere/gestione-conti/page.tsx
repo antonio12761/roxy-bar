@@ -11,6 +11,8 @@ import { getOrdinazioniConsegnate } from "@/lib/actions/cassa";
 import { creaPagamentoRigheSpecifiche } from "@/lib/actions/pagamenti";
 import { richiediPagamento, richiediScontrino } from "@/lib/actions/pagamenti";
 import { creaPagamentiParziali } from "@/lib/actions/pagamenti-parziali";
+import { creaPrePagamento } from "@/lib/actions/pre-pagamento";
+import { completaPagamentoCameriere } from "@/lib/actions/completa-pagamento";
 import { getTuttiContiScalari, saldaContoParziale } from "@/lib/actions/ordinaPerAltri";
 import { toast } from "@/lib/toast";
 import PaymentHistory from "@/components/cassa/payment-history";
@@ -485,7 +487,7 @@ export default function GestioneContiPage() {
     return selectedTableItems.length === unpaidItemsCount;
   };
 
-  const handleWaiterPayment = async () => {
+  const handlePrintReceipts = async () => {
     if (selectedItems.length === 0 || !paymentMethod || !customerNameForPayment.trim()) {
       if (!customerNameForPayment.trim()) {
         toast.error('Inserisci il nome del cliente');
@@ -495,38 +497,36 @@ export default function GestioneContiPage() {
 
     setProcessingPayment(true);
     try {
-      // Raggruppa gli articoli per ordine
-      const orderGroups = selectedItems.reduce((acc, item) => {
-        if (!acc[item.orderId]) {
-          acc[item.orderId] = [];
-        }
-        acc[item.orderId].push(item);
-        return acc;
-      }, {} as Record<string, SelectedItem[]>);
+      // Prendi il primo ordine (assumiamo pagamento singolo ordine per semplicità)
+      const orderIds = [...new Set(selectedItems.map(item => item.orderId))];
+      
+      if (orderIds.length > 1) {
+        toast.error('Seleziona articoli di un solo ordine alla volta');
+        setProcessingPayment(false);
+        return;
+      }
 
-      // Processa pagamenti per ogni ordine
-      for (const [orderId, items] of Object.entries(orderGroups)) {
-        const righeSelezionate = items.map(item => item.rigaId);
-        const importoTotale = items.reduce((sum, item) => sum + item.totalPrice, 0);
-        
-        const result = await creaPagamentiParziali(
-          orderId,
-          [{
-            clienteNome: customerNameForPayment,
-            importo: importoTotale,
-            modalita: paymentMethod as 'POS' | 'CONTANTI' | 'MISTO',
-            righeSelezionate
-          }]
-        );
-        
-        if (!result.success) {
-          toast.error(`Errore pagamento ordine: ${'error' in result ? result.error : 'Errore sconosciuto'}`);
-          continue;
-        }
+      const orderId = orderIds[0];
+      
+      // Crea pre-pagamento che stampa gli scontrini
+      const result = await creaPrePagamento(
+        orderId,
+        paymentMethod as 'POS' | 'CONTANTI',
+        customerNameForPayment
+      );
+      
+      if (!result.success) {
+        toast.error(`Errore: ${'error' in result ? result.error : 'Errore sconosciuto'}`);
+        return;
       }
       
       const totalAmount = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
-      toast.success(`Pagamento ${paymentMethod} di €${totalAmount.toFixed(2)} completato per ${customerNameForPayment}`);
+      toast.success(
+        `✅ Richiesta inviata al cassiere!\n` +
+        `💰 Importo: €${totalAmount.toFixed(2)} - ${paymentMethod}\n` +
+        `⏳ Attendere conferma del cassiere per la stampa\n` +
+        `👉 Poi recarsi in cassa per ritirare gli scontrini`
+      );
       
       // Marca come richiesti
       const newRequestedItems = new Set(requestedPaymentItems);
@@ -869,8 +869,8 @@ export default function GestioneContiPage() {
                                       checked={isOrderFullySelected(order)}
                                       onCheckedChange={() => toggleOrderSelection(order)}
                                       onClick={(e) => e.stopPropagation()}
-                                      title="Seleziona ordinazione per pagamento"
-                                      disabled={order.righeNonPagate === 0}
+                                      title={order.stato === 'RICHIESTA_CONTO' ? "Ordine già in pagamento" : "Seleziona ordinazione per pagamento"}
+                                      disabled={order.righeNonPagate === 0 || order.stato === 'RICHIESTA_CONTO'}
                                       style={{
                                         '--border': colors.border.primary,
                                         '--primary': colors.accent
@@ -903,10 +903,49 @@ export default function GestioneContiPage() {
                                         Parziale
                                       </span>
                                     )}
+                                    {order.stato === 'RICHIESTA_CONTO' && (
+                                      <span className="text-xs px-2 py-1 rounded animate-pulse flex items-center gap-1"
+                                        style={{ 
+                                          backgroundColor: colors.text.info ? colors.text.info + '20' : '#3b82f620',
+                                          color: colors.text.info || '#3b82f6'
+                                        }}>
+                                        <FileText className="h-3 w-3" />
+                                        Scontrini stampati
+                                      </span>
+                                    )}
                                   </div>
-                                  <span className="text-sm font-bold" style={{ color: colors.text.secondary }}>
-                                    €{orderTotal.toFixed(2)}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold" style={{ color: colors.text.secondary }}>
+                                      €{orderTotal.toFixed(2)}
+                                    </span>
+                                    {order.stato === 'RICHIESTA_CONTO' && (
+                                      <button
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          try {
+                                            const result = await completaPagamentoCameriere(order.id);
+                                            if (result.success) {
+                                              toast.success('Pagamento completato con successo!');
+                                              await fetchDeliveredOrders();
+                                            } else {
+                                              toast.error(result.error || 'Errore nel completamento del pagamento');
+                                            }
+                                          } catch (error) {
+                                            console.error('Errore completamento pagamento:', error);
+                                            toast.error('Errore durante il completamento del pagamento');
+                                          }
+                                        }}
+                                        className="px-3 py-1 text-xs font-medium rounded-lg flex items-center gap-1 hover:opacity-90 transition-opacity"
+                                        style={{
+                                          backgroundColor: colors.text.success,
+                                          color: 'white'
+                                        }}
+                                      >
+                                        <CheckCircle className="h-3 w-3" />
+                                        Conferma Pagamento
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -927,10 +966,26 @@ export default function GestioneContiPage() {
                                 
                                 const productKey = `${group.tableNumber}-${index}`;
                                 const isProductExpanded = expandedProducts.has(productKey);
-                                const hasUnpaidItems = product.items.some(item => !item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`));
+                                // Controlla se l'ordine è in RICHIESTA_CONTO per escluderlo dalla selezione
+                                const isOrderInRichiestaConto = (orderId: string) => {
+                                  const order = group.orders.find((o: any) => o.id === orderId);
+                                  return order?.stato === 'RICHIESTA_CONTO';
+                                };
+                                
+                                const hasUnpaidItems = product.items.some(item => 
+                                  !item.isPagato && 
+                                  !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`) &&
+                                  !isOrderInRichiestaConto(item.orderId)
+                                );
                                 const paidQuantity = product.items.filter(item => item.isPagato).reduce((sum, item) => sum + item.quantity, 0);
-                                const unpaidQuantity = product.items.filter(item => !item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`)).reduce((sum, item) => sum + item.quantity, 0);
-                                const requestedQuantity = product.items.filter(item => requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`)).reduce((sum, item) => sum + item.quantity, 0);
+                                const unpaidQuantity = product.items.filter(item => 
+                                  !item.isPagato && 
+                                  !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`) &&
+                                  !isOrderInRichiestaConto(item.orderId)
+                                ).reduce((sum, item) => sum + item.quantity, 0);
+                                const requestedQuantity = product.items.filter(item => 
+                                  requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`)
+                                ).reduce((sum, item) => sum + item.quantity, 0);
                                 const isFullyPaid = unpaidQuantity === 0;
                                 // Controlla se il prodotto ha quantità > 1 o più item
                                 const isExpandable = product.totalQuantity > 1 || product.items.length > 1;
@@ -978,7 +1033,11 @@ export default function GestioneContiPage() {
                                           <Checkbox
                                             checked={selectedQuantity === unpaidQuantity}
                                             onCheckedChange={(checked) => {
-                                              const unpaidItems = product.items.filter(item => !item.isPagato && !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`));
+                                              const unpaidItems = product.items.filter(item => 
+                                                !item.isPagato && 
+                                                !requestedPaymentItems.has(`${item.orderId}-${item.rigaId}`) &&
+                                                !isOrderInRichiestaConto(item.orderId)
+                                              );
                                               
                                               if (selectedQuantity === unpaidQuantity) {
                                                 unpaidItems.forEach(item => {
@@ -1410,7 +1469,7 @@ export default function GestioneContiPage() {
                 className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-lg flex items-center justify-center gap-2"
               >
                 <Euro className="h-5 w-5" />
-                <span className="font-medium">Incassa in Contanti</span>
+                <span className="font-medium">Stampa Scontrini - Contanti</span>
               </button>
               <button
                 onClick={() => {
@@ -1421,7 +1480,7 @@ export default function GestioneContiPage() {
                 className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg flex items-center justify-center gap-2"
               >
                 <CreditCard className="h-5 w-5" />
-                <span className="font-medium">Incassa con POS</span>
+                <span className="font-medium">Stampa Scontrini - POS</span>
               </button>
               <button
                 onClick={() => {
@@ -1470,7 +1529,7 @@ export default function GestioneContiPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text.primary }}>
-              Conferma Incasso {paymentMethod === 'CONTANTI' ? 'in Contanti' : paymentMethod === 'POS' ? 'con POS' : 'Misto'}
+              Stampa Scontrini - Pagamento {paymentMethod === 'CONTANTI' ? 'in Contanti' : paymentMethod === 'POS' ? 'con POS' : 'Misto'}
             </h3>
             
             <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: colors.bg.darker }}>
@@ -1504,7 +1563,10 @@ export default function GestioneContiPage() {
             {paymentMethod === 'CONTANTI' && (
               <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                 <p className="text-sm text-amber-400">
-                  Ricevi i contanti dal cliente e conferma l'incasso
+                  1. Invio richiesta al cassiere<br/>
+                  2. Il cassiere conferma e stampa scontrino non fiscale<br/>
+                  3. Il cassiere emette lo scontrino fiscale CONTANTI<br/>
+                  4. Ritira entrambi, consegna al cliente e incassa
                 </p>
               </div>
             )}
@@ -1512,7 +1574,10 @@ export default function GestioneContiPage() {
             {paymentMethod === 'POS' && (
               <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                 <p className="text-sm text-blue-400">
-                  Procedi con il pagamento POS e conferma quando completato
+                  1. Invio richiesta al cassiere<br/>
+                  2. Il cassiere conferma e stampa scontrino non fiscale<br/>
+                  3. Il cassiere emette lo scontrino fiscale con dicitura POS<br/>
+                  4. Ritira entrambi, consegna al cliente che paga con carta
                 </p>
               </div>
             )}
@@ -1520,14 +1585,17 @@ export default function GestioneContiPage() {
             {paymentMethod === 'MISTO' && (
               <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
                 <p className="text-sm text-purple-400">
-                  Ricevi il pagamento misto (contanti + POS) e conferma l'incasso
+                  1. Invio richiesta al cassiere<br/>
+                  2. Il cassiere conferma e stampa scontrino non fiscale<br/>
+                  3. Il cassiere emette lo scontrino fiscale MISTO<br/>
+                  4. Ricevi parte contanti e parte POS dal cliente
                 </p>
               </div>
             )}
 
             <div className="flex gap-2">
               <button
-                onClick={handleWaiterPayment}
+                onClick={handlePrintReceipts}
                 disabled={processingPayment}
                 className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground rounded-lg flex items-center justify-center gap-2"
               >
@@ -1539,7 +1607,7 @@ export default function GestioneContiPage() {
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4" />
-                    Conferma Incasso
+                    Stampa Scontrini
                   </>
                 )}
               </button>

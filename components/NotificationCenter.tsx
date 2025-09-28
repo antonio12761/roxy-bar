@@ -402,8 +402,50 @@ export default function NotificationCenter({
       });
     });
     
+    // Subscribe to order:item:update for IN_PREPARAZIONE state
+    const unsubItemUpdate = sseContext.subscribe('order:item:update', (data: any) => {
+      // Only notify for IN_LAVORAZIONE (IN_PREPARAZIONE) status
+      if (data.status !== 'IN_LAVORAZIONE') return;
+      
+      // Deduplication
+      const key = `item-update-${data.itemId}-${data.status}`;
+      const now = Date.now();
+      
+      if (lastUpdateRef.current[key] && (now - lastUpdateRef.current[key] < 3000)) {
+        return;
+      }
+      
+      lastUpdateRef.current[key] = now;
+      
+      // Get order number from the server-sent data
+      const orderNumber = data.orderNumber || data.orderId;
+      
+      const notification: EnhancedSSENotification = {
+        id: `item-update-${data.itemId}-${Date.now()}`,
+        type: NotificationTypes.ORDER_UPDATE,
+        message: `🔄 Ordine #${orderNumber} in preparazione`,
+        priority: NotificationPriority.NORMAL,
+        timestamp: new Date().toISOString(),
+        data: data,
+        targetRoles: ['CAMERIERE'],
+        syncVersion: Date.now()
+      };
+      
+      setNotifications(prev => {
+        const exists = prev.some(n => n.id === notification.id);
+        if (exists) return prev;
+        const updated = [notification, ...prev];
+        return updated.slice(0, maxNotifications);
+      });
+      
+      requestAnimationFrame(() => {
+        playNotificationSound(notification.priority);
+      });
+    });
+
     // Subscribe to order ready
     const unsubOrderReady = sseContext.subscribe('order:ready', (data: any) => {
+      console.log('[NotificationCenter] Received order:ready event:', data);
       
       // Deduplication for order ready
       const key = `order-ready-${data.orderId || data.id}`;
@@ -578,6 +620,67 @@ export default function NotificationCenter({
       });
     });
     
+    // Subscribe to new order event for PREPARA role
+    const unsubOrderNew = sseContext.subscribe('order:new', (data: any) => {
+      // Only notify PREPARA role for new orders that have PREPARA or BANCO items
+      if (userRole !== 'PREPARA') return;
+      
+      // Check if the order has any items for PREPARA or BANCO station
+      const hasPreparaOrBancoItems = data.items?.some((item: any) => 
+        item.destination === 'PREPARA' || item.destination === 'BANCO'
+      );
+      
+      if (!hasPreparaOrBancoItems) return;
+      
+      // Deduplication for new orders
+      const key = `order-new-${data.orderId}`;
+      const now = Date.now();
+      
+      if (lastUpdateRef.current[key] && (now - lastUpdateRef.current[key] < 3000)) {
+        return; // Ignore duplicates within 3 seconds
+      }
+      
+      lastUpdateRef.current[key] = now;
+      
+      // Count items for PREPARA/BANCO
+      const preparaItems = data.items?.filter((item: any) => 
+        item.destination === 'PREPARA' || item.destination === 'BANCO'
+      ).length || 0;
+      
+      const notification: EnhancedSSENotification = {
+        id: `order-new-${data.orderId}-${Date.now()}`,
+        type: NotificationTypes.NEW_ORDER,
+        message: `🔔 Nuovo ordine${data.tableNumber ? ` Tavolo ${data.tableNumber}` : ''} - ${preparaItems} prodotti`,
+        priority: NotificationPriority.HIGH,
+        timestamp: new Date().toISOString(),
+        data: {
+          ...data,
+          orderId: data.orderId,
+          tableNumber: data.tableNumber,
+          items: data.items,
+          customerName: data.customerName
+        },
+        targetRoles: ['PREPARA', 'CUCINA', 'SUPERVISORE'],
+        syncVersion: Date.now()
+      };
+      
+      // Add notification IMMEDIATELY
+      setNotifications(prev => {
+        const exists = prev.some(n => n.id === notification.id);
+        if (exists) return prev;
+        const updated = [notification, ...prev];
+        return updated.slice(0, maxNotifications);
+      });
+      
+      // Play sound immediately for high priority
+      playNotificationSound(notification.priority);
+      
+      // Also show a toast notification for new orders
+      toast.success(`🔔 Nuovo ordine${data.tableNumber ? ` Tavolo ${data.tableNumber}` : ''} - ${preparaItems} prodotti`, {
+        duration: 5000
+      });
+    });
+    
     // All subscriptions are now active
     
     return () => {
@@ -586,8 +689,10 @@ export default function NotificationCenter({
       unsubAvailability();
       unsubOutOfStock();
       unsubOrderUpdate();
+      unsubItemUpdate();
       unsubOrderReady();
       unsubOrderDelivered();
+      unsubOrderNew();
       unsubEsauritoAlert();
       unsubEsauritoTaken();
     };

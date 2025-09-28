@@ -310,14 +310,15 @@ export default function TavoloPage() {
   // Parametri per modalità "ordina per altri"
   const modalitaOrdinazione = searchParams.get('modalita');
   const clienteOrdinanteParam = searchParams.get('clienteOrdinante');
+  const clienteParam = searchParams.get('cliente'); // Nuovo parametro per cliente preselezionato
   const isOrdinaPerAltri = modalitaOrdinazione === 'per-altri';
   
   const [table, setTable] = useState<Table | null>(null);
   const [order, setOrder] = useState<OrderItem[]>([]);
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
-  const [customerName, setCustomerName] = useState("");
+  const [customerName, setCustomerName] = useState(""); // Inizializza vuoto, verrà popolato dopo
   const [customerSeats, setCustomerSeats] = useState(2);
-  const [showNameModal, setShowNameModal] = useState(true);
+  const [showNameModal, setShowNameModal] = useState(true); // Mostra sempre il modal
   const [showActiveOrders, setShowActiveOrders] = useState(false);
   const [clienteOrdinante, setClienteOrdinante] = useState(clienteOrdinanteParam || "");
   const [productCode, setProductCode] = useState("");
@@ -603,6 +604,10 @@ export default function TavoloPage() {
         // Set customer name suggestions from previous orders at this table
         if (previousCustomers.success && previousCustomers.customerNames.length > 0) {
           setCustomerNameSuggestions(previousCustomers.customerNames);
+          // Se c'è un ultimo cliente, usa quello come valore iniziale
+          if (previousCustomers.lastCustomerName) {
+            setCustomerName(previousCustomers.lastCustomerName);
+          }
         } else {
           // Fallback to localStorage suggestions if no previous customers
           const savedNames = localStorage.getItem('customerNames');
@@ -623,12 +628,8 @@ export default function TavoloPage() {
     };
   }, [tavoloId]); // Only depend on tavoloId to prevent loops
 
-  // Quando le ordinazioni attive cambiano, aggiorna la visibilità del modal nome
-  useEffect(() => {
-    if (table && table.stato === "OCCUPATO" && activeOrders.length > 0) {
-      setShowNameModal(false);
-    }
-  }, [activeOrders, table]);
+  // Rimuovo la logica che chiudeva automaticamente il modal quando c'erano ordini attivi
+  // Il modal deve rimanere aperto sempre all'inizio
 
   // Track last product update to prevent duplicate toasts
   const lastProductUpdateRef = useRef<{ productId: string; timestamp: number }>({ productId: '', timestamp: 0 });
@@ -1601,7 +1602,7 @@ export default function TavoloPage() {
         tableZone={table.zona || undefined}
         maxSeats={table.posti}
         suggestions={customerNameSuggestions}
-        initialName={customerName}
+        initialName={customerName} // Usa sempre customerName che ora contiene l'ultimo cliente
         initialSeats={customerSeats}
         onBack={() => {
           setIsSubmittingFromModal(false);

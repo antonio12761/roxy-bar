@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Gift, AlertTriangle, User } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -7,10 +7,11 @@ interface TableCardProps {
     id: number;
     numero: string;
     stato: "LIBERO" | "OCCUPATO" | "RISERVATO" | "IN_PULIZIA";
-    posti: number;
     clienteNome?: string | null;
     hasOutOfStockOrder?: boolean;
     outOfStockHandledBy?: string | null;
+    lastOrderStatus?: string | null;
+    lastOrderReadyTime?: string | null;
   };
   isGiftMode: boolean;
   onClick: () => void;
@@ -19,6 +20,28 @@ interface TableCardProps {
   showTooltip?: boolean;
   tooltipContent?: React.ReactNode;
 }
+
+// Helper function to get order status label
+const getOrderStatusLabel = (status: string): string => {
+  switch (status) {
+    case 'ORDINATO':
+      return 'Ordinato';
+    case 'IN_PREPARAZIONE':
+      return 'In prep.';
+    case 'PRONTO':
+      return 'Pronto';
+    case 'CONSEGNATO':
+      return 'Consegnato';
+    case 'RITIRATO':
+      return 'Ritirato';
+    case 'PAGATO':
+      return 'Pagato';
+    case 'ANNULLATO':
+      return 'Annullato';
+    default:
+      return status;
+  }
+};
 
 // Memoized component to prevent re-renders
 export const TableCard = memo(function TableCard({
@@ -32,11 +55,48 @@ export const TableCard = memo(function TableCard({
 }: TableCardProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode === 'system' ? 'dark' : themeMode];
+  const [, forceUpdate] = useState({});
+
+  // Force re-render every 10 seconds to update colors for ready orders
+  useEffect(() => {
+    if (table.lastOrderStatus === 'PRONTO' && table.lastOrderReadyTime) {
+      const interval = setInterval(() => {
+        forceUpdate({});
+      }, 10000); // Update every 10 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [table.lastOrderStatus, table.lastOrderReadyTime]);
+
+  // Calculate time elapsed for ready orders
+  const getReadyStateClass = () => {
+    if (table.lastOrderStatus !== 'PRONTO' || !table.lastOrderReadyTime) {
+      return null;
+    }
+    
+    const readyTime = new Date(table.lastOrderReadyTime).getTime();
+    const now = Date.now();
+    const minutesElapsed = (now - readyTime) / (1000 * 60);
+    
+    if (minutesElapsed < 1) {
+      return 'table-card-ready-yellow';  // Yellow in first minute
+    } else if (minutesElapsed < 2) {
+      return 'table-card-ready-red';     // Red from 1-2 minutes
+    } else {
+      return 'table-card-ready-red-flash'; // Flashing red after 2 minutes
+    }
+  };
+
+  const readyClass = getReadyStateClass();
 
   // CSS classes based on state - computed once
   const stateClasses = {
     LIBERO: `table-card-free`,
-    OCCUPATO: table.hasOutOfStockOrder ? `table-card-out-of-stock` : `table-card-occupied`,
+    OCCUPATO: table.hasOutOfStockOrder 
+      ? `table-card-out-of-stock` 
+      : readyClass 
+        ? readyClass
+        : `table-card-occupied`,
     RISERVATO: `table-card-reserved`,
     IN_PULIZIA: `table-card-cleaning`
   };
@@ -83,12 +143,54 @@ export const TableCard = memo(function TableCard({
           border-color: #991b1b;
         }
         
+        .table-card-ready-yellow {
+          background-color: #fbbf24;
+          border-color: #f59e0b;
+          color: white;
+        }
+        .table-card-ready-yellow:hover {
+          opacity: 0.9;
+          border-color: #d97706;
+        }
+        
+        .table-card-ready-red {
+          background-color: #ef4444;
+          border-color: #dc2626;
+          color: white;
+        }
+        .table-card-ready-red:hover {
+          opacity: 0.9;
+          border-color: #b91c1c;
+        }
+        
+        .table-card-ready-red-flash {
+          background-color: #ef4444;
+          border-color: #dc2626;
+          color: white;
+          animation: flash 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .table-card-ready-red-flash:hover {
+          opacity: 0.9;
+          border-color: #b91c1c;
+        }
+        
         @keyframes pulse {
           0%, 100% {
             opacity: 1;
           }
           50% {
             opacity: 0.8;
+          }
+        }
+        
+        @keyframes flash {
+          0%, 100% {
+            opacity: 1;
+            background-color: #ef4444;
+          }
+          50% {
+            opacity: 0.7;
+            background-color: #dc2626;
           }
         }
         
@@ -129,12 +231,6 @@ export const TableCard = memo(function TableCard({
             <Gift className="h-5 w-5 text-yellow-400 mt-1 animate-pulse" />
           ) : (
             <>
-              <div className="text-xs">{table.posti}</div>
-              {table.stato === "OCCUPATO" && !table.hasOutOfStockOrder && (
-                <div className="text-[10px] bg-white/10 text-white/60 px-1 rounded mt-1">
-                  +Ordine
-                </div>
-              )}
               {table.hasOutOfStockOrder && (
                 <div className="flex flex-col items-center gap-1 mt-1">
                   <AlertTriangle className="h-4 w-4 text-white animate-bounce" />
@@ -149,9 +245,9 @@ export const TableCard = memo(function TableCard({
                   )}
                 </div>
               )}
-              {table.clienteNome && !table.hasOutOfStockOrder && (
-                <div className="text-[10px] text-foreground mt-1 truncate w-full text-center">
-                  {table.clienteNome}
+              {!table.hasOutOfStockOrder && table.lastOrderStatus && (
+                <div className="text-[10px] text-white/90 px-1 rounded mt-1">
+                  {getOrderStatusLabel(table.lastOrderStatus)}
                 </div>
               )}
             </>

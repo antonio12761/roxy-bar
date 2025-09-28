@@ -347,6 +347,18 @@ export class NotificationManager {
       syncVersion: Date.now()
     });
 
+    // Emit specific order:ready event for real-time updates
+    if (typeof window === 'undefined') { // Server-side only
+      const { sseService } = require('@/lib/sse/sse-service');
+      sseService.emit('order:ready', {
+        orderId: data.orderId,
+        orderNumber: data.tableNumber ? parseInt(data.tableNumber.toString()) : undefined,
+        tableNumber: data.tableNumber,
+        readyItems: [],
+        timestamp: new Date().toISOString()
+      });
+    }
+
     return eventId || `notification-${Date.now()}`;
   }
 

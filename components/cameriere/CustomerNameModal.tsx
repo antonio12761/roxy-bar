@@ -47,6 +47,7 @@ export function CustomerNameModal({
   const [showError, setShowError] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [recentCustomers, setRecentCustomers] = useState<string[]>([]);
+  const [allSuggestions, setAllSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     const loadRecentCustomers = async () => {
@@ -60,6 +61,14 @@ export function CustomerNameModal({
       loadRecentCustomers();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Combina i clienti del tavolo (suggestions) con i clienti recenti generali
+    // Rimuovi duplicati mantenendo l'ordine: prima clienti del tavolo, poi clienti generali
+    const tableCustomers = suggestions || [];
+    const generalCustomers = recentCustomers.filter(name => !tableCustomers.includes(name));
+    setAllSuggestions([...tableCustomers, ...generalCustomers]);
+  }, [suggestions, recentCustomers]);
 
   const handleSearchCustomers = async (query: string) => {
     const result = await searchClientiAutocomplete(query);
@@ -132,8 +141,14 @@ export function CustomerNameModal({
             <ArrowLeft className="h-4 w-4" style={{ color: colors.text.secondary }} />
           </button>
         )}
-        <h2 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+        <h2 className="text-xl font-bold flex-1" style={{ color: colors.text.primary }}>
           Tavolo {tableNumber} {tableZone && `- ${tableZone}`}
+          {suggestions && suggestions.length > 0 && (
+            <span className="ml-2 text-base font-normal" style={{ color: colors.text.secondary }}>
+              • {suggestions.slice(0, 2).join(', ')}
+              {suggestions.length > 2 && ` +${suggestions.length - 2}`}
+            </span>
+          )}
         </h2>
       </div>
       <p className="text-sm mb-4" style={{ color: colors.text.muted }}>
@@ -162,7 +177,7 @@ export function CustomerNameModal({
               Nome Cliente
             </label>
             <p className="text-xs mb-2" style={{ color: colors.text.muted }}>
-              Seleziona dall'elenco o digita un nuovo nome
+              Seleziona un cliente esistente o aggiungi un nuovo nome
             </p>
             <Autocomplete
               value={customerName}
@@ -192,7 +207,7 @@ export function CustomerNameModal({
               placeholder="Cerca o aggiungi nuovo cliente..."
               autoFocus
               required
-              suggestions={recentCustomers}
+              suggestions={allSuggestions}
             />
           </div>
           

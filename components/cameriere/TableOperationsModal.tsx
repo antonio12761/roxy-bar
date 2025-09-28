@@ -16,10 +16,14 @@ import {
   Edit,
   Trash2,
   UserX,
-  X
+  X,
+  User,
+  UserPlus
 } from "lucide-react";
 import Link from "next/link";
-import { getTableOrdersInfo } from "@/lib/actions/ordinazioni";
+import { getTableOrdersInfo, getCustomerNamesForTable } from "@/lib/actions/ordinazioni";
+import { CustomerNameModal } from "@/components/cameriere/CustomerNameModal";
+import { useRouter } from "next/navigation";
 
 interface Table {
   id: number;
@@ -49,12 +53,15 @@ interface TableOperationsModalProps {
 export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: TableOperationsModalProps) {
   const { currentTheme, themeMode } = useTheme();
   const colors = currentTheme.colors[themeMode as keyof typeof currentTheme.colors];
+  const router = useRouter();
   const [ordersCount, setOrdersCount] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showOutOfStockManagement, setShowOutOfStockManagement] = useState(false);
   const [outOfStockOrderDetails, setOutOfStockOrderDetails] = useState<any>(null);
   const [loadingOutOfStock, setLoadingOutOfStock] = useState(false);
+  const [existingCustomers, setExistingCustomers] = useState<string[]>([]);
+  const [selectedCustomerName, setSelectedCustomerName] = useState("");
 
   // Carica i dati reali del tavolo
   useEffect(() => {
@@ -62,19 +69,30 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
       if (table && table.stato === "OCCUPATO") {
         setIsLoading(true);
         try {
-          const data = await getTableOrdersInfo(table.id);
-          setOrdersCount(data.ordersCount);
-          setPendingAmount(data.pendingAmount);
+          const [orderData, customerData] = await Promise.all([
+            getTableOrdersInfo(table.id),
+            getCustomerNamesForTable(table.id)
+          ]);
+          
+          setOrdersCount(orderData.ordersCount);
+          setPendingAmount(orderData.pendingAmount);
+          
+          // Imposta i nomi clienti esistenti
+          if (customerData.success && customerData.customerNames.length > 0) {
+            setExistingCustomers(customerData.customerNames);
+          }
         } catch (error) {
           console.error("Errore caricamento dati tavolo:", error);
           setOrdersCount(0);
           setPendingAmount(0);
+          setExistingCustomers([]);
         } finally {
           setIsLoading(false);
         }
       } else {
         setOrdersCount(0);
         setPendingAmount(0);
+        setExistingCustomers([]);
       }
     };
 
@@ -83,6 +101,13 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
 
   if (!table) return null;
 
+  const handleNewOrder = () => {
+    // Vai sempre direttamente alla pagina ordine
+    // Il CustomerNameModal mostrerà sia i clienti del tavolo che quelli generali
+    router.push(`/cameriere/tavolo/${table.id}`);
+    onClose();
+  };
+
   const actions = [
     {
       id: "new-order",
@@ -90,7 +115,8 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
       description: "Aggiungi un nuovo ordine a questo tavolo",
       icon: ShoppingCart,
       color: "bg-blue-500",
-      href: `/cameriere/tavolo/${table.id}`,
+      href: null as any, // Useremo onClick invece di href
+      onClick: handleNewOrder,
       available: true
     },
     {
@@ -125,11 +151,15 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
   ];
 
   const handleActionClick = (action: typeof actions[0]) => {
-    onClose();
-    // La navigazione sarà gestita dal Link
+    if (action.onClick) {
+      action.onClick();
+    } else {
+      onClose();
+    }
   };
 
   return (
+    <>
     <ThemedModal
       isOpen={isOpen}
       onClose={onClose}
@@ -154,11 +184,15 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
               {table.numero}
             </div>
             
-            {/* Customer Names */}
+            {/* Table Info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm sm:text-base font-medium truncate" style={{ color: colors.text.primary }}>
-                {table.clienteNome || "Nessun cliente"}
-              </div>
+              {/* Mostra i nomi dei clienti se presenti */}
+              {existingCustomers.length > 0 && (
+                <div className="text-sm sm:text-base font-medium truncate" style={{ color: colors.text.primary }}>
+                  {existingCustomers.slice(0, 3).join(', ')}
+                  {existingCustomers.length > 3 && ` +${existingCustomers.length - 3}`}
+                </div>
+              )}
               <div className="text-xs sm:text-sm" style={{ color: colors.text.secondary }}>
                 {table.zona && `${table.zona} • `}{table.posti} posti
               </div>
@@ -439,10 +473,13 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
               const isFirst = index === 0;
               const isLast = index === actions.length - 1;
               
+              const ActionWrapper = action.href ? Link : 'div';
+              const actionProps = action.href ? { href: action.href } : {};
+              
               return (
-                <Link
+                <ActionWrapper
                   key={action.id}
-                  href={action.href}
+                  {...actionProps}
                   onClick={() => handleActionClick(action)}
                   className={`
                     block p-3 sm:p-4 border-2 border-l-2 border-r-2 transition-all duration-200
@@ -498,7 +535,7 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
                       </div>
                     )}
                   </div>
-                </Link>
+                </ActionWrapper>
               );
             })}
           </div>
@@ -508,14 +545,13 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
         {table.stato === "OCCUPATO" && (
           <div className="pt-2 sm:pt-3 border-t" style={{ borderColor: colors.border.primary }}>
             <div className="flex gap-2 sm:gap-3">
-              <Link
-                href={`/cameriere/tavolo/${table.id}`}
-                onClick={onClose}
+              <button
+                onClick={handleNewOrder}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-center text-sm sm:text-base font-medium transition-colors"
               >
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 sm:mr-2" />
                 Aggiungi Ordine
-              </Link>
+              </button>
               {pendingAmount > 0 && (
                 <Link
                   href={`/cameriere/conti?tavolo=${table.numero}`}
@@ -533,17 +569,18 @@ export function TableOperationsModal({ isOpen, onClose, table, onTableUpdate }: 
         {/* Quick Action per tavoli liberi */}
         {table.stato === "LIBERO" && (
           <div className="pt-2 sm:pt-3 border-t" style={{ borderColor: colors.border.primary }}>
-            <Link
-              href={`/cameriere/tavolo/${table.id}`}
-              onClick={onClose}
+            <button
+              onClick={handleNewOrder}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-center text-sm sm:text-base font-medium transition-colors block"
             >
               <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 sm:mr-2" />
               Inizia Nuovo Ordine
-            </Link>
+            </button>
           </div>
         )}
       </div>
     </ThemedModal>
+
+    </>
   );
 }

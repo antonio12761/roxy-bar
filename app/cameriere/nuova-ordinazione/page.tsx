@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Coffee, Gift, Folder, Home, Utensils, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Filter } from "lucide-react";
+import { Coffee, Gift, Folder, Home, Utensils, Trees, Sun, Moon, Star, Wine, Beer, Martini, Users, Store, Building, Palmtree, Umbrella, Mountain, Waves, Filter, RefreshCw } from "lucide-react";
 // Removed old useSSE import - now using SSE context
 import { getTavoli, getCustomerNamesForTable, getProdotti } from "@/lib/actions/ordinazioni";
 import { creaOrdinazionePerAltri } from "@/lib/actions/ordinaPerAltri";
@@ -23,8 +23,9 @@ import { HeartsAnimation } from "@/components/ui/HeartsAnimation";
 import { useSSE } from "@/contexts/sse-context";
 
 // Cache per evitare ricaricamenti
-const tablesCache = new Map<string, { data: Table[], timestamp: number }>();
+const tablesCache = new Map<string, { data: Table[], timestamp: number, version?: string }>();
 const CACHE_DURATION = 30000; // 30 secondi
+const CACHE_VERSION = '1.0.1'; // Incrementa quando cambia l'ordinamento dei gruppi
 
 interface Table {
   id: number;
@@ -37,6 +38,12 @@ interface Table {
   hasOutOfStockOrder?: boolean;
   outOfStockHandledBy?: string | null;
   outOfStockOrders?: string[];
+  Ordinazione?: Array<{
+    id: string;
+    stato: string;
+    numero: number;
+    dataApertura?: string | null;
+  }>;
   GruppoTavoli?: {
     id: number;
     nome: string;
@@ -70,6 +77,7 @@ export default function NuovaOrdinazionePage() {
   const [filterMode, setFilterMode] = useState<'all' | 'occupied' | 'free'>('all');
   const [showFireworks, setShowFireworks] = useState(false);
   const [outOfStockTables, setOutOfStockTables] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Helper functions for table interactions
 
@@ -106,29 +114,35 @@ export default function NuovaOrdinazionePage() {
       filteredTables = tables.filter(table => table.stato === 'LIBERO');
     }
 
-    // Group tables by GruppoTavoli or zona
-    const tablesByGroup = filteredTables.reduce((acc, table: any) => {
-      // Use GruppoTavoli if available, otherwise fallback to zona
-      const groupName = table.GruppoTavoli?.nome || table.zona || 'Senza Gruppo';
-      if (!acc[groupName]) {
-        acc[groupName] = [];
-      }
-      acc[groupName].push(table);
-      return acc;
-    }, {} as Record<string, any[]>);
+    // Create groups array maintaining the order from database
+    const groupsWithTables: Array<{name: string, tables: any[]}> = [];
+    const groupsAdded = new Set<string>();
     
-    // Get all unique groups, putting "Senza Gruppo" first if it exists
-    const allGroups = Object.keys(tablesByGroup).sort((a, b) => {
-      if (a === 'Senza Gruppo') return -1;
-      if (b === 'Senza Gruppo') return 1;
-      return a.localeCompare(b);
+    // Process tables in order (they're already sorted by GruppoTavoli.ordinamento)
+    filteredTables.forEach((table: any) => {
+      const groupName = table.GruppoTavoli?.nome || table.zona || 'Senza Gruppo';
+      
+      if (!groupsAdded.has(groupName)) {
+        groupsAdded.add(groupName);
+        groupsWithTables.push({
+          name: groupName,
+          tables: []
+        });
+      }
+      
+      // Add table to the appropriate group
+      const group = groupsWithTables.find(g => g.name === groupName);
+      if (group) {
+        group.tables.push(table);
+      }
     });
     
     const result: React.JSX.Element[] = [];
     
     // Render each group with fused card style
-    allGroups.forEach((groupName, groupIndex) => {
-      const tavoliGruppo = tablesByGroup[groupName];
+    groupsWithTables.forEach((group, groupIndex) => {
+      const groupName = group.name;
+      const tavoliGruppo = group.tables;
       
       // Icon mapping for lucide-react icons
       const iconMap: Record<string, any> = {
@@ -171,7 +185,7 @@ export default function NuovaOrdinazionePage() {
       } : {};
       
       const isFirst = groupIndex === 0;
-      const isLast = groupIndex === allGroups.length - 1;
+      const isLast = groupIndex === groupsWithTables.length - 1;
       
       result.push(
         <div 
@@ -195,52 +209,277 @@ export default function NuovaOrdinazionePage() {
             <span>{groupName}</span>
             <span className="text-sm font-normal text-muted-foreground">({tavoliGruppo.length})</span>
           </h3>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-            {tavoliGruppo.map((table) => (
-              <TableCard
-                key={table.id}
-                table={table}
-                isGiftMode={isGiftMode}
-                onClick={() => {
-                  if (isGiftMode) {
-                    setSelectedTableForGift(table.id);
-                    setShowOrdinaPerAltriModal(true);
-                  } else {
-                    // Always show table operations modal
-                    // It will handle out of stock orders internally
-                    setSelectedTable(table);
-                    setShowTableOperationsModal(true);
-                  }
-                }}
-                onMouseEnter={() => handleTableHover(table.id)}
-                onMouseLeave={handleTableLeave}
-                showTooltip={hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0}
-                tooltipContent={
-                  hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0 && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
-                      <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-lg max-w-48">
-                        <div className="text-xs font-medium text-white/70 mb-2">Clienti recenti:</div>
-                        <div className="space-y-1">
-                          {tableCustomers[table.id].slice(0, 5).map((name, index) => (
-                            <div key={index} className="text-xs text-foreground">
-                              • {name}
+          {groupName === "Gazebo" ? (
+            // Visualizzazione speciale per Gazebo con sottogruppi
+            <div className="space-y-4">
+              {/* Sottogruppo 11-15 */}
+              {tavoliGruppo.filter(t => {
+                const num = parseInt(t.numero);
+                return num >= 11 && num <= 15;
+              }).length > 0 && (
+                <div>
+                  <h5 className="text-xs font-medium mb-2 text-muted-foreground pl-2">
+                    Tavoli 11-15
+                  </h5>
+                  <div className="grid grid-cols-5 gap-3">
+                    {tavoliGruppo.filter(t => {
+                      const num = parseInt(t.numero);
+                      return num >= 11 && num <= 15;
+                    }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
+                      const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
+                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        : null;
+                      
+                      return (
+                        <TableCard
+                          key={table.id}
+                          table={{
+                            ...table,
+                            lastOrderStatus: lastOrder?.stato || null,
+                            lastOrderReadyTime: lastOrder?.stato === 'PRONTO' 
+                              ? (lastOrder?.dataApertura || new Date().toISOString()) 
+                              : null
+                          }}
+                          isGiftMode={isGiftMode}
+                          onClick={() => {
+                            if (isGiftMode) {
+                              setSelectedTableForGift(table.id);
+                              setShowOrdinaPerAltriModal(true);
+                            } else {
+                              setSelectedTable(table);
+                              setShowTableOperationsModal(true);
+                            }
+                          }}
+                          onMouseEnter={() => handleTableHover(table.id)}
+                          onMouseLeave={handleTableLeave}
+                          showTooltip={hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0}
+                          tooltipContent={
+                            hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0 && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
+                                <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-lg max-w-48">
+                                  <div className="text-xs font-medium text-white/70 mb-2">Clienti recenti:</div>
+                                  <div className="space-y-1">
+                                    {tableCustomers[table.id].slice(0, 5).map((name, index) => (
+                                      <div key={index} className="text-xs text-foreground">
+                                        • {name}
+                                      </div>
+                                    ))}
+                                    {tableCustomers[table.id].length > 5 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{tableCustomers[table.id].length - 5} altri...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/20"></div>
+                                </div>
+                              </div>
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Sottogruppo 21-25 */}
+              {tavoliGruppo.filter(t => {
+                const num = parseInt(t.numero);
+                return num >= 21 && num <= 25;
+              }).length > 0 && (
+                <div>
+                  <h5 className="text-xs font-medium mb-2 text-muted-foreground pl-2">
+                    Tavoli 21-25
+                  </h5>
+                  <div className="grid grid-cols-5 gap-3">
+                    {tavoliGruppo.filter(t => {
+                      const num = parseInt(t.numero);
+                      return num >= 21 && num <= 25;
+                    }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
+                      const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
+                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        : null;
+                      
+                      return (
+                        <TableCard
+                          key={table.id}
+                          table={{
+                            ...table,
+                            lastOrderStatus: lastOrder?.stato || null,
+                            lastOrderReadyTime: lastOrder?.stato === 'PRONTO' 
+                              ? (lastOrder?.dataApertura || new Date().toISOString()) 
+                              : null
+                          }}
+                          isGiftMode={isGiftMode}
+                          onClick={() => {
+                            if (isGiftMode) {
+                              setSelectedTableForGift(table.id);
+                              setShowOrdinaPerAltriModal(true);
+                            } else {
+                              setSelectedTable(table);
+                              setShowTableOperationsModal(true);
+                            }
+                          }}
+                          onMouseEnter={() => handleTableHover(table.id)}
+                          onMouseLeave={handleTableLeave}
+                          showTooltip={hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0}
+                          tooltipContent={
+                            hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0 && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
+                                <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-lg max-w-48">
+                                  <div className="text-xs font-medium text-white/70 mb-2">Clienti recenti:</div>
+                                  <div className="space-y-1">
+                                    {tableCustomers[table.id].slice(0, 5).map((name, index) => (
+                                      <div key={index} className="text-xs text-foreground">
+                                        • {name}
+                                      </div>
+                                    ))}
+                                    {tableCustomers[table.id].length > 5 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{tableCustomers[table.id].length - 5} altri...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/20"></div>
+                                </div>
+                              </div>
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Sottogruppo 31-35 */}
+              {tavoliGruppo.filter(t => {
+                const num = parseInt(t.numero);
+                return num >= 31 && num <= 35;
+              }).length > 0 && (
+                <div>
+                  <h5 className="text-xs font-medium mb-2 text-muted-foreground pl-2">
+                    Tavoli 31-35
+                  </h5>
+                  <div className="grid grid-cols-5 gap-3">
+                    {tavoliGruppo.filter(t => {
+                      const num = parseInt(t.numero);
+                      return num >= 31 && num <= 35;
+                    }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
+                      const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
+                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        : null;
+                      
+                      return (
+                        <TableCard
+                          key={table.id}
+                          table={{
+                            ...table,
+                            lastOrderStatus: lastOrder?.stato || null,
+                            lastOrderReadyTime: lastOrder?.stato === 'PRONTO' 
+                              ? (lastOrder?.dataApertura || new Date().toISOString()) 
+                              : null
+                          }}
+                          isGiftMode={isGiftMode}
+                          onClick={() => {
+                            if (isGiftMode) {
+                              setSelectedTableForGift(table.id);
+                              setShowOrdinaPerAltriModal(true);
+                            } else {
+                              setSelectedTable(table);
+                              setShowTableOperationsModal(true);
+                            }
+                          }}
+                          onMouseEnter={() => handleTableHover(table.id)}
+                          onMouseLeave={handleTableLeave}
+                          showTooltip={hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0}
+                          tooltipContent={
+                            hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0 && (
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
+                                <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-lg max-w-48">
+                                  <div className="text-xs font-medium text-white/70 mb-2">Clienti recenti:</div>
+                                  <div className="space-y-1">
+                                    {tableCustomers[table.id].slice(0, 5).map((name, index) => (
+                                      <div key={index} className="text-xs text-foreground">
+                                        • {name}
+                                      </div>
+                                    ))}
+                                    {tableCustomers[table.id].length > 5 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{tableCustomers[table.id].length - 5} altri...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/20"></div>
+                                </div>
+                              </div>
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Visualizzazione normale per altri gruppi
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+              {tavoliGruppo.map((table) => {
+                const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
+                  ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                  : null;
+                
+                return (
+                  <TableCard
+                    key={table.id}
+                    table={{
+                      ...table,
+                      lastOrderStatus: lastOrder?.stato || null,
+                      lastOrderReadyTime: lastOrder?.stato === 'PRONTO' 
+                        ? (lastOrder?.dataApertura || new Date().toISOString()) 
+                        : null
+                    }}
+                    isGiftMode={isGiftMode}
+                    onClick={() => {
+                      if (isGiftMode) {
+                        setSelectedTableForGift(table.id);
+                        setShowOrdinaPerAltriModal(true);
+                      } else {
+                        setSelectedTable(table);
+                        setShowTableOperationsModal(true);
+                      }
+                    }}
+                    onMouseEnter={() => handleTableHover(table.id)}
+                    onMouseLeave={handleTableLeave}
+                    showTooltip={hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0}
+                    tooltipContent={
+                      hoveredTable === table.id && tableCustomers[table.id] && tableCustomers[table.id].length > 0 && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
+                          <div className="bg-black/90 border border-white/20 rounded-lg p-3 shadow-lg max-w-48">
+                            <div className="text-xs font-medium text-white/70 mb-2">Clienti recenti:</div>
+                            <div className="space-y-1">
+                              {tableCustomers[table.id].slice(0, 5).map((name, index) => (
+                                <div key={index} className="text-xs text-foreground">
+                                  • {name}
+                                </div>
+                              ))}
+                              {tableCustomers[table.id].length > 5 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{tableCustomers[table.id].length - 5} altri...
+                                </div>
+                              )}
                             </div>
-                          ))}
-                          {tableCustomers[table.id].length > 5 && (
-                            <div className="text-xs text-muted-foreground">
-                              +{tableCustomers[table.id].length - 5} altri...
-                            </div>
-                          )}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/20"></div>
+                          </div>
                         </div>
-                        {/* Arrow pointing down */}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/20"></div>
-                      </div>
-                    </div>
-                  )
-                }
-              />
-            ))}
-          </div>
+                      )
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       );
     });
@@ -248,20 +487,27 @@ export default function NuovaOrdinazionePage() {
     return result;
   }, [tables, hoveredTable, tableCustomers, isGiftMode, filterMode]);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (showLoader = true, forceRefresh = false) => {
+    if (showLoader) {
+      setIsLoading(true);
+    }
+    
     try {
-      console.log("🔄 Caricamento tavoli...");
       
-      // Check cache first
+      // Check cache first (skip if forceRefresh)
       const cacheKey = 'tables-products';
       const cached = tablesCache.get(cacheKey);
       const now = Date.now();
       
-      if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-        console.log("✅ Using cached data");
+      if (!forceRefresh && cached && 
+          (now - cached.timestamp) < CACHE_DURATION && 
+          cached.version === CACHE_VERSION && 
+          showLoader) {
+        // console.log("[loadData] Using cached data");
         setTables(cached.data);
-        setIsLoading(false);
+        if (showLoader) {
+          setIsLoading(false);
+        }
         return;
       }
       
@@ -272,9 +518,20 @@ export default function NuovaOrdinazionePage() {
         getTablesWithOutOfStockOrders()
       ]);
       
-      console.log("✅ Tavoli caricati dal server:", tavoliData?.length || 0);
+      // console.log("[loadData] Received from getTavoli:", tavoliData);
       
       if (Array.isArray(tavoliData) && tavoliData.length > 0) {
+        // Log the order of groups as received
+        const groupsOrder: string[] = [];
+        const seenGroups = new Set<string>();
+        tavoliData.forEach((table: any) => {
+          const groupName = table.GruppoTavoli?.nome || 'Senza Gruppo';
+          if (!seenGroups.has(groupName)) {
+            seenGroups.add(groupName);
+            groupsOrder.push(groupName);
+          }
+        });
+        // console.log("[loadData] Groups order from server:", groupsOrder);
         // Merge out of stock info with tables
         const tablesWithOutOfStock = tavoliData.map(table => {
           const outOfStockInfo = outOfStockData?.success && outOfStockData.tables?.find(
@@ -303,20 +560,39 @@ export default function NuovaOrdinazionePage() {
         
         // Cache the data
         tablesCache.set(cacheKey, {
-          data: tavoliData,
-          timestamp: now
+          data: tablesWithOutOfStock,
+          timestamp: now,
+          version: CACHE_VERSION
         });
         
-        console.log("💾 Data cached for future use");
+        // Data cached for future use
       } else {
-        console.error("❌ Nessun dato tavoli");
+        // No tables returned from server
         setTables([]);
       }
     } catch (error) {
       console.error("❌ Errore caricamento tavoli:", error);
       setTables([]);
     } finally {
-      setIsLoading(false);
+      if (showLoader) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Clear cache to force fresh data
+      tablesCache.clear();
+      await loadData(false, true);
+      toast.success('Tavoli aggiornati');
+    } catch (error) {
+      console.error('Error refreshing:', error);
+      toast.error('Errore durante l\'aggiornamento');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -347,20 +623,9 @@ export default function NuovaOrdinazionePage() {
     loadData();
   }, []);
 
-  // Debug: monitora cambiamenti ai tavoli
-  useEffect(() => {
-    console.log("🔄 Tables state updated:", tables);
-    console.log("📊 Number of tables in state:", tables.length);
-    if (tables.length > 0) {
-      console.log("🏠 First table in state:", tables[0]);
-    }
-  }, [tables]);
 
-  // Ricarica automaticamente ogni 30 secondi
-  useEffect(() => {
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // Rimuovo il refresh automatico per evitare il flickering dello skeleton
+  // Gli aggiornamenti avverranno solo tramite SSE events
 
   // Sottoscrivi agli eventi SSE per ordini esauriti
   useEffect(() => {
@@ -385,9 +650,9 @@ export default function NuovaOrdinazionePage() {
         }));
       }
       
-      // Ricarica i dati dopo aver aggiornato lo stato locale
-      // per avere i dati aggiornati dal server ma senza perdere lo stato immediato
-      setTimeout(() => loadData(), 1000);
+      // Ricarica i dati silenziosamente dopo aver aggiornato lo stato locale
+      // per avere i dati aggiornati dal server ma senza mostrare lo skeleton
+      setTimeout(() => loadData(false), 1000);
     });
 
     // Quando qualcuno prende in carico un ordine esaurito
@@ -417,8 +682,8 @@ export default function NuovaOrdinazionePage() {
     const unsubReleased = sseContext.subscribe('order:esaurito:released', async (data) => {
       console.log('[NuovaOrdinazione] Ordine esaurito rilasciato:', data);
       
-      // Ricarica i dati
-      await loadData();
+      // Ricarica i dati silenziosamente
+      await loadData(false);
     });
 
     // Quando un ordine esaurito viene risolto
@@ -443,8 +708,151 @@ export default function NuovaOrdinazionePage() {
         }));
       }
       
-      // Ricarica i dati dopo un breve delay per avere dati aggiornati
-      setTimeout(() => loadData(), 500);
+      // Ricarica i dati silenziosamente dopo un breve delay per avere dati aggiornati
+      setTimeout(() => loadData(false), 500);
+    });
+
+    // Subscribe to order:item:update event for IN_PREPARAZIONE status
+    const unsubItemUpdate = sseContext.subscribe('order:item:update', (data: any) => {
+      console.log('[NuovaOrdinazione] Item update ricevuto:', data);
+      
+      // Update table card when order goes to IN_PREPARAZIONE
+      if (data.status === 'IN_LAVORAZIONE' && data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            // Update order status to IN_PREPARAZIONE
+            const updatedOrdinazione = table.Ordinazione?.map(ord => 
+              ord.id === data.orderId 
+                ? { ...ord, stato: 'IN_PREPARAZIONE' } 
+                : ord
+            );
+            return {
+              ...table,
+              Ordinazione: updatedOrdinazione
+            };
+          }
+          return table;
+        }));
+      }
+    });
+
+    // Subscribe to order:delivered event to update table status
+    const unsubDelivered = sseContext.subscribe('order:delivered', (data: any) => {
+      console.log('[NuovaOrdinazione] Ordine consegnato:', data);
+      
+      // Update table card when order is delivered
+      if (data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            // Update order status to CONSEGNATO
+            const updatedOrdinazione = table.Ordinazione?.map(ord => 
+              ord.id === data.orderId 
+                ? { ...ord, stato: 'CONSEGNATO' } 
+                : ord
+            );
+            
+            // Check if all orders are delivered or paid to potentially free the table
+            const hasActiveOrders = updatedOrdinazione?.some(ord => 
+              ['ORDINATO', 'IN_PREPARAZIONE', 'PRONTO'].includes(ord.stato)
+            );
+            
+            return {
+              ...table,
+              stato: hasActiveOrders ? 'OCCUPATO' : table.stato,
+              Ordinazione: updatedOrdinazione
+            };
+          }
+          return table;
+        }));
+      }
+      
+      // Reload data after a short delay to sync with server
+      setTimeout(() => loadData(false), 1000);
+    });
+
+    // Sottoscrivi agli eventi tables:reordered per aggiornare l'ordine dei tavoli
+    const unsubReordered = sseContext.subscribe('tables:reordered', (data: any) => {
+      console.log('[NuovaOrdinazione] Ordine tavoli aggiornato:', data);
+      
+      // Ricarica i dati silenziosamente per riflettere il nuovo ordine
+      setTimeout(() => {
+        tablesCache.clear(); // Pulisci la cache per forzare il reload
+        loadData(false);
+        toast.info(`L'ordine dei tavoli è stato aggiornato da ${data.updatedBy}`);
+      }, 500);
+    });
+    
+    // Sottoscrivi agli eventi groups:reordered per aggiornare l'ordine dei gruppi
+    const unsubGroupsReordered = sseContext.subscribe('groups:reordered', (data: any) => {
+      console.log('[NuovaOrdinazione] Ordine gruppi aggiornato:', data);
+      
+      // Ricarica i dati silenziosamente per riflettere il nuovo ordine
+      setTimeout(() => {
+        tablesCache.clear(); // Pulisci la cache per forzare il reload
+        loadData(false, true); // Force refresh
+        toast.info('L\'ordine dei gruppi è stato aggiornato');
+      }, 500);
+    });
+    
+    // Sottoscrivi agli eventi di visibilità
+    const unsubGroupsVisibility = sseContext.subscribe('groups:visibility:update', (data: any) => {
+      console.log('[NuovaOrdinazione] Visibilità gruppo aggiornata:', data);
+      
+      setTimeout(() => {
+        tablesCache.clear();
+        loadData(false, true);
+      }, 500);
+    });
+    
+    const unsubTablesVisibility = sseContext.subscribe('tables:visibility:update', (data: any) => {
+      console.log('[NuovaOrdinazione] Visibilità tavolo aggiornata:', data);
+      
+      setTimeout(() => {
+        tablesCache.clear();
+        loadData(false, true);
+      }, 500);
+    });
+
+    // Sottoscrivi agli eventi order:ready per mostrare notifiche
+    const unsubReady = sseContext.subscribe('order:ready', (data: any) => {
+      console.log('[NuovaOrdinazione] Ordine pronto:', data);
+      
+      // Mostra notifica per ordine pronto
+      const message = data.tableNumber 
+        ? `🔔 Ordine #${data.orderNumber} - Tavolo ${data.tableNumber} PRONTO!`
+        : `🔔 Ordine #${data.orderNumber} PRONTO!`;
+      
+      toast.success(message, {
+        duration: 5000,
+        style: {
+          background: '#10b981',
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: 'bold'
+        }
+      });
+      
+      // Aggiorna lo stato del tavolo per mostrare che l'ordine è pronto
+      if (data.tableNumber) {
+        setTables(prevTables => prevTables.map(table => {
+          if (table.numero === data.tableNumber) {
+            // Aggiorna l'ultimo stato dell'ordine più recente
+            const updatedOrdinazione = table.Ordinazione?.map(ord => 
+              ord.id === data.orderId 
+                ? { ...ord, stato: 'PRONTO', dataApertura: new Date().toISOString() } 
+                : ord
+            );
+            return {
+              ...table,
+              Ordinazione: updatedOrdinazione
+            };
+          }
+          return table;
+        }));
+      }
+      
+      // Ricarica i dati dopo un breve delay
+      setTimeout(() => loadData(false), 500);
     });
 
     return () => {
@@ -452,6 +860,13 @@ export default function NuovaOrdinazionePage() {
       unsubTaken();
       unsubReleased();
       unsubResolved();
+      unsubItemUpdate();
+      unsubDelivered();
+      unsubReordered();
+      unsubGroupsReordered();
+      unsubGroupsVisibility();
+      unsubTablesVisibility();
+      unsubReady();
     };
   }, [sseContext]);
 
@@ -473,8 +888,8 @@ export default function NuovaOrdinazionePage() {
           toast.success('message' in result ? result.message : "Ordinazione creata con successo");
         }
         
-        // Ricarica i dati per aggiornare la lista tavoli
-        loadData();
+        // Ricarica i dati silenziosamente per aggiornare la lista tavoli
+        loadData(false);
       } else {
         toast.error(`❌ ${'error' in result ? result.error : 'Errore creazione ordine'}`);
       }
@@ -493,12 +908,23 @@ export default function NuovaOrdinazionePage() {
       {/* Enhanced Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-            Seleziona un Tavolo
-          </h1>
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Refresh Button */}
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className={`p-2 rounded-lg transition-all duration-200 hover:bg-white/10 ${
+                isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              title="Aggiorna tavoli"
+            >
+              <RefreshCw className={`h-5 w-5 text-white/70 ${
+                isRefreshing ? 'animate-spin' : ''
+              }`} />
+            </button>
+            
             {/* Filter Tables */}
             <button
               onClick={() => {
@@ -603,8 +1029,8 @@ export default function NuovaOrdinazionePage() {
         }}
         table={selectedTable}
         onTableUpdate={() => {
-          // Ricarica i tavoli quando viene aggiornato un ordine esaurito
-          loadData();
+          // Ricarica i tavoli silenziosamente quando viene aggiornato un ordine esaurito
+          loadData(false);
         }}
       />
 
