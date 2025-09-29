@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { Package, AlertCircle, RefreshCw, Save } from "lucide-react";
 import { updateProductAvailability } from "@/lib/actions/inventory-management";
 import { getInventarioProdotti, aggiornaQuantitaProdotto } from "@/lib/actions/inventario";
-import { getCurrentUser } from "@/lib/auth-multi-tenant";
 
 interface ProdottoInventario {
   id: number;
@@ -26,17 +25,9 @@ export default function InventarioPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingProduct, setEditingProduct] = useState<number | null>(null);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
   useEffect(() => {
-    loadUser();
     loadInventario();
   }, []);
-
-  const loadUser = async () => {
-    const user = await getCurrentUser();
-    setCurrentUser(user);
-  };
 
   const loadInventario = async () => {
     try {

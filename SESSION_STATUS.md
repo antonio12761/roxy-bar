@@ -1,6 +1,6 @@
 # STATO SESSIONE - Bar Roxy Clean
 **Data ultima sessione**: 2025-09-29
-**Ultimo aggiornamento**: 11:18
+**Ultimo aggiornamento**: 11:43
 
 ## 🔧 LAVORI COMPLETATI IN QUESTA SESSIONE
 
@@ -26,7 +26,25 @@
 - **File modificato**: `app/cameriere/ordini-in-corso/page-optimized.tsx`
 - **Stato**: COMPLETATO e committato
 
-### 4. ✅ Commit di tutte le modifiche accumulate
+### 4. ✅ Aggiunti Prodotti Cucina per Testing
+- **Creato script**: `scripts/add-kitchen-products.ts`
+- **Aggiunti 25 prodotti** per la postazione CUCINA:
+  - Antipasti (bruschette, taglieri, caprese, antipasto di mare)
+  - Primi piatti (pasta, risotti, lasagne, gnocchi)
+  - Secondi piatti (carne, pesce, fritture)
+  - Contorni e verdure
+  - Pizze
+  - Hamburger e panini
+- **Categoria Cucina** creata con icona utensils
+- Ora possibile testare flusso completo PREPARA + CUCINA
+- **Stato**: COMPLETATO e committato
+
+### 5. ✅ Fix Double-Mounting React StrictMode
+- **Problema**: Il componente ordini-in-corso veniva montato due volte causando problemi
+- **Soluzione**: Rimosso flag isUnmountingRef che rimaneva true dopo il primo unmount
+- **Stato**: COMPLETATO e committato
+
+### 6. ✅ Commit di tutte le modifiche accumulate
 - **Organizzati 9 commit tematici**:
   1. Sistema richieste pagamento e gestione cassa
   2. Sistema gestione magazzino bar completo

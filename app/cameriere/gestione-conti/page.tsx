@@ -923,7 +923,12 @@ export default function GestioneContiPage() {
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           try {
-                                            const result = await completaPagamentoCameriere(order.id);
+                                            const result = await completaPagamentoCameriere(
+                                              order.id,
+                                              "CONTANTI", // Default payment method
+                                              order.totale,
+                                              order.clienteNome
+                                            );
                                             if (result.success) {
                                               toast.success('Pagamento completato con successo!');
                                               await fetchDeliveredOrders();

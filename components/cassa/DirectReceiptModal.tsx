@@ -31,6 +31,7 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("TUTTI");
   const [paymentMethod, setPaymentMethod] = useState<"CONTANTI" | "CARTA">("CONTANTI");
+  const [customerName, setCustomerName] = useState(""); // Nome cliente
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCart, setShowCart] = useState(false); // Mobile cart toggle
@@ -136,12 +137,14 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
           prezzo: item.prezzo
         })),
         modalitaPagamento: paymentMethod,
-        totale: calculateTotal()
+        totale: calculateTotal(),
+        clienteNome: customerName.trim() || undefined
       });
 
       if (result.success) {
         showSuccess("Scontrino creato con successo");
         setCart([]);
+        setCustomerName(""); // Reset nome cliente
         onSuccess?.();
         onClose();
       } else {
@@ -256,6 +259,16 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
                     <span className="text-xl font-bold text-green-600 dark:text-green-400">
                       €{calculateTotal().toFixed(2)}
                     </span>
+                  </div>
+
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Nome cliente (opzionale)"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                    />
                   </div>
 
                   <div className="flex gap-2 mb-4">
@@ -529,29 +542,39 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
                 </span>
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPaymentMethod("CONTANTI")}
-                  className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
-                    paymentMethod === "CONTANTI"
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  <Banknote className="w-4 h-4" />
-                  Contanti
-                </button>
-                <button
-                  onClick={() => setPaymentMethod("CARTA")}
-                  className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
-                    paymentMethod === "CARTA"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Carta
-                </button>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Nome cliente (opzionale)"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPaymentMethod("CONTANTI")}
+                    className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
+                      paymentMethod === "CONTANTI"
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    <Banknote className="w-4 h-4" />
+                    Contanti
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod("CARTA")}
+                    className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
+                      paymentMethod === "CARTA"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Carta
+                  </button>
+                </div>
               </div>
 
               <button

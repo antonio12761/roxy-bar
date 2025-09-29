@@ -228,7 +228,7 @@ export default function NuovaOrdinazionePage() {
                       return num >= 11 && num <= 15;
                     }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
                       const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
-                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        ? table.Ordinazione.sort((a: any, b: any) => b.numero - a.numero)[0]
                         : null;
                       
                       return (
@@ -298,7 +298,7 @@ export default function NuovaOrdinazionePage() {
                       return num >= 21 && num <= 25;
                     }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
                       const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
-                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        ? table.Ordinazione.sort((a: any, b: any) => b.numero - a.numero)[0]
                         : null;
                       
                       return (
@@ -368,7 +368,7 @@ export default function NuovaOrdinazionePage() {
                       return num >= 31 && num <= 35;
                     }).sort((a, b) => parseInt(a.numero) - parseInt(b.numero)).map((table) => {
                       const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
-                        ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                        ? table.Ordinazione.sort((a: any, b: any) => b.numero - a.numero)[0]
                         : null;
                       
                       return (
@@ -428,7 +428,7 @@ export default function NuovaOrdinazionePage() {
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
               {tavoliGruppo.map((table) => {
                 const lastOrder = table.Ordinazione && table.Ordinazione.length > 0 
-                  ? table.Ordinazione.sort((a, b) => b.numero - a.numero)[0]
+                  ? table.Ordinazione.sort((a: any, b: any) => b.numero - a.numero)[0]
                   : null;
                 
                 return (
@@ -537,7 +537,7 @@ export default function NuovaOrdinazionePage() {
         // Adapt unified data to match existing structure
         const adaptedTables = tavoliData.map(table => ({
           id: table.id,
-          numero: table.numero,
+          numero: String(table.numero),
           nome: table.nome,
           descrizione: table.descrizione,
           posizione: table.posizione,

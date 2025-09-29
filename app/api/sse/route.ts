@@ -4,6 +4,7 @@ import { sseService } from '@/lib/sse/sse-service';
 import { SSEChannels } from '@/lib/sse/sse-events';
 import { verifyToken } from '@/lib/auth-multi-tenant';
 import { prisma } from '@/lib/db';
+import { secureLog, logHttpRequest } from '@/lib/utils/log-sanitizer';
 // import { rateLimiter } from '@/lib/security/rate-limiter'; // Removed - file deleted
 // import { crashRecovery } from '@/lib/sse/crash-recovery'; // Removed - file deleted
 // import { secureNotificationService } from '@/lib/sse/secure-notification-service'; // Removed - file deleted
@@ -20,12 +21,12 @@ export async function GET(request: NextRequest) {
   const cookieName = process.env.SESSION_COOKIE_NAME || 'bar-roxy-session';
   const sessionCookie = cookieStore.get(cookieName);
   
-  // Debug: log tutti i cookie ricevuti
+  // Debug: log cookie names only (no values)
   if (!DISABLE_LOGS) {
     const allCookies = cookieStore.getAll();
-    console.log('[SSE] All cookies received:', allCookies.map(c => c.name).join(', '));
-    console.log(`[SSE] Looking for cookie: ${cookieName}`);
-    console.log('[SSE] Cookie found:', sessionCookie ? 'yes' : 'no');
+    secureLog.debug('[SSE] All cookies received:', allCookies.map(c => c.name).join(', '));
+    secureLog.debug(`[SSE] Looking for cookie: ${cookieName}`);
+    secureLog.debug('[SSE] Cookie found:', sessionCookie ? 'yes' : 'no');
   }
   
   let tokenData = null;
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
   // Prima prova a leggere dal cookie httpOnly
   if (sessionCookie?.value) {
     tokenData = verifyToken(sessionCookie.value);
-    if (!DISABLE_LOGS) console.log('[SSE] Auth via cookie:', tokenData ? 'valid' : 'invalid');
+    if (!DISABLE_LOGS) secureLog.debug('[SSE] Auth via cookie:', tokenData ? 'valid' : 'invalid');
   }
   
   // Se non c'è il cookie, prova con il token dal query parameter (per retrocompatibilità)
@@ -44,12 +45,12 @@ export async function GET(request: NextRequest) {
     
     if (token) {
       tokenData = verifyToken(token);
-      if (!DISABLE_LOGS) console.log('[SSE] Auth via token:', tokenData ? 'valid' : 'invalid');
+      if (!DISABLE_LOGS) secureLog.debug('[SSE] Auth via token:', tokenData ? 'valid' : 'invalid');
     }
   }
   
   if (!tokenData) {
-    console.log('[SSE] Authentication failed - no valid cookie or token');
+    secureLog.warn('[SSE] Authentication failed - no valid authentication');
     return new Response('Unauthorized: No valid authentication', { status: 401 });
   }
   
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
         return new Response('Service Unavailable: Too many connections', { status: 503 });
       }
       
-      console.log(`[SSE Route] Client connected: ${client.id}, station: ${client.stationType}, user: ${user.nome}, tenant: ${user.tenantId}`);
+      secureLog.info(`[SSE Route] Client connected: ${client.id}, station: ${client.stationType}, user: ${user.nome}`);
       
       // Subscribe to relevant channels based on user role
       const channels: string[] = [];
@@ -191,7 +192,7 @@ export async function GET(request: NextRequest) {
       
       // Check for queued events after a delay to ensure client is ready
       setTimeout(() => {
-        console.log(`[SSE Route] Checking queued events for tenant ${user.tenantId} after delay`);
+        secureLog.debug(`[SSE Route] Checking queued events for tenant after delay`);
         // Trigger queue delivery again to ensure events are received
         sseService.emit('queue:check', { 
           tenantId: user.tenantId 
@@ -220,7 +221,7 @@ export async function GET(request: NextRequest) {
         // Mark client as disconnected in crash recovery - Disabled
         // crashRecovery.markClientDisconnected(client.id);
         
-        console.log(`[SSE Route] Client disconnected: ${client.id}, station: ${client.stationType}`);
+        secureLog.info(`[SSE Route] Client disconnected: ${client.id}, station: ${client.stationType}`);
       };
       
       request.signal.addEventListener('abort', cleanup);
@@ -241,7 +242,7 @@ export async function GET(request: NextRequest) {
       // Try multiple times to ensure delivery
       const checkQueue = () => {
         const tenantClients = sseManager.getTenantsClients(user.tenantId);
-        console.log(`[SSE Route] Force queue check - found ${tenantClients.length} clients for tenant ${user.tenantId}`);
+        secureLog.debug(`[SSE Route] Force queue check - found ${tenantClients.length} clients for tenant`);
         
         // Manually trigger queue processor for immediate delivery
         sseService.processQueueForTenant(user.tenantId);
@@ -264,7 +265,7 @@ export async function GET(request: NextRequest) {
   // 6. Headers SSE corretti
   // Log solo se non disabilitato
   if (!DISABLE_LOGS) {
-    console.log(`[SSE] New connection from ${user.ruolo}`);
+    secureLog.info(`[SSE] New connection from ${user.ruolo}`);
   }
   
   return new Response(stream, {

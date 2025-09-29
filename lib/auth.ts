@@ -3,6 +3,7 @@ import { sign, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
 import { sseService } from "./sse/sse-service";
+import { secureLog } from "./utils/log-sanitizer";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
@@ -86,7 +87,7 @@ export async function checkAuth(): Promise<User | null> {
       permissions
     } as User;
   } catch (error) {
-    console.error('Auth check error:', error);
+    secureLog.error('Auth check error:', error);
     return null;
   }
 }
@@ -122,7 +123,7 @@ export function verifyToken(token: string): { userId: string } | null {
 // Login con username e password
 export async function loginUser(username: string, password: string): Promise<AuthResult> {
   try {
-    console.log(`[LOGIN] Tentativo login con username: ${username}`);
+    secureLog.info('[LOGIN] Tentativo login con username');
     
     // Cerca l'utente per username
     const user = await prisma.user.findUnique({
@@ -144,12 +145,12 @@ export async function loginUser(username: string, password: string): Promise<Aut
     });
 
     if (!user) {
-      console.log(`[LOGIN] Utente non trovato: ${username}`);
+      secureLog.info('[LOGIN] Utente non trovato');
       return { success: false, error: "Credenziali non valide" };
     }
 
     if (!user.attivo) {
-      console.log(`[LOGIN] Utente non attivo: ${username}`);
+      secureLog.info('[LOGIN] Utente non attivo');
       return { success: false, error: "Account non attivo" };
     }
 
@@ -157,11 +158,11 @@ export async function loginUser(username: string, password: string): Promise<Aut
     const isPasswordValid = await verifyPassword(password, user.password);
     
     if (!isPasswordValid) {
-      console.log(`[LOGIN] Password non valida per: ${username}`);
+      secureLog.info('[LOGIN] Password non valida');
       return { success: false, error: "Credenziali non valide" };
     }
 
-    console.log(`[LOGIN] Login riuscito per: ${user.nome} (${user.ruolo})`);
+    secureLog.info(`[LOGIN] Login riuscito: ${user.ruolo}`);
 
     // Controlla se l'utente è bloccato
     if (user.bloccato) {
@@ -225,12 +226,12 @@ export async function loginUser(username: string, password: string): Promise<Aut
       domain: undefined, // Let browser handle domain
     });
     
-    console.log(`[LOGIN] Cookie set with name: ${COOKIE_NAME}, maxAge: ${isDev ? '30 days' : '1 day'}`);
+    secureLog.debug(`[LOGIN] Cookie set with name: ${COOKIE_NAME}`);
 
     const { password: _, ...userWithoutPassword } = user;
     return { success: true, user: userWithoutPassword };
   } catch (error) {
-    console.error("Errore login:", error);
+    secureLog.error("Errore login:", error);
     return { success: false, error: "Errore interno del server" };
   }
 }
@@ -249,7 +250,7 @@ export async function logout() {
     }
     return result;
   } catch (error) {
-    console.error("Errore logout action:", error);
+    secureLog.error("Errore logout action:", error);
     return { success: false };
   }
 }

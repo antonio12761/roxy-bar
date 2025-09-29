@@ -17,6 +17,7 @@ interface DirectReceiptData {
   items: DirectReceiptItem[];
   modalitaPagamento: "CONTANTI" | "CARTA";
   totale: number;
+  clienteNome?: string;
 }
 
 export async function creaSconsintrinoDiretto(data: DirectReceiptData) {
@@ -35,7 +36,7 @@ export async function creaSconsintrinoDiretto(data: DirectReceiptData) {
           stato: "PAGATO",
           statoPagamento: "COMPLETAMENTE_PAGATO",
           note: "Scontrino diretto - Cassa - Tavolo 0",
-          nomeCliente: "Scontrino Diretto",
+          nomeCliente: data.clienteNome || "Scontrino Diretto",
           updatedAt: new Date()
         }
       });

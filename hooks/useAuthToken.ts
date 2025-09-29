@@ -19,14 +19,14 @@ export function useAuthToken() {
       for (const cookie of cookies) {
         const [name, value] = cookie.split('=');
         if (name === cookieName) {
-          console.log("🔑 Token found:", value.substring(0, 20) + "...");
+          // Token found successfully
           setToken(value);
           setIsLoading(false);
           return;
         }
       }
       
-      console.log("❌ No token found in cookies. Available cookies:", document.cookie);
+      // No token found in cookies
       setToken(null);
       setIsLoading(false);
     };
