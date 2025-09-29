@@ -4,7 +4,7 @@ const withPWA = withPWAInit({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false,
+  disable: process.env.NODE_ENV === 'development', // Disabilita PWA in development
   buildExcludes: [/middleware-manifest\.json$/],
   publicExcludes: ['!icon-*.png', '!apple-touch-icon.png', '!screenshot-*.png'],
   runtimeCaching: [
