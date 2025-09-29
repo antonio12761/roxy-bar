@@ -68,7 +68,11 @@ export default function OrdiniInCorsoPageOptimized() {
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [tableFilter, setTableFilter] = useState<string | null>(searchParams.get('tavolo'));
+  const [tableFilter, setTableFilter] = useState<string | null>(() => {
+    const filter = searchParams.get('tavolo');
+    console.log('[Cameriere] Initial tableFilter from searchParams:', filter);
+    return filter;
+  });
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showActiveOrdersModal, setShowActiveOrdersModal] = useState(false);
@@ -260,6 +264,11 @@ export default function OrdiniInCorsoPageOptimized() {
         console.log('[Cameriere] Current table filter:', tableFilter);
         if (activeOrders.length > 0) {
           console.log('[Cameriere] First order tavolo:', activeOrders[0].tavolo);
+          // Log orders for the specific table if filter is set
+          if (tableFilter) {
+            const tableOrders = activeOrders.filter(o => o.tavolo?.numero === tableFilter);
+            console.log(`[Cameriere] Orders for table ${tableFilter}:`, tableOrders.length);
+          }
         }
         
         // Only update state if component is still mounted
@@ -519,34 +528,20 @@ export default function OrdiniInCorsoPageOptimized() {
     }
   }, [orders, currentUser]);
 
-  // Initial load on mount and when loadOrders changes
+  // Simple approach: load orders whenever loadOrders is ready
   useEffect(() => {
-    console.log('[Cameriere] Initial load effect, tableFilter:', tableFilter);
+    console.log('[Cameriere] loadOrders effect triggered, tableFilter:', tableFilter);
     
-    // Load orders immediately on mount
+    // Load immediately
     loadOrders(true);
     
-    // Set up interval for periodic updates
+    // Set up periodic refresh
     const interval = setInterval(() => {
-      loadOrders(false); // Don't force refresh on interval updates
+      loadOrders(false);
     }, 30000);
     
-    return () => {
-      clearInterval(interval);
-    };
-  }, [loadOrders]); // Include loadOrders in dependencies
-  
-  // Reload when table filter changes (but not on initial mount)
-  useEffect(() => {
-    // Skip first mount
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      return;
-    }
-    
-    console.log('[Cameriere] Table filter changed to:', tableFilter);
-    loadOrders(true); // Force refresh when filter changes
-  }, [tableFilter, loadOrders]);
+    return () => clearInterval(interval);
+  }, [loadOrders]); // This will trigger when loadOrders is created/updated
 
   // Cleanup on unmount
   useEffect(() => {

@@ -1,8 +1,30 @@
 # STATO SESSIONE - Bar Roxy Clean
-**Data ultima sessione**: 2025-09-28
-**Ultimo aggiornamento**: 18:15
+**Data ultima sessione**: 2025-09-29
+**Ultimo aggiornamento**: 11:18
 
 ## 🔧 LAVORI COMPLETATI IN QUESTA SESSIONE
+
+### 1. ✅ Fix Auto-refresh Ordini in Corso
+- **Problema**: Quando si accede agli ordini in corso del tavolo, bisognava fare refresh manuale per vedere i dati
+- **Soluzione**: Implementato sistema di auto-refresh con SSE events
+- **Modifiche**:
+  - Aggiunto handler per evento `order:new` per ricaricare ordini automaticamente
+  - Migliorato caricamento iniziale con delay di 100ms per assicurare SSE pronto
+  - Aggiunto parametro `forceRefresh` a loadOrders per distinguere refresh cache vs API
+  - Gestione corretta del filtro tavolo per aggiornamenti mirati solo per quel tavolo
+  - Aggiunto feedback visivo (toast) quando si clicca refresh manuale
+- **File modificato**: `app/cameriere/ordini-in-corso/page-optimized.tsx`
+- **Stato**: COMPLETATO e committato
+
+### 2. ✅ Fix Caricamento Iniziale con Filtro Tavolo
+- **Problema**: Quando si accedeva alla pagina ordini in corso con parametro ?tavolo=X, gli ordini non venivano caricati fino al refresh manuale
+- **Causa**: L'useEffect iniziale aveva dipendenze vuote [] e non poteva accedere al valore corrente di tableFilter
+- **Soluzione**: 
+  - Corretto useEffect per includere loadOrders nelle dipendenze
+  - Rimosso delay iniziale non necessario
+  - Ordini ora caricati immediatamente al mount con accesso corretto al tableFilter
+- **File modificato**: `app/cameriere/ordini-in-corso/page-optimized.tsx`
+- **Stato**: COMPLETATO e committato
 
 ### 4. ✅ Commit di tutte le modifiche accumulate
 - **Organizzati 9 commit tematici**:
