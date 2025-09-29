@@ -519,40 +519,33 @@ export default function OrdiniInCorsoPageOptimized() {
     }
   }, [orders, currentUser]);
 
-  // Initial load
-  // Initial load on mount - with small delay to ensure SSE connection is ready
+  // Initial load on mount and when loadOrders changes
   useEffect(() => {
-    console.log('[Cameriere] Component mounted, tableFilter:', tableFilter);
+    console.log('[Cameriere] Initial load effect, tableFilter:', tableFilter);
     
-    // Add small delay to ensure component is fully mounted and SSE is ready
-    const initialLoadTimer = setTimeout(() => {
-      console.log('[Cameriere] Loading orders after mount delay');
-      loadOrders(true); // Force refresh on initial mount
-    }, 100);
+    // Load orders immediately on mount
+    loadOrders(true);
     
-    // Reload orders every 30 seconds
+    // Set up interval for periodic updates
     const interval = setInterval(() => {
       loadOrders(false); // Don't force refresh on interval updates
     }, 30000);
     
     return () => {
-      clearTimeout(initialLoadTimer);
       clearInterval(interval);
     };
-  }, []); // Remove loadOrders dependency to run only once on mount
+  }, [loadOrders]); // Include loadOrders in dependencies
   
-  // Reload when table filter changes after mount
+  // Reload when table filter changes (but not on initial mount)
   useEffect(() => {
-    // Skip first render to avoid double loading
+    // Skip first mount
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
       return;
     }
     
-    if (tableFilter !== null) {
-      console.log('[Cameriere] Table filter changed to:', tableFilter);
-      loadOrders(true); // Force refresh when filter changes
-    }
+    console.log('[Cameriere] Table filter changed to:', tableFilter);
+    loadOrders(true); // Force refresh when filter changes
   }, [tableFilter, loadOrders]);
 
   // Cleanup on unmount
