@@ -78,6 +78,7 @@ export default function OrdiniInCorsoPageOptimized() {
     isUrgent: boolean;
   } | null>(null);
   const isUnmountingRef = useRef(false);
+  const isFirstRenderRef = useRef(true);
 
   // Use optimized SSE hook
   const { 
@@ -136,6 +137,9 @@ export default function OrdiniInCorsoPageOptimized() {
     }));
   }, []);
 
+  // Handle new order - will be implemented after loadOrders is defined
+  const handleNewOrderRef = useRef<(data: any) => void>(() => {});
+
   // Handle order delivered
   const handleOrderDelivered = useCallback((data: any) => {
     // Remove from active orders
@@ -156,6 +160,10 @@ export default function OrdiniInCorsoPageOptimized() {
       console.log(`[Cameriere] Processing event: ${event}`, data);
       
       switch (event) {
+        case 'order:new':
+          handleNewOrderRef.current(data);
+          break;
+          
         case 'order:ready':
           handleOrderReady(data);
           break;
@@ -182,8 +190,8 @@ export default function OrdiniInCorsoPageOptimized() {
   }, [eventQueue, clearEventQueue, handleOrderReady, handleOrderUpdate, handleOrderDelivered, handleOrderPaid]);
 
   // Load orders with cache support
-  const loadOrders = useCallback(async () => {
-    console.log('[Cameriere] loadOrders called');
+  const loadOrders = useCallback(async (forceRefresh: boolean = false) => {
+    console.log('[Cameriere] loadOrders called, forceRefresh:', forceRefresh);
     // Don't make API calls if component is unmounting
     if (isUnmountingRef.current) {
       console.log('[Cameriere] Skipping loadOrders - component unmounting');
@@ -192,12 +200,15 @@ export default function OrdiniInCorsoPageOptimized() {
 
     try {
       console.log('[Cameriere] Fetching orders...');
-      // Check cache first
-      const cachedOrders = getCachedData<Order[]>('orders:my-tables');
-      if (cachedOrders && cachedOrders.length > 0 && !isUnmountingRef.current) {
-        console.log('[Cameriere] Using cached orders:', cachedOrders.length);
-        setOrders(cachedOrders);
-        setIsLoading(false);
+      // Check cache first only if not forcing refresh
+      if (!forceRefresh && getCachedData) {
+        const cachedOrders = getCachedData<Order[]>('orders:my-tables');
+        if (cachedOrders && cachedOrders.length > 0 && !isUnmountingRef.current) {
+          console.log('[Cameriere] Using cached orders:', cachedOrders.length);
+          setOrders(cachedOrders);
+          setIsLoading(false);
+          return; // Return early if using cache
+        }
       }
 
       // Fetch fresh data only if not unmounting
@@ -264,7 +275,25 @@ export default function OrdiniInCorsoPageOptimized() {
         setIsLoading(false);
       }
     }
-  }, [getCachedData]);
+  }, [getCachedData, tableFilter]);
+
+  // Now define handleNewOrder after loadOrders
+  const handleNewOrder = useCallback((data: any) => {
+    console.log('[Cameriere] New order created:', data);
+    
+    // If we have a table filter and the new order is for that table, reload orders
+    if (tableFilter && data.tableNumber?.toString() === tableFilter) {
+      loadOrders(true);
+    } else if (!tableFilter) {
+      // If no filter, reload all orders
+      loadOrders(true);
+    }
+  }, [tableFilter, loadOrders]);
+
+  // Update the ref
+  useEffect(() => {
+    handleNewOrderRef.current = handleNewOrder;
+  }, [handleNewOrder]);
 
   // Handle status update with optimistic updates
   const handleStatusUpdate = async (item: LocalOrderItem, orderId: string, newStatus: string) => {
@@ -440,6 +469,12 @@ export default function OrdiniInCorsoPageOptimized() {
     }
   }, []);
 
+  // Subscribe to new order events
+  useSSEEvent('order:new', (data) => {
+    console.log('[OrdiniInCorso] New order event received:', data);
+    handleNewOrderRef.current(data);
+  }, []);
+
   // Subscribe to product unavailable in order events
   useSSEEvent('product:unavailable-in-order', (data) => {
     console.log('[OrdiniInCorso] Product unavailable in orders:', data);
@@ -485,9 +520,40 @@ export default function OrdiniInCorsoPageOptimized() {
   }, [orders, currentUser]);
 
   // Initial load
+  // Initial load on mount - with small delay to ensure SSE connection is ready
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+    console.log('[Cameriere] Component mounted, tableFilter:', tableFilter);
+    
+    // Add small delay to ensure component is fully mounted and SSE is ready
+    const initialLoadTimer = setTimeout(() => {
+      console.log('[Cameriere] Loading orders after mount delay');
+      loadOrders(true); // Force refresh on initial mount
+    }, 100);
+    
+    // Reload orders every 30 seconds
+    const interval = setInterval(() => {
+      loadOrders(false); // Don't force refresh on interval updates
+    }, 30000);
+    
+    return () => {
+      clearTimeout(initialLoadTimer);
+      clearInterval(interval);
+    };
+  }, []); // Remove loadOrders dependency to run only once on mount
+  
+  // Reload when table filter changes after mount
+  useEffect(() => {
+    // Skip first render to avoid double loading
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    
+    if (tableFilter !== null) {
+      console.log('[Cameriere] Table filter changed to:', tableFilter);
+      loadOrders(true); // Force refresh when filter changes
+    }
+  }, [tableFilter, loadOrders]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -570,7 +636,12 @@ export default function OrdiniInCorsoPageOptimized() {
             <ConnectionStatus connectionHealth={connectionHealth} />
             
             <button
-              onClick={loadOrders}
+              onClick={async () => {
+                console.log('[Cameriere] Manual refresh clicked');
+                setIsLoading(true);
+                await loadOrders(true);
+                toast.success('Ordini aggiornati');
+              }}
               className="p-2 rounded-lg transition-colors"
               style={{ backgroundColor: 'transparent' }}
               onMouseEnter={(e) => {

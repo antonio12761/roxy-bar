@@ -19,7 +19,15 @@ export async function getProdotti() {
         requiresGlasses: true,
         disponibile: true,
         terminato: true,
-        isMiscelato: true
+        isMiscelato: true,
+        categoriaMenuId: true,
+        CategoriaMenu: {
+          select: {
+            id: true,
+            nome: true,
+            ordinamento: true
+          }
+        }
       },
       orderBy: {
         categoria: 'asc'
@@ -50,7 +58,15 @@ export async function getAllProdotti() {
         disponibile: true,
         terminato: true,
         ingredienti: true,
-        isMiscelato: true
+        isMiscelato: true,
+        categoriaMenuId: true,
+        CategoriaMenu: {
+          select: {
+            id: true,
+            nome: true,
+            ordinamento: true
+          }
+        }
       },
       orderBy: {
         categoria: 'asc'
@@ -60,6 +76,29 @@ export async function getAllProdotti() {
     return serializeDecimalData(prodotti);
   } catch (error: any) {
     console.error("Errore recupero tutti i prodotti:", error.message);
+    return [];
+  }
+}
+
+export async function getCategorieMenu() {
+  try {
+    const categorie = await prisma.categoriaMenu.findMany({
+      where: {
+        attiva: true
+      },
+      select: {
+        id: true,
+        nome: true,
+        ordinamento: true
+      },
+      orderBy: {
+        ordinamento: 'asc'
+      }
+    });
+
+    return categorie;
+  } catch (error: any) {
+    console.error("Errore recupero categorie menu:", error.message);
     return [];
   }
 }
