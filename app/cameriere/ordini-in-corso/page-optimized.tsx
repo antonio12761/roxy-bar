@@ -217,8 +217,8 @@ export default function OrdiniInCorsoPageOptimized() {
 
       // Fetch fresh data only if not unmounting
       if (!isUnmountingRef.current) {
-        console.log('[Cameriere] Calling getOrdinazioniAperte...');
-        const data = await getOrdinazioniAperte();
+        console.log('[Cameriere] Calling getOrdinazioniAperte with tableFilter:', tableFilter);
+        const data = await getOrdinazioniAperte(tableFilter || undefined);
         console.log('[Cameriere] Got data:', data);
         const serializedData = serializeDecimalData(data);
         
@@ -452,12 +452,9 @@ export default function OrdiniInCorsoPageOptimized() {
   };
 
   const filteredOrders = orders.filter((order: Order) => {
-    // Filtra per tavolo se specificato
-    if (tableFilter && order.tavolo?.numero !== tableFilter) {
-      return false;
-    }
+    // Non serve più filtrare per tavolo qui perché lo facciamo server-side
     
-    // Filtra per postazione
+    // Filtra solo per postazione
     if (filter === "tutti") return true;
     if (!order.righe || !Array.isArray(order.righe)) return false;
     return order.righe.some((item: LocalOrderItem) => 

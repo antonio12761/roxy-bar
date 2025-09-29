@@ -609,11 +609,46 @@ export async function creaOrdinazione(dati: NuovaOrdinazione) {
   return creaOrdinazioneImpl(dati);
 }
 
-export async function getOrdinazioniAperte() {
+export async function getOrdinazioniAperte(numeroTavolo?: string) {
   try {
     // Fetching open orders
     
-    // Usa il nuovo servizio di sync per ottenere ordini ottimizzati
+    // Se è specificato un tavolo, carica solo gli ordini di quel tavolo
+    if (numeroTavolo) {
+      console.log('[Server] Loading orders for specific table:', numeroTavolo);
+      
+      const ordinazioni = await prisma.ordinazione.findMany({
+        where: {
+          stato: {
+            in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "ORDINATO_ESAURITO"]
+          },
+          Tavolo: {
+            numero: numeroTavolo
+          }
+        },
+        include: {
+          Tavolo: true,
+          User: {
+            select: {
+              nome: true
+            }
+          },
+          RigaOrdinazione: {
+            include: {
+              Prodotto: true
+            }
+          }
+        },
+        orderBy: {
+          dataApertura: 'asc'
+        }
+      });
+      
+      console.log(`[Server] Found ${ordinazioni.length} orders for table ${numeroTavolo}`);
+      return serializeDecimalData(ordinazioni);
+    }
+    
+    // Altrimenti usa il servizio di sync per ottenere tutti gli ordini
     const result = await ordersSyncService.getOrders();
     
     // Orders fetched
@@ -625,12 +660,21 @@ export async function getOrdinazioniAperte() {
     
     // Fallback alla query diretta se servizio fallisce
     try {
+      const whereClause: any = {
+        stato: {
+          in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "ORDINATO_ESAURITO"]
+        }
+      };
+      
+      // Aggiungi filtro tavolo se specificato
+      if (numeroTavolo) {
+        whereClause.Tavolo = {
+          numero: numeroTavolo
+        };
+      }
+      
       const ordinazioni = await prisma.ordinazione.findMany({
-        where: {
-          stato: {
-            in: ["ORDINATO", "IN_PREPARAZIONE", "PRONTO", "CONSEGNATO", "ORDINATO_ESAURITO"]
-          }
-        },
+        where: whereClause,
         include: {
           Tavolo: true,
           User: {
