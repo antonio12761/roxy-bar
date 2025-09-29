@@ -81,7 +81,6 @@ export default function OrdiniInCorsoPageOptimized() {
     affectedOrders: any[];
     isUrgent: boolean;
   } | null>(null);
-  const isUnmountingRef = useRef(false);
   const isFirstRenderRef = useRef(true);
 
   // Use optimized SSE hook
@@ -196,18 +195,13 @@ export default function OrdiniInCorsoPageOptimized() {
   // Load orders with cache support
   const loadOrders = useCallback(async (forceRefresh: boolean = false) => {
     console.log('[Cameriere] loadOrders called, forceRefresh:', forceRefresh);
-    // Don't make API calls if component is unmounting
-    if (isUnmountingRef.current) {
-      console.log('[Cameriere] Skipping loadOrders - component unmounting');
-      return;
-    }
 
     try {
       console.log('[Cameriere] Fetching orders...');
       // Check cache first only if not forcing refresh
       if (!forceRefresh && getCachedData) {
         const cachedOrders = getCachedData<Order[]>('orders:my-tables');
-        if (cachedOrders && cachedOrders.length > 0 && !isUnmountingRef.current) {
+        if (cachedOrders && cachedOrders.length > 0) {
           console.log('[Cameriere] Using cached orders:', cachedOrders.length);
           setOrders(cachedOrders);
           setIsLoading(false);
@@ -215,8 +209,7 @@ export default function OrdiniInCorsoPageOptimized() {
         }
       }
 
-      // Fetch fresh data only if not unmounting
-      if (!isUnmountingRef.current) {
+      // Fetch fresh data
         console.log('[Cameriere] Calling getOrdinazioniAperte with tableFilter:', tableFilter);
         const data = await getOrdinazioniAperte(tableFilter || undefined);
         console.log('[Cameriere] Got data:', data);
@@ -271,18 +264,13 @@ export default function OrdiniInCorsoPageOptimized() {
           }
         }
         
-        // Only update state if component is still mounted
-        if (!isUnmountingRef.current) {
-          setOrders(activeOrders);
-          setIsLoading(false);
-        }
-      }
+        // Update state with active orders
+        setOrders(activeOrders);
+        setIsLoading(false);
       
     } catch (error) {
       console.error("[Cameriere] Errore caricamento ordini:", error);
-      if (!isUnmountingRef.current) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   }, [getCachedData, tableFilter]);
 
@@ -540,11 +528,10 @@ export default function OrdiniInCorsoPageOptimized() {
     return () => clearInterval(interval);
   }, [loadOrders]); // This will trigger when loadOrders is created/updated
 
-  // Cleanup on unmount
+  // Cleanup on unmount - removed isUnmountingRef to avoid issues with React StrictMode
   useEffect(() => {
     return () => {
-      console.log('[OrdiniInCorso] Component unmounting, cleaning up...');
-      isUnmountingRef.current = true;
+      console.log('[OrdiniInCorso] Component cleanup...');
       clearEventQueue();
     };
   }, [clearEventQueue]);
