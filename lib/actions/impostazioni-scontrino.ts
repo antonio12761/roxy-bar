@@ -1,41 +1,57 @@
 "use server";
 
-import prisma from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
-import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { revalidatePath } from "next/cache";
+import { secureLog } from "@/lib/utils/log-sanitizer";
 
+export interface ImpostazioniScontrino {
+  id: string;
+  nomeAttivita: string;
+  indirizzo: string;
+  telefono: string;
+  messaggioIntestazione: string;
+  messaggioRingraziamento: string;
+  mostraData: boolean;
+  mostraOra: boolean;
+  mostraOperatore: boolean;
+  mostraTavolo: boolean;
+  mostraNumeroOrdine: boolean;
+  mostraCliente: boolean;
+  mostraDettagliProdotti: boolean;
+  mostraQuantita: boolean;
+  mostraPrezzoUnitario: boolean;
+  mostraTotaleRiga: boolean;
+  taglioAutomatico: boolean;
+  carattereSeparatore: string;
+  attivo: boolean;
+}
+
+/**
+ * Recupera le impostazioni scontrino attive
+ */
 export async function getImpostazioniScontrino() {
   try {
     const user = await getCurrentUser();
     
     // Permetti lettura a CASSA per stampare con le impostazioni corrette
     if (!user || !["SUPERVISORE", "ADMIN", "CASSA", "CAMERIERE"].includes(user.ruolo)) {
-      return {
-        success: false,
-        error: "Non autorizzato"
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
     // Recupera le impostazioni attive
-    console.log("GET - Ricerca impostazioni attive nel DB...");
+    secureLog.debug("GET - Ricerca impostazioni attive nel DB...");
     let impostazioni = await prisma.impostazioniScontrino.findFirst({
       where: { attivo: true },
       orderBy: { updatedAt: "desc" }
     });
-    console.log("GET - Impostazioni trovate:", impostazioni ? "SI" : "NO");
-    
-    if (impostazioni) {
-      console.log("GET - ID:", impostazioni.id);
-      console.log("GET - Nome attività:", impostazioni.nomeAttivita);
-      console.log("GET - Indirizzo:", impostazioni.indirizzo);
-      console.log("GET - Telefono:", impostazioni.telefono);
-      console.log("GET - Messaggio:", impostazioni.messaggioRingraziamento);
-    }
 
-    // Se non esistono impostazioni, crea quelle di default CON TUTTI I CAMPI
+    // Se non esistono impostazioni, crea quelle di default
     if (!impostazioni) {
-      console.log("GET - Creazione impostazioni di default...");
+      secureLog.info("GET - Creazione impostazioni di default...");
       impostazioni = await prisma.impostazioniScontrino.create({
         data: {
           nomeAttivita: "Bar Roxy",
@@ -58,90 +74,92 @@ export async function getImpostazioniScontrino() {
           attivo: true
         }
       });
-      console.log("GET - Impostazioni di default create con successo");
     }
 
-    return serializeDecimalData({
-      success: true,
-      data: impostazioni
-    });
+    return { 
+      success: true, 
+      data: impostazioni as ImpostazioniScontrino 
+    };
   } catch (error) {
-    console.error("Errore nel recupero impostazioni:", error);
-    return {
-      success: false,
-      error: "Errore nel recupero delle impostazioni"
+    secureLog.error("Errore nel recupero impostazioni:", error);
+    return { 
+      success: false, 
+      error: "Errore nel recupero delle impostazioni" 
     };
   }
 }
 
-export async function aggiornaImpostazioniScontrino(
-  id: string,
-  updateData: any
+/**
+ * Aggiorna le impostazioni scontrino esistenti
+ */
+export async function updateImpostazioniScontrino(
+  id: string, 
+  updateData: Partial<ImpostazioniScontrino>
 ) {
   try {
     const user = await getCurrentUser();
     
     if (!user || (user.ruolo !== "SUPERVISORE" && user.ruolo !== "ADMIN")) {
-      return {
-        success: false,
-        error: "Non autorizzato"
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
-
-    console.log("PUT - Dati ricevuti:", JSON.stringify({ id, ...updateData }, null, 2));
-    console.log("PUT - ID:", id);
-    console.log("PUT - UpdateData keys:", Object.keys(updateData));
 
     if (!id) {
-      return {
-        success: false,
-        error: "ID impostazioni mancante"
+      return { 
+        success: false, 
+        error: "ID impostazioni mancante" 
       };
     }
+
+    // Rimuovi campi che non dovrebbero essere aggiornati
+    const { id: _, attivo, ...dataToUpdate } = updateData;
 
     // IMPORTANTE: Assicurati che rimanga attivo!
     const impostazioniAggiornate = await prisma.impostazioniScontrino.update({
       where: { id },
       data: {
-        ...updateData,
+        ...dataToUpdate,
         attivo: true, // FORZA sempre attivo quando si aggiorna
         modificatoDa: user.id,
         updatedAt: new Date()
       }
     });
     
-    console.log("PUT - Impostazioni aggiornate:", {
-      nomeAttivita: impostazioniAggiornate.nomeAttivita,
-      indirizzo: impostazioniAggiornate.indirizzo,
-      telefono: impostazioniAggiornate.telefono
-    });
+    secureLog.info("PUT - Impostazioni aggiornate con successo");
 
-    // Invalidate cache
-    revalidatePath("/admin/scontrino");
-    revalidatePath("/cassa");
+    // Revalida le pagine che usano queste impostazioni
+    revalidatePath('/cassa');
+    revalidatePath('/supervisore/impostazioni');
 
-    return serializeDecimalData({
-      success: true,
-      data: impostazioniAggiornate,
+    return { 
+      success: true, 
+      data: impostazioniAggiornate as ImpostazioniScontrino,
       message: "Impostazioni aggiornate con successo"
-    });
+    };
   } catch (error) {
-    console.error("Errore nell'aggiornamento impostazioni:", error);
-    return {
-      success: false,
-      error: "Errore nell'aggiornamento delle impostazioni"
+    secureLog.error("Errore nell'aggiornamento impostazioni:", error);
+    return { 
+      success: false, 
+      error: "Errore nell'aggiornamento delle impostazioni" 
     };
   }
 }
 
-export async function creaImpostazioniScontrino(data: any) {
+/**
+ * Crea nuove impostazioni scontrino (disattiva quelle esistenti)
+ */
+export async function createImpostazioniScontrino(
+  data: Omit<ImpostazioniScontrino, 'id' | 'attivo'>
+) {
   try {
     const user = await getCurrentUser();
     
     if (!user || (user.ruolo !== "SUPERVISORE" && user.ruolo !== "ADMIN")) {
-      return {
-        success: false,
-        error: "Non autorizzato"
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
@@ -160,20 +178,43 @@ export async function creaImpostazioniScontrino(data: any) {
       }
     });
 
-    // Invalidate cache
-    revalidatePath("/admin/scontrino");
-    revalidatePath("/cassa");
+    // Revalida le pagine
+    revalidatePath('/cassa');
+    revalidatePath('/supervisore/impostazioni');
 
-    return serializeDecimalData({
-      success: true,
-      data: nuoveImpostazioni,
+    return { 
+      success: true, 
+      data: nuoveImpostazioni as ImpostazioniScontrino,
       message: "Impostazioni create con successo"
-    });
+    };
   } catch (error) {
-    console.error("Errore nella creazione impostazioni:", error);
-    return {
-      success: false,
-      error: "Errore nella creazione delle impostazioni"
+    secureLog.error("Errore nella creazione impostazioni:", error);
+    return { 
+      success: false, 
+      error: "Errore nella creazione delle impostazioni" 
     };
   }
+}
+
+/**
+ * Helper per verificare se le impostazioni sono complete
+ */
+export async function checkImpostazioniComplete(): Promise<boolean> {
+  const result = await getImpostazioniScontrino();
+  
+  if (!result.success || !result.data) {
+    return false;
+  }
+  
+  const required = [
+    'nomeAttivita',
+    'indirizzo',
+    'telefono',
+    'messaggioIntestazione',
+    'messaggioRingraziamento'
+  ];
+  
+  return required.every(field => 
+    result.data![field as keyof ImpostazioniScontrino]
+  );
 }

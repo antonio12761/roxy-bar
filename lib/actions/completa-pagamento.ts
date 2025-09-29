@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth-multi-tenant";
 import { revalidatePath } from "next/cache";
 import { sseService } from "@/lib/sse/sse-service";
 import { nanoid } from "nanoid";
+import { assegnaPuntiPagamento } from "./fidelity";
 
 export async function completaPagamentoCameriere(
   ordinazioneId: string,
@@ -109,6 +110,20 @@ export async function completaPagamentoCameriere(
       return { pagamento };
     });
 
+    // Assegna punti fidelity se c'è un cliente associato
+    let puntiAssegnati = null;
+    if (ordinazione.clienteId && modalita !== "DEBITO") {
+      const risultatoPunti = await assegnaPuntiPagamento(
+        ordinazioneId,
+        ordinazione.clienteId,
+        importo
+      );
+      
+      if (risultatoPunti.success) {
+        puntiAssegnati = risultatoPunti;
+      }
+    }
+
     // Notifica completamento pagamento
     sseService.emit('order:paid', {
       orderId: ordinazioneId,
@@ -117,7 +132,8 @@ export async function completaPagamentoCameriere(
       amount: importo,
       paymentMethod: modalita,
       cashierId: utente.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      fidelityPoints: puntiAssegnati?.punti || 0
     }, {
       tenantId: ordinazione.User?.tenantId,
       broadcast: true
@@ -126,10 +142,15 @@ export async function completaPagamentoCameriere(
     revalidatePath("/cameriere");
     revalidatePath("/cassa");
 
+    const messaggioPunti = puntiAssegnati?.punti 
+      ? ` (+${puntiAssegnati.punti} punti fidelity)`
+      : '';
+
     return { 
       success: true, 
-      message: `Pagamento ${modalita} di €${importo.toFixed(2)} completato`,
-      pagamentoId: result.pagamento.id
+      message: `Pagamento ${modalita} di €${importo.toFixed(2)} completato${messaggioPunti}`,
+      pagamentoId: result.pagamento.id,
+      puntiAssegnati: puntiAssegnati?.punti || 0
     };
   } catch (error) {
     console.error("Errore completamento pagamento:", error);

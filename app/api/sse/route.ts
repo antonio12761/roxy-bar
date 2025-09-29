@@ -190,22 +190,17 @@ export async function GET(request: NextRequest) {
       //     console.error(`[SSE Route] Failed to recover secure notifications:`, error);
       //   });
       
-      // Check for queued events after a delay to ensure client is ready
-      setTimeout(() => {
-        secureLog.debug(`[SSE Route] Checking queued events for tenant after delay`);
-        // Trigger queue delivery again to ensure events are received
-        sseService.emit('queue:check', { 
-          tenantId: user.tenantId 
-        }, { 
-          userId: user.id,
-          tenantId: user.tenantId
-        });
-      }, 1500); // 1.5 second delay to ensure client-side is ready
+      // Queue check is already done below, no need to duplicate
       
       // 4. Setup heartbeat (importante!) - Reduced to 2s for maximum reliability
       const heartbeat = setInterval(() => {
         try {
-          controller.enqueue(new TextEncoder().encode(':heartbeat\n\n'));
+          // Send heartbeat as a proper event instead of comment
+          const heartbeatData = JSON.stringify({ 
+            type: 'system:heartbeat', 
+            timestamp: Date.now() 
+          });
+          controller.enqueue(new TextEncoder().encode(`data: ${heartbeatData}\n\n`));
         } catch (error) {
           // Connection closed
           clearInterval(heartbeat);
@@ -248,11 +243,8 @@ export async function GET(request: NextRequest) {
         sseService.processQueueForTenant(user.tenantId);
       };
       
-      // Check immediately and then after short delays
-      setTimeout(checkQueue, 100);
-      setTimeout(checkQueue, 500); 
-      setTimeout(checkQueue, 1000);
-      setTimeout(checkQueue, 2000);
+      // Check once after a short delay
+      setTimeout(checkQueue, 500);
       
       // Silent connect
     },

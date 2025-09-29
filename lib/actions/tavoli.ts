@@ -2,40 +2,69 @@
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
-import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { revalidatePath } from "next/cache";
-import { FormaTavolo } from "@prisma/client";
+import { secureLog } from "@/lib/utils/log-sanitizer";
 
-interface GetTavoliOptions {
+export interface Tavolo {
+  id: number;
+  numero: string;
+  nome: string | null;
+  zona: string | null;
+  forma: 'QUADRATO' | 'ROTONDO' | 'RETTANGOLARE';
+  gruppoId: number | null;
+  posizioneX: number;
+  posizioneY: number;
+  ordinamento: number | null;
+  note: string | null;
+  attivo: boolean;
+  GruppoTavoli?: {
+    id: number;
+    nome: string;
+    colore: string | null;
+    icona: string;
+  };
+  Ordinazione?: Array<{
+    id: string;
+    numero: number;
+    stato: string;
+    totale: number;
+  }>;
+}
+
+export interface TavoliSearchParams {
   includeGroups?: boolean;
   groupId?: number;
   search?: string;
 }
 
-export async function getTavoliAdmin(options: GetTavoliOptions = {}) {
+/**
+ * Recupera tutti i tavoli con filtri opzionali
+ */
+export async function getTavoli(params?: TavoliSearchParams) {
   try {
     const user = await getCurrentUser();
     
     if (!user) {
-      return { success: false, error: "Non autorizzato" };
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
 
-    const { includeGroups = false, groupId, search = '' } = options;
-
-    // Build where clause per tavoli
+    // Build where clause
     const where: any = {
       attivo: true
     };
 
-    if (groupId) {
-      where.gruppoId = groupId;
+    if (params?.groupId) {
+      where.gruppoId = params.groupId;
     }
 
-    if (search) {
+    if (params?.search) {
       where.OR = [
-        { numero: { contains: search, mode: 'insensitive' } },
-        { nome: { contains: search, mode: 'insensitive' } },
-        { zona: { contains: search, mode: 'insensitive' } }
+        { numero: { contains: params.search, mode: 'insensitive' } },
+        { nome: { contains: params.search, mode: 'insensitive' } },
+        { zona: { contains: params.search, mode: 'insensitive' } }
       ];
     }
 
@@ -65,33 +94,15 @@ export async function getTavoliAdmin(options: GetTavoliOptions = {}) {
       ]
     });
 
-    let result: any = { tavoli };
+    let result: any = { 
+      tavoli: tavoli as Tavolo[] 
+    };
 
     // Get gruppi if requested
-    if (includeGroups) {
+    if (params?.includeGroups) {
       const gruppi = await prisma.gruppoTavoli.findMany({
         where: { attivo: true },
         include: {
-          Tavolo: {
-            where: { attivo: true },
-            orderBy: { ordinamento: 'asc' },
-            include: {
-              GruppoTavoli: true,
-              Ordinazione: {
-                where: {
-                  stato: {
-                    notIn: ['PAGATO', 'ANNULLATO']
-                  }
-                },
-                select: {
-                  id: true,
-                  numero: true,
-                  stato: true,
-                  totale: true
-                }
-              }
-            }
-          },
           _count: {
             select: { Tavolo: true }
           }
@@ -101,126 +112,174 @@ export async function getTavoliAdmin(options: GetTavoliOptions = {}) {
       result.gruppi = gruppi;
     }
 
-    return serializeDecimalData({
-      success: true,
-      data: result
-    });
+    return { 
+      success: true, 
+      data: result 
+    };
   } catch (error) {
-    console.error('Get tavoli error:', error);
-    return {
-      success: false,
-      error: 'Errore nel recupero dei tavoli'
+    secureLog.error('Get tavoli error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nel recupero dei tavoli' 
     };
   }
 }
 
-interface CreateTavoloData {
+/**
+ * Recupera un singolo tavolo per ID o numero
+ */
+export async function getTavolo(idOrNumero: number | string) {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    const where = typeof idOrNumero === 'number' 
+      ? { id: idOrNumero }
+      : { numero: idOrNumero };
+
+    const tavolo = await prisma.tavolo.findFirst({
+      where: {
+        ...where,
+        attivo: true
+      },
+      include: {
+        GruppoTavoli: true,
+        Ordinazione: {
+          where: {
+            stato: {
+              notIn: ['PAGATO', 'ANNULLATO']
+            }
+          },
+          include: {
+            RigaOrdinazione: {
+              include: {
+                Prodotto: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!tavolo) {
+      return { 
+        success: false, 
+        error: 'Tavolo non trovato' 
+      };
+    }
+
+    return { 
+      success: true, 
+      data: tavolo 
+    };
+  } catch (error) {
+    secureLog.error('Get tavolo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nel recupero del tavolo' 
+    };
+  }
+}
+
+/**
+ * Crea un nuovo tavolo
+ */
+export async function createTavolo(data: {
   numero: string;
   nome?: string;
   zona?: string;
-  forma?: FormaTavolo;
+  forma?: 'QUADRATO' | 'ROTONDO' | 'RETTANGOLARE';
   gruppoId?: number;
   posizioneX?: number;
   posizioneY?: number;
   ordinamento?: number;
   note?: string;
-}
-
-export async function creaTavolo(data: CreateTavoloData) {
+}) {
   try {
     const user = await getCurrentUser();
     
-    if (!user || !["SUPERVISORE", "ADMIN"].includes(user.ruolo)) {
-      return { success: false, error: "Non autorizzato" };
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
 
-    const {
-      numero,
-      nome,
-      zona,
-      forma = 'QUADRATO',
-      gruppoId,
-      posizioneX = 0,
-      posizioneY = 0,
-      ordinamento = 0,
-      note
-    } = data;
-
     // Validazione
-    if (!numero) {
-      return {
-        success: false,
-        error: 'Il numero del tavolo è obbligatorio'
+    if (!data.numero) {
+      return { 
+        success: false, 
+        error: 'Il numero del tavolo è obbligatorio' 
       };
     }
 
     // Check numero unique
     const existingTavolo = await prisma.tavolo.findUnique({
-      where: { numero }
+      where: { numero: data.numero }
     });
 
     if (existingTavolo) {
-      return {
-        success: false,
-        error: 'Numero tavolo già esistente'
+      return { 
+        success: false, 
+        error: 'Numero tavolo già esistente' 
       };
     }
 
     // Create tavolo
     const newTavolo = await prisma.tavolo.create({
       data: {
-        numero,
-        nome,
-        zona,
-        forma,
-        gruppoId,
-        posizioneX,
-        posizioneY,
-        ordinamento,
-        note
+        numero: data.numero,
+        nome: data.nome || null,
+        zona: data.zona || null,
+        forma: data.forma || 'QUADRATO',
+        gruppoId: data.gruppoId || null,
+        posizioneX: data.posizioneX || 0,
+        posizioneY: data.posizioneY || 0,
+        ordinamento: data.ordinamento || 0,
+        note: data.note || null
       },
       include: {
         GruppoTavoli: true
       }
     });
 
-    // Invalidate cache
-    revalidatePath("/dashboard/tavoli");
-    revalidatePath("/admin/tavoli");
-    revalidatePath("/cameriere");
+    // Revalida le pagine
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
-    return serializeDecimalData({
-      success: true,
-      data: newTavolo,
-      message: "Tavolo creato con successo"
-    });
-  } catch (error) {
-    console.error('Create tavolo error:', error);
     return {
-      success: false,
-      error: 'Errore nella creazione del tavolo'
+      success: true,
+      data: newTavolo as Tavolo
+    };
+  } catch (error) {
+    secureLog.error('Create tavolo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nella creazione del tavolo' 
     };
   }
 }
 
-interface UpdateTavoloData extends Partial<CreateTavoloData> {
-  id: number;
-}
-
-export async function aggiornaTavolo(data: UpdateTavoloData) {
+/**
+ * Aggiorna un tavolo esistente
+ */
+export async function updateTavolo(
+  id: number,
+  data: Partial<Omit<Tavolo, 'id' | 'attivo' | 'GruppoTavoli' | 'Ordinazione'>>
+) {
   try {
     const user = await getCurrentUser();
     
-    if (!user || !["SUPERVISORE", "ADMIN"].includes(user.ruolo)) {
-      return { success: false, error: "Non autorizzato" };
-    }
-
-    const { id, ...updateData } = data;
-
-    if (!id) {
-      return {
-        success: false,
-        error: 'ID tavolo richiesto'
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
@@ -230,25 +289,25 @@ export async function aggiornaTavolo(data: UpdateTavoloData) {
     });
 
     if (!existingTavolo) {
-      return {
-        success: false,
-        error: 'Tavolo non trovato'
+      return { 
+        success: false, 
+        error: 'Tavolo non trovato' 
       };
     }
 
-    // If updating numero, check uniqueness
-    if (updateData.numero && updateData.numero !== existingTavolo.numero) {
+    // If updating numero, check uniqueness (excluding current table)
+    if (data.numero && data.numero !== existingTavolo.numero) {
       const existingNumero = await prisma.tavolo.findFirst({
         where: { 
-          numero: updateData.numero,
+          numero: data.numero,
           id: { not: id }
         }
       });
 
       if (existingNumero) {
-        return {
-          success: false,
-          error: 'Numero tavolo già in uso'
+        return { 
+          success: false, 
+          error: 'Numero tavolo già in uso' 
         };
       }
     }
@@ -256,50 +315,51 @@ export async function aggiornaTavolo(data: UpdateTavoloData) {
     // Update tavolo
     const updatedTavolo = await prisma.tavolo.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...data,
+        updatedAt: new Date()
+      },
       include: {
         GruppoTavoli: true
       }
     });
 
-    // Invalidate cache
-    revalidatePath("/dashboard/tavoli");
-    revalidatePath("/admin/tavoli");
-    revalidatePath("/cameriere");
+    // Revalida le pagine
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
+    revalidatePath(`/cameriere/tavolo/${id}`);
 
-    return serializeDecimalData({
-      success: true,
-      data: updatedTavolo,
-      message: "Tavolo aggiornato con successo"
-    });
-  } catch (error) {
-    console.error('Update tavolo error:', error);
     return {
-      success: false,
-      error: 'Errore nell\'aggiornamento del tavolo'
+      success: true,
+      data: updatedTavolo as Tavolo
+    };
+  } catch (error) {
+    secureLog.error('Update tavolo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'aggiornamento del tavolo' 
     };
   }
 }
 
-export async function eliminaTavolo(tavoloId: number) {
+/**
+ * Elimina (soft delete) un tavolo
+ */
+export async function deleteTavolo(id: number) {
   try {
     const user = await getCurrentUser();
     
     if (!user || !["SUPERVISORE", "ADMIN"].includes(user.ruolo)) {
-      return { success: false, error: "Non autorizzato" };
-    }
-
-    if (!tavoloId) {
-      return {
-        success: false,
-        error: 'ID tavolo richiesto'
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
     // Check if tavolo has active orders
     const activeOrders = await prisma.ordinazione.findFirst({
       where: {
-        tavoloId,
+        tavoloId: id,
         stato: {
           notIn: ['PAGATO', 'ANNULLATO']
         }
@@ -307,90 +367,140 @@ export async function eliminaTavolo(tavoloId: number) {
     });
 
     if (activeOrders) {
-      return {
-        success: false,
-        error: 'Non puoi eliminare un tavolo con ordinazioni attive'
+      return { 
+        success: false, 
+        error: 'Non puoi eliminare un tavolo con ordinazioni attive' 
       };
     }
 
-    // Get tavolo data
+    // Get tavolo
     const tavolo = await prisma.tavolo.findUnique({
-      where: { id: tavoloId }
+      where: { id }
     });
     
     if (!tavolo) {
-      return {
-        success: false,
-        error: 'Tavolo non trovato'
+      return { 
+        success: false, 
+        error: 'Tavolo non trovato' 
       };
     }
     
-    // Soft delete (set inactive and rename to avoid unique constraint)
+    // Soft delete: set inactive and rename to avoid unique constraint
     await prisma.tavolo.update({
-      where: { id: tavoloId },
+      where: { id },
       data: { 
         attivo: false,
-        numero: `${tavolo.numero}_DELETED_${Date.now()}`
+        numero: `${tavolo.numero}_DELETED_${Date.now()}`,
+        updatedAt: new Date()
       }
     });
 
-    // Invalidate cache
-    revalidatePath("/dashboard/tavoli");
-    revalidatePath("/admin/tavoli");
-    revalidatePath("/cameriere");
+    // Revalida le pagine
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
     return {
       success: true,
-      message: 'Tavolo eliminato con successo'
+      message: 'Tavolo disattivato con successo'
     };
   } catch (error) {
-    console.error('Delete tavolo error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'eliminazione del tavolo'
+    secureLog.error('Delete tavolo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'eliminazione del tavolo' 
     };
   }
 }
 
-export async function aggiornaVisibilitaTavolo(tavoloId: number, visibile: boolean) {
+/**
+ * Aggiorna l'ordinamento di più tavoli
+ */
+export async function updateTavoliOrdinamento(
+  updates: Array<{ id: number; ordinamento: number }>
+) {
   try {
     const user = await getCurrentUser();
     
-    if (!user) {
-      return {
-        success: false,
-        error: "Non autorizzato"
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
-    await prisma.tavolo.update({
-      where: { id: tavoloId },
-      data: { visibile }
-    });
-    
-    // Emit SSE event for real-time updates
-    const { sseService } = await import('@/lib/sse/sse-service');
-    sseService.emit('tables:visibility:update', {
-      tavoloId,
-      visibile,
-      updatedBy: user.name || user.email || 'Admin',
-      timestamp: new Date().toISOString()
-    }, {
-      tenantId: user.tenantId
-    });
+    // Esegui tutti gli aggiornamenti in una transazione
+    await prisma.$transaction(
+      updates.map(({ id, ordinamento }) =>
+        prisma.tavolo.update({
+          where: { id },
+          data: { 
+            ordinamento,
+            updatedAt: new Date()
+          }
+        })
+      )
+    );
 
-    revalidatePath("/dashboard");
-    revalidatePath("/cameriere");
+    // Revalida le pagine
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
-    return {
-      success: true,
-      message: `Tavolo ${visibile ? 'reso visibile' : 'nascosto'} con successo`
+    return { 
+      success: true, 
+      message: 'Ordinamento aggiornato con successo' 
     };
   } catch (error) {
-    console.error('Update tavolo visibility error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'aggiornamento della visibilità del tavolo'
+    secureLog.error('Errore nell\'aggiornamento dell\'ordinamento:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'aggiornamento dell\'ordinamento' 
+    };
+  }
+}
+
+/**
+ * Aggiorna la posizione di più tavoli (per drag & drop)
+ */
+export async function updateTavoliPosizioni(
+  updates: Array<{ id: number; posizioneX: number; posizioneY: number }>
+) {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    // Esegui tutti gli aggiornamenti in una transazione
+    await prisma.$transaction(
+      updates.map(({ id, posizioneX, posizioneY }) =>
+        prisma.tavolo.update({
+          where: { id },
+          data: { 
+            posizioneX,
+            posizioneY,
+            updatedAt: new Date()
+          }
+        })
+      )
+    );
+
+    // Revalida le pagine
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
+
+    return { 
+      success: true, 
+      message: 'Posizioni aggiornate con successo' 
+    };
+  } catch (error) {
+    secureLog.error('Errore nell\'aggiornamento delle posizioni:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'aggiornamento delle posizioni' 
     };
   }
 }

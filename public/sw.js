@@ -1,100 +1,77 @@
-/**
- * Copyright 2018 Google Inc. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Service Worker per Bar Roxy PWA
+const CACHE_NAME = 'roxy-bar-v1';
+const FIDELITY_CACHE = 'roxy-fidelity-v1';
 
-// If the loader is already loaded, just stop.
-if (!self.define) {
-  let registry = {};
+// URLs da pre-cachare per la fidelity card
+const FIDELITY_URLS = [
+  '/fidelity',
+  '/manifest-fidelity.json',
+  '/api/fidelity/card/',
+];
 
-  // Used for `eval` and `importScripts` where we can't get script URL by other means.
-  // In both cases, it's safe to use a global var because those functions are synchronous.
-  let nextDefineUri;
+self.addEventListener('install', function(event) {
+  console.log('[SW] Installing service worker');
+  
+  event.waitUntil(
+    caches.open(FIDELITY_CACHE).then(function(cache) {
+      return cache.addAll(FIDELITY_URLS.filter(url => !url.includes('/api/')));
+    })
+  );
+  
+  self.skipWaiting();
+});
 
-  const singleRequire = (uri, parentUri) => {
-    uri = new URL(uri + ".js", parentUri).href;
-    return registry[uri] || (
-      
-        new Promise(resolve => {
-          if ("document" in self) {
-            const script = document.createElement("script");
-            script.src = uri;
-            script.onload = resolve;
-            document.head.appendChild(script);
-          } else {
-            nextDefineUri = uri;
-            importScripts(uri);
-            resolve();
+self.addEventListener('activate', function(event) {
+  console.log('[SW] Activating service worker');
+  
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME && cacheName !== FIDELITY_CACHE) {
+            return caches.delete(cacheName);
           }
         })
-      
-      .then(() => {
-        let promise = registry[uri];
-        if (!promise) {
-          throw new Error(`Module ${uri} didn’t register its module`);
-        }
-        return promise;
+      );
+    })
+  );
+  
+  return self.clients.claim();
+});
+
+self.addEventListener('fetch', function(event) {
+  const url = new URL(event.request.url);
+  
+  // Gestione speciale per la fidelity card
+  if (url.pathname.startsWith('/fidelity') || url.pathname.startsWith('/api/fidelity/')) {
+    event.respondWith(
+      caches.match(event.request).then(function(response) {
+        return response || fetch(event.request).then(function(fetchResponse) {
+          // Cache solo le risposte GET per la fidelity
+          if (event.request.method === 'GET' && fetchResponse.status === 200) {
+            const responseToCache = fetchResponse.clone();
+            caches.open(FIDELITY_CACHE).then(function(cache) {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return fetchResponse;
+        }).catch(function() {
+          // Se offline, mostra una pagina di fallback
+          if (url.pathname === '/fidelity') {
+            return new Response('Offline - Riconnettiti per vedere la tua carta fedeltà', {
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            });
+          }
+        });
       })
     );
-  };
-
-  self.define = (depsNames, factory) => {
-    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
-    if (registry[uri]) {
-      // Module is already loading or loaded.
-      return;
-    }
-    let exports = {};
-    const require = depUri => singleRequire(depUri, uri);
-    const specialDeps = {
-      module: { uri },
-      exports,
-      require
-    };
-    registry[uri] = Promise.all(depsNames.map(
-      depName => specialDeps[depName] || require(depName)
-    )).then(deps => {
-      factory(...deps);
-      return exports;
-    });
-  };
-}
-define(['./workbox-e43f5367'], (function (workbox) { 'use strict';
-
-  importScripts();
-  self.skipWaiting();
-  workbox.clientsClaim();
-  workbox.registerRoute("/", new workbox.NetworkFirst({
-    "cacheName": "start-url",
-    plugins: [{
-      cacheWillUpdate: async ({
-        request,
-        response,
-        event,
-        state
-      }) => {
-        if (response && response.type === 'opaqueredirect') {
-          return new Response(response.body, {
-            status: 200,
-            statusText: 'OK',
-            headers: response.headers
-          });
-        }
-        return response;
-      }
-    }]
-  }), 'GET');
-  workbox.registerRoute(/.*/i, new workbox.NetworkOnly({
-    "cacheName": "dev",
-    plugins: []
-  }), 'GET');
-
-}));
+    return;
+  }
+  
+  // Per tutte le altre richieste, usa la strategia network-first
+  event.respondWith(
+    fetch(event.request).catch(function() {
+      return caches.match(event.request);
+    })
+  );
+});

@@ -705,6 +705,29 @@ async function parseCSVLine(line: string): Promise<string[]> {
   return result;
 }
 
+// Product Procedure Types
+export interface ProcedureIngredient {
+  id: string;
+  name: string;
+  quantity?: string;
+  unit?: string;
+}
+
+export interface ProcedureStep {
+  id: string;
+  description: string;
+  order: number;
+  ingredients: ProcedureIngredient[];
+}
+
+export interface ProductProcedure {
+  id: string;
+  productId: number;
+  glasses?: string[];
+  steps: ProcedureStep[];
+  updatedAt: Date;
+}
+
 // Import prodotti da CSV (Server Action)
 export async function importProductsCSV(formData: FormData) {
   try {
@@ -820,5 +843,260 @@ export async function importProductsCSV(formData: FormData) {
   } catch (error) {
     console.error("Import error:", error);
     return { success: false, error: "Errore durante l'importazione" };
+  }
+}
+
+/**
+ * Recupera la procedura di preparazione di un prodotto
+ */
+export async function getProductProcedure(productId: number) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !["ADMIN", "MANAGER", "PREPARA", "CUCINA"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    if (!productId) {
+      return { 
+        success: false, 
+        error: "Product ID richiesto" 
+      };
+    }
+
+    const procedure = await prisma.productProcedure.findUnique({
+      where: { productId },
+      include: {
+        ProcedureStep: {
+          orderBy: { order: "asc" },
+          include: {
+            ProcedureIngredient: {
+              orderBy: { name: "asc" }
+            }
+          }
+        }
+      }
+    });
+
+    if (!procedure) {
+      return {
+        success: true,
+        data: null
+      };
+    }
+
+    // Format the response
+    const formattedProcedure: ProductProcedure = {
+      id: procedure.id,
+      productId: procedure.productId,
+      glasses: procedure.glasses || [],
+      steps: procedure.ProcedureStep.map(step => ({
+        id: step.id,
+        description: step.description,
+        order: step.order,
+        ingredients: step.ProcedureIngredient.map(ing => ({
+          id: ing.id,
+          name: ing.name,
+          quantity: ing.quantity || undefined,
+          unit: ing.unit || undefined
+        }))
+      })),
+      updatedAt: procedure.updatedAt
+    };
+
+    return {
+      success: true,
+      data: formattedProcedure
+    };
+  } catch (error) {
+    console.error("Errore recupero procedura:", error);
+    return { 
+      success: false, 
+      error: "Errore nel recupero della procedura" 
+    };
+  }
+}
+
+/**
+ * Crea o aggiorna la procedura di preparazione di un prodotto
+ */
+export async function saveProductProcedure(data: {
+  productId: number;
+  steps: Array<{
+    description: string;
+    order: number;
+    ingredients?: Array<{
+      name: string;
+      quantity?: string;
+      unit?: string;
+    }>;
+  }>;
+  glasses?: string[];
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !["ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    const { productId, steps, glasses = [] } = data;
+
+    if (!productId || !steps || !Array.isArray(steps)) {
+      return { 
+        success: false, 
+        error: "Dati non validi" 
+      };
+    }
+
+    // Delete existing procedure if any
+    await prisma.productProcedure.deleteMany({
+      where: { productId }
+    });
+
+    // Create new procedure
+    const procedure = await prisma.productProcedure.create({
+      data: {
+        id: nanoid(),
+        productId,
+        glasses,
+        updatedAt: new Date(),
+        ProcedureStep: {
+          create: steps.map((step) => ({
+            id: nanoid(),
+            description: step.description,
+            order: step.order,
+            updatedAt: new Date(),
+            ProcedureIngredient: {
+              create: (step.ingredients || []).map((ing) => ({
+                id: nanoid(),
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                updatedAt: new Date()
+              }))
+            }
+          }))
+        }
+      },
+      include: {
+        ProcedureStep: {
+          include: {
+            ProcedureIngredient: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        id: nanoid(),
+        action: 'PROCEDURE_SAVED',
+        entityType: 'PRODUCT_PROCEDURE',
+        entityId: procedure.id,
+        tenantId: user.tenantId || 'default',
+        userId: user.id,
+        metadata: {
+          productId,
+          stepsCount: steps.length
+        },
+      },
+    });
+
+    // Format the response
+    const formattedProcedure: ProductProcedure = {
+      id: procedure.id,
+      productId: procedure.productId,
+      glasses: procedure.glasses || [],
+      steps: procedure.ProcedureStep.map(step => ({
+        id: step.id,
+        description: step.description,
+        order: step.order,
+        ingredients: step.ProcedureIngredient.map(ing => ({
+          id: ing.id,
+          name: ing.name,
+          quantity: ing.quantity || undefined,
+          unit: ing.unit || undefined
+        }))
+      })),
+      updatedAt: procedure.updatedAt
+    };
+
+    // Revalidate relevant pages
+    revalidatePath('/dashboard/products');
+    revalidatePath('/prepara');
+
+    return {
+      success: true,
+      data: formattedProcedure
+    };
+  } catch (error) {
+    console.error("Errore salvataggio procedura:", error);
+    return { 
+      success: false, 
+      error: "Errore nel salvataggio della procedura" 
+    };
+  }
+}
+
+/**
+ * Elimina la procedura di preparazione di un prodotto
+ */
+export async function deleteProductProcedure(productId: number) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !["ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    if (!productId) {
+      return { 
+        success: false, 
+        error: "Product ID richiesto" 
+      };
+    }
+
+    // Delete the procedure
+    await prisma.productProcedure.deleteMany({
+      where: { productId }
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        id: nanoid(),
+        action: 'PROCEDURE_DELETED',
+        entityType: 'PRODUCT_PROCEDURE',
+        entityId: productId.toString(),
+        tenantId: user.tenantId || 'default',
+        userId: user.id,
+        metadata: {
+          productId
+        },
+      },
+    });
+
+    // Revalidate relevant pages
+    revalidatePath('/dashboard/products');
+    revalidatePath('/prepara');
+
+    return {
+      success: true,
+      message: 'Procedura eliminata con successo'
+    };
+  } catch (error) {
+    console.error("Errore eliminazione procedura:", error);
+    return { 
+      success: false, 
+      error: "Errore nell'eliminazione della procedura" 
+    };
   }
 }

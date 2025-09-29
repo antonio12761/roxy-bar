@@ -2,6 +2,25 @@
  * Utility per sanitizzare i log e rimuovere informazioni sensibili
  */
 
+// Log levels
+const LOG_LEVELS = {
+  'debug': 0,
+  'info': 1,
+  'warn': 2,
+  'error': 3
+};
+
+/**
+ * Controlla se un log dovrebbe essere mostrato basato sul livello corrente
+ */
+function shouldLog(level: keyof typeof LOG_LEVELS): boolean {
+  const currentLevel = process.env.LOG_LEVEL || 'info';
+  const currentLevelValue = LOG_LEVELS[currentLevel as keyof typeof LOG_LEVELS] || LOG_LEVELS.info;
+  const requestedLevelValue = LOG_LEVELS[level] || LOG_LEVELS.info;
+  
+  return requestedLevelValue >= currentLevelValue;
+}
+
 // Pattern per identificare informazioni sensibili
 const SENSITIVE_PATTERNS = [
   // JWT tokens
@@ -96,39 +115,54 @@ export function sanitizeObject(obj: any, depth = 0, maxDepth = 5): any {
  */
 export const secureLog = {
   log: (...args: any[]) => {
-    const sanitizedArgs = args.map(arg => 
-      typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
-    );
+    if (!shouldLog('info')) return;
+    const sanitizedArgs = process.env.SANITIZE_LOGS !== 'false' 
+      ? args.map(arg => 
+          typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
+        )
+      : args;
     console.log(...sanitizedArgs);
   },
   
   error: (...args: any[]) => {
-    const sanitizedArgs = args.map(arg => 
-      typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
-    );
+    if (!shouldLog('error')) return;
+    const sanitizedArgs = process.env.SANITIZE_LOGS !== 'false' 
+      ? args.map(arg => 
+          typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
+        )
+      : args;
     console.error(...sanitizedArgs);
   },
   
   warn: (...args: any[]) => {
-    const sanitizedArgs = args.map(arg => 
-      typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
-    );
+    if (!shouldLog('warn')) return;
+    const sanitizedArgs = process.env.SANITIZE_LOGS !== 'false' 
+      ? args.map(arg => 
+          typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
+        )
+      : args;
     console.warn(...sanitizedArgs);
   },
   
   info: (...args: any[]) => {
-    const sanitizedArgs = args.map(arg => 
-      typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
-    );
+    if (!shouldLog('info')) return;
+    const sanitizedArgs = process.env.SANITIZE_LOGS !== 'false' 
+      ? args.map(arg => 
+          typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
+        )
+      : args;
     console.info(...sanitizedArgs);
   },
   
   debug: (...args: any[]) => {
+    if (!shouldLog('debug')) return;
     // Debug logs solo in development
     if (process.env.NODE_ENV !== 'production') {
-      const sanitizedArgs = args.map(arg => 
-        typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
-      );
+      const sanitizedArgs = process.env.SANITIZE_LOGS !== 'false' 
+        ? args.map(arg => 
+            typeof arg === 'object' ? sanitizeObject(arg) : sanitizeString(String(arg))
+          )
+        : args;
       console.debug(...sanitizedArgs);
     }
   }

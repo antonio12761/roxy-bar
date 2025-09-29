@@ -6,6 +6,8 @@ import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { generaScontrino } from "./cassa";
 import { sseManager } from "@/lib/sse/sse-manager";
 import { Decimal } from "@prisma/client/runtime/library";
+import { nanoid } from "nanoid";
+import { assegnaPuntiPagamento } from "./fidelity";
 
 interface DirectReceiptItem {
   prodottoId: string;
@@ -15,9 +17,10 @@ interface DirectReceiptItem {
 
 interface DirectReceiptData {
   items: DirectReceiptItem[];
-  modalitaPagamento: "CONTANTI" | "CARTA";
+  modalitaPagamento: "CONTANTI" | "CARTA" | "DEBITO";
   totale: number;
   clienteNome?: string;
+  clienteId?: string;
 }
 
 export async function creaSconsintrinoDiretto(data: DirectReceiptData) {
@@ -66,44 +69,127 @@ export async function creaSconsintrinoDiretto(data: DirectReceiptData) {
         )
       );
 
-      // Create payment record
-      const pagamento = await tx.pagamento.create({
-        data: {
-          id: `pag_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          ordinazioneId: ordinazione.id,
-          importo: new Decimal(data.totale),
-          modalita: data.modalitaPagamento === "CARTA" ? "POS" : data.modalitaPagamento,
-          righeIds: [],
-          operatoreId: user.id
+      // Create payment record or debt based on payment method
+      let pagamento = null;
+      let debito = null;
+
+      if (data.modalitaPagamento === "DEBITO") {
+        // Create debt if customer ID is provided
+        if (!data.clienteId) {
+          throw new Error("Cliente richiesto per creare un debito");
         }
-      });
+
+        // Check if customer exists
+        const cliente = await tx.cliente.findUnique({
+          where: { id: data.clienteId }
+        });
+
+        if (!cliente) {
+          throw new Error("Cliente non trovato");
+        }
+
+        // Create debt
+        debito = await tx.debito.create({
+          data: {
+            id: nanoid(),
+            clienteId: data.clienteId,
+            ordinazioneId: ordinazione.id,
+            importo: new Decimal(data.totale),
+            importoPagato: new Decimal(0),
+            stato: "APERTO",
+            note: `Debito da scontrino diretto - ${new Date().toLocaleString('it-IT')}`,
+            operatoreId: user.id,
+            dataCreazione: new Date()
+          },
+          include: {
+            Cliente: true
+          }
+        });
+
+        // Update order status to PAGATO (via debt)
+        await tx.ordinazione.update({
+          where: { id: ordinazione.id },
+          data: {
+            stato: "PAGATO",
+            statoPagamento: "COMPLETAMENTE_PAGATO",
+            dataChiusura: new Date(),
+            note: `Pagato con debito - ${cliente.nome}`
+          }
+        });
+      } else {
+        // Create regular payment
+        pagamento = await tx.pagamento.create({
+          data: {
+            id: `pag_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            ordinazioneId: ordinazione.id,
+            importo: new Decimal(data.totale),
+            modalita: data.modalitaPagamento === "CARTA" ? "POS" : data.modalitaPagamento,
+            righeIds: [],
+            operatoreId: user.id
+          }
+        });
+      }
 
       // Generate receipt
       const scontrinoResult = await generaScontrino(ordinazione.id);
 
-      // Send SSE notification
-      sseManager.sendToTenant(user.tenantId, {
-        event: "payment:completed",
-        data: {
-          ordinazioneId: ordinazione.id,
-          numeroTavolo: 0,
-          totale: data.totale,
-          modalita: data.modalitaPagamento === "CARTA" ? "POS" : data.modalitaPagamento,
-          isDirect: true,
-          timestamp: new Date().toISOString()
-        }
-      });
-
       return {
         ordinazione,
         pagamento,
+        debito,
         scontrino: scontrinoResult
       };
     });
 
+    // Assegna punti fidelity se c'è un cliente e non è un debito
+    let puntiAssegnati = null;
+    if (data.clienteId && data.modalitaPagamento !== "DEBITO") {
+      const risultatoPunti = await assegnaPuntiPagamento(
+        result.ordinazione.id,
+        data.clienteId,
+        data.totale
+      );
+      
+      if (risultatoPunti.success) {
+        puntiAssegnati = risultatoPunti;
+      }
+    }
+
+    // Send SSE notification
+    if (data.modalitaPagamento === "DEBITO") {
+        // Send debt created notification
+        sseManager.sendToTenant(user.tenantId, {
+          event: "debt:created",
+          data: {
+            debitoId: debito!.id,
+            clienteId: data.clienteId,
+            clienteName: debito!.Cliente.nome,
+            amount: data.totale,
+            orderId: ordinazione.id,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } else {
+        // Send payment completed notification
+        sseManager.sendToTenant(user.tenantId, {
+          event: "payment:completed",
+          data: {
+            ordinazioneId: result.ordinazione.id,
+            numeroTavolo: 0,
+            totale: data.totale,
+            modalita: data.modalitaPagamento === "CARTA" ? "POS" : data.modalitaPagamento,
+            isDirect: true,
+            timestamp: new Date().toISOString(),
+            fidelityPoints: puntiAssegnati?.punti || 0
+          }
+        });
+      }
+
     return {
       success: true,
-      data: serializeDecimalData(result)
+      data: serializeDecimalData(result),
+      puntiAssegnati: puntiAssegnati?.punti || 0,
+      messaggioPunti: puntiAssegnati?.message
     };
   } catch (error: any) {
     console.error("Errore creazione scontrino diretto:", error);

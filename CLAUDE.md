@@ -18,6 +18,34 @@ Sistema completo di gestione bar con funzionalità per camerieri, preparazione o
 - **Real-time**: Server-Sent Events (SSE) per aggiornamenti in tempo reale
 - **PWA**: next-pwa per supporto Progressive Web App
 
+## 🔴 REGOLE DI SVILUPPO IMPORTANTI
+
+### 1. Server Actions (SEMPRE!)
+**UTILIZZARE SEMPRE SERVER ACTIONS** invece di API routes per:
+- Fetch di dati dal database
+- Operazioni di mutazione (create, update, delete)
+- Qualsiasi interazione server-side
+
+Le server actions sono definite in `lib/actions/` e devono:
+- Usare la direttiva `'use server'` all'inizio del file
+- Restituire oggetti serializzabili (no Date objects diretti, convertire in string)
+- Gestire gli errori con try/catch e restituire `{ success: boolean, error?: string }`
+- Essere importate direttamente nei componenti client
+
+Esempio:
+```typescript
+// lib/actions/esempio.ts
+'use server';
+
+export async function getDataById(id: string) {
+  try {
+    const data = await prisma.table.findUnique({ where: { id } });
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: 'Errore nel recupero dati' };
+  }
+}
+
 ## Struttura Progetto
 ```
 bar-roxy-clean/

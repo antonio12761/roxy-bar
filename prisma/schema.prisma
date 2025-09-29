@@ -207,6 +207,7 @@ model Cliente {
   Pagamento                                                      Pagamento[]
   RigaOrdinazione_RigaOrdinazione_clienteBeneficiarioIdToCliente RigaOrdinazione[]       @relation("RigaOrdinazione_clienteBeneficiarioIdToCliente")
   RigaOrdinazione_RigaOrdinazione_clienteOrdinanteIdToCliente    RigaOrdinazione[]       @relation("RigaOrdinazione_clienteOrdinanteIdToCliente")
+  fidelityCard                                                   FidelityCard?
 
   @@index([tenantId])
   @@index([nome])
@@ -544,6 +545,8 @@ model Ordinazione {
   RichiestaAnnullamento RichiestaAnnullamento[]
   RichiestaMerge        RichiestaMerge[]
   RigaOrdinazione       RigaOrdinazione[]
+  movimentiPunti        MovimentoPunti[]
+  riscattiUtilizzati    RiscattoPremio[]
 
   @@index([cameriereId, dataApertura, stato])
   @@index([cameriereId])
@@ -773,6 +776,7 @@ model Prodotto {
   TrackingVendite         TrackingVendita[]
   LottiProdotto           LottoProdotto[]
   AnalisiVendite          AnalisiVenditePeriodo[]
+  premiFidelity           PremioFidelity[]
 
   @@index([categoriaMenuId])
   @@index([categoria])
@@ -1328,6 +1332,9 @@ model User {
   FattureFornitore                                      FatturaFornitore[]
   MovimentiTrasferimento                                MovimentoTrasferimento[]
   MovimentiLotto                                        MovimentoLotto[]
+  movimentiPuntiCreati                                  MovimentoPunti[]
+  riscattiGestiti                                       RiscattoPremio[]
+  pagamentiQuota                                        PagamentoQuota[]
 
   @@index([tenantId, attivo])
   @@index([tenantId])
@@ -2666,4 +2673,156 @@ model AnalisiVenditePeriodo {
   @@unique([prodottoId, periodo, dataInizio])
   @@index([prodottoId, periodo])
   @@index([dataInizio, dataFine])
+}
+
+// Sistema Fidelity Card
+model FidelityCard {
+  id                String              @id @default(cuid())
+  clienteId         String              @unique
+  cliente           Cliente             @relation(fields: [clienteId], references: [id])
+  codiceCliente     String              @unique  // Per compatibilità con sistema esistente
+  nomeCliente       String?             // Per compatibilità con sistema esistente
+  
+  // Punti sistema esistente (semplice)
+  punti             Int                 @default(0)  // Punti attuali per premio ogni 10
+  puntiTotali       Int                 @default(0)  // Punti totali accumulati storicamente
+  
+  // Nuovo sistema punti avanzato
+  puntiMensili      Int                 @default(0)  // Punti del mese corrente
+  puntiDisponibili  Int                 @default(0)  // Punti disponibili per riscatto
+  meseRiferimento   DateTime            @default(now())
+  
+  // Quota mensile €10
+  quotaPagata       Boolean             @default(false)
+  dataScadenzaQuota DateTime?
+  
+  // Stato
+  attiva            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Relazioni
+  movimenti         MovimentoPunti[]
+  riscatti          RiscattoPremio[]
+  pagamentiQuota    PagamentoQuota[]
+  
+  @@index([clienteId])
+  @@index([codiceCliente])
+  @@index([attiva, dataScadenzaQuota])
+}
+
+model MovimentoPunti {
+  id               String          @id @default(cuid())
+  fidelityCardId   String
+  fidelityCard     FidelityCard    @relation(fields: [fidelityCardId], references: [id])
+  tipo             TipoMovimentoPunti   @default(ACQUISTO)
+  punti            Int             // Può essere negativo per riscatti
+  puntiPrima       Int             @default(0) // Saldo punti prima del movimento
+  puntiDopo        Int             @default(0) // Saldo punti dopo il movimento
+  descrizione      String
+  importoOriginale Decimal?        @db.Decimal(10, 2)
+  ordinazioneId    String?
+  ordinazione      Ordinazione?    @relation(fields: [ordinazioneId], references: [id])
+  operatoreId      String
+  operatore        User            @relation(fields: [operatoreId], references: [id])
+  timestamp        DateTime        @default(now())
+  
+  @@index([fidelityCardId, timestamp])
+  @@index([ordinazioneId])
+}
+
+model PremioFidelity {
+  id              String           @id @default(cuid())
+  nome            String
+  descrizione     String?
+  puntiRichiesti  Int
+  tipo            TipoPremio       @default(PRODOTTO)
+  
+  // Per premi prodotto
+  prodottoId      Int?
+  prodotto        Prodotto?        @relation(fields: [prodottoId], references: [id])
+  
+  // Per sconti o quota
+  valoreSconto    Decimal?         @db.Decimal(10, 2)
+  percentualeSconto Int?
+  
+  // Configurazione
+  attivo          Boolean          @default(true)
+  ordinamento     Int              @default(0)
+  icona           String?
+  categoria       String?          // beverage, food, sconto, quota
+  
+  riscatti        RiscattoPremio[]
+  
+  @@index([attivo, puntiRichiesti])
+  @@index([categoria, attivo])
+}
+
+model RiscattoPremio {
+  id               String          @id @default(cuid())
+  fidelityCardId   String
+  fidelityCard     FidelityCard    @relation(fields: [fidelityCardId], references: [id])
+  premioId         String
+  premio           PremioFidelity  @relation(fields: [premioId], references: [id])
+  puntiUtilizzati  Int
+  dataRiscatto     DateTime        @default(now())
+  statoUtilizzo    StatoRiscatto   @default(ATTIVO)
+  codiceRiscatto   String          @unique @default(cuid())
+  dataUtilizzo     DateTime?
+  ordinazioneId    String?
+  ordinazione      Ordinazione?    @relation(fields: [ordinazioneId], references: [id])
+  operatoreId      String
+  operatore        User            @relation(fields: [operatoreId], references: [id])
+  note             String?
+  
+  @@index([fidelityCardId, statoUtilizzo])
+  @@index([codiceRiscatto])
+}
+
+model PagamentoQuota {
+  id               String          @id @default(cuid())
+  fidelityCardId   String
+  fidelityCard     FidelityCard    @relation(fields: [fidelityCardId], references: [id])
+  importo          Decimal         @db.Decimal(10, 2)
+  modalita         ModalitaPagamentoQuota @default(CONTANTI)
+  usatoPunti       Boolean         @default(false)
+  puntiUsati       Int?
+  meseRiferimento  DateTime
+  operatoreId      String
+  operatore        User            @relation(fields: [operatoreId], references: [id])
+  timestamp        DateTime        @default(now())
+  
+  @@index([fidelityCardId, meseRiferimento])
+}
+
+// Enum per Fidelity Card
+enum TipoMovimentoPunti {
+  ACQUISTO         // Punti da acquisto
+  BONUS           // Punti bonus
+  RISCATTO        // Punti usati per premio
+  QUOTA           // Punti usati per quota
+  MANUALE         // Aggiustamento manuale
+  RESET_MENSILE   // Reset punti mensili
+  SCADENZA        // Punti scaduti
+}
+
+enum TipoPremio {
+  PRODOTTO            // Prodotto gratis dal menu
+  SCONTO_PERCENTUALE  // Sconto % sull'ordine
+  SCONTO_FISSO        // Sconto € fisso
+  QUOTA_MENSILE       // Pagamento quota con punti
+}
+
+enum StatoRiscatto {
+  ATTIVO      // Può essere utilizzato
+  UTILIZZATO  // Già utilizzato
+  SCADUTO     // Scaduto
+  ANNULLATO   // Annullato manualmente
+}
+
+enum ModalitaPagamentoQuota {
+  CONTANTI
+  POS
+  PUNTI
+  MISTO
 }

@@ -1,6 +1,6 @@
 # STATO SESSIONE - Bar Roxy Clean
 **Data ultima sessione**: 2025-09-29
-**Ultimo aggiornamento**: 11:43
+**Ultimo aggiornamento**: 12:05
 
 ## 🔧 LAVORI COMPLETATI IN QUESTA SESSIONE
 
@@ -44,7 +44,117 @@
 - **Soluzione**: Rimosso flag isUnmountingRef che rimaneva true dopo il primo unmount
 - **Stato**: COMPLETATO e committato
 
-### 6. ✅ Commit di tutte le modifiche accumulate
+### 6. ✅ Disabilitato PWA in Development  
+- **Problema**: PWA causava errori in development (GenerateSW multiple calls, file mancanti)
+- **Soluzione**: Aggiunto `disable: process.env.NODE_ENV === 'development'` in next.config.mjs
+- **Benefici**: 
+  - Nessun errore in development
+  - PWA ancora attiva in produzione per supporto offline
+- **Stato**: COMPLETATO e committato
+
+### 7. ✅ Aggiunto Campo Nome Cliente in Scontrino Diretto
+- **Richiesta**: Aggiungere campo per inserire nome cliente nel modal scontrino diretto
+- **Implementazione**:
+  - Aggiunto input "Nome cliente (opzionale)" nella sezione pagamento
+  - Campo presente sia in vista mobile che desktop
+  - Nome salvato in `nomeCliente` dell'ordinazione virtuale
+  - Default "Scontrino Diretto" se non specificato
+  - Reset automatico alla chiusura del modal
+- **File modificati**:
+  - `components/cassa/DirectReceiptModal.tsx`
+  - `lib/actions/scontrino-diretto.ts`
+- **Stato**: COMPLETATO e committato
+
+### 9. ✅ Implementato Autocomplete Cliente per Scontrino Diretto
+- **Richiesta**: Sostituire campo testo semplice con autocomplete clienti già registrati
+- **Implementazione**:
+  - Creato componente `CustomerAutocomplete` completo con:
+    - Ricerca clienti con debounce (300ms)
+    - Visualizzazione clienti esistenti con dettagli (telefono, email, debiti)
+    - Opzione per creare nuovo cliente al volo
+    - Navigazione con tastiera (frecce, enter, escape)
+    - Gestione click esterno per chiudere dropdown
+  - Creato hook `useDebounce` per ottimizzare le ricerche
+  - Integrato in `DirectReceiptModal` sia per mobile che desktop
+  - Usa funzioni esistenti `searchClientiAutocomplete` e `creaCliente`
+- **File creati/modificati**:
+  - `components/ui/CustomerAutocomplete.tsx` (nuovo)
+  - `hooks/useDebounce.ts` (nuovo)
+  - `components/cassa/DirectReceiptModal.tsx` (aggiornato)
+- **Stato**: COMPLETATO
+
+### 10. ✅ Implementato Creazione Debiti in Scontrino Diretto
+- **Richiesta**: Aggiungere possibilità di creare debiti nel modal scontrino diretto
+- **Implementazione**:
+  - Aggiunto "DEBITO" come modalità di pagamento
+  - Modificato `creaSconsintrinoDiretto` per gestire creazione debiti
+  - Quando si seleziona DEBITO:
+    - Campo cliente diventa obbligatorio
+    - Crea debito invece di pagamento normale
+    - Ordine viene marcato come PAGATO (tramite debito)
+    - Emette evento SSE "debt:created"
+  - UI aggiornata con pulsante Debito (icona Calendar, colore arancione)
+  - Validazione: richiede cliente selezionato per creare debito
+  - Feedback specifico: "Debito di €X creato per [nome cliente]"
+- **File modificati**:
+  - `lib/actions/scontrino-diretto.ts` - Aggiunto supporto debiti
+  - `components/cassa/DirectReceiptModal.tsx` - Aggiunto pulsante e logica debito
+  - `components/ui/CustomerAutocomplete.tsx` - Aggiunto prop required
+- **Stato**: COMPLETATO
+
+### 11. ✅ Implementato Sistema Punti Fidelity Card
+- **Richiesta**: Sistema punti con 1 punto ogni €2 spesi
+- **Implementazione**:
+  - Formula: `punti = Math.floor(importo / 2)`
+  - Creato schema database per fidelity card (da migrare)
+  - Funzioni principali:
+    - `calcolaPunti()`: Calcola punti da importo
+    - `assegnaPuntiPagamento()`: Assegna punti dopo pagamento
+    - `getSaldoPunti()`: Recupera saldo punti cliente
+    - `attivaFidelityCard()`: Attiva card con quota €10
+    - `previewPunti()`: Mostra preview punti prima del pagamento
+  - Integrato assegnazione automatica punti in:
+    - `completaPagamentoCameriere()` 
+    - `creaSconsintrinoDiretto()`
+  - UI aggiornata:
+    - Preview punti in tempo reale nel carrello
+    - Notifica punti guadagnati dopo pagamento
+    - Mostra suggerimento per raggiungere soglia successiva
+  - Punti NON assegnati per pagamenti con debito
+  - Reset automatico punti mensili il 1° del mese
+- **File creati/modificati**:
+  - `prisma/schema-fidelity.prisma` (nuovo - da integrare)
+  - `lib/actions/fidelity.ts` (nuovo)
+  - `components/ui/FidelityPointsPreview.tsx` (nuovo)
+  - `lib/actions/completa-pagamento.ts` (modificato)
+  - `lib/actions/scontrino-diretto.ts` (modificato)
+  - `components/cassa/DirectReceiptModal.tsx` (modificato)
+- **Stato**: COMPLETATO (manca solo migrazione DB)
+
+### 12. ✅ Integrato Sistema Fidelity con PWA Esistente
+- **Scoperta**: Esiste già PWA fidelity card in `/fidelity`
+- **Integrazione**:
+  - Esteso schema database per supportare sia sistema semplice che avanzato
+  - Creato schema integrato `schema-fidelity-integrated.prisma`:
+    - Mantiene campi esistenti (codiceCliente, punti semplici)
+    - Aggiunge nuovi campi (puntiMensili, puntiDisponibili, quota)
+    - Sistema premi configurabile
+  - Aggiornato API esistente per includere nuovi dati
+  - Convertito API in server action `getFidelityCardByCodice()`
+  - Generazione automatica codice cliente (formato: XXX9999)
+  - Aggiornata UI PWA per mostrare:
+    - Sistema punti semplice (premio ogni 10 punti)
+    - Nuovo sistema punti mensili con reset
+    - Stato quota mensile €10
+    - Punti disponibili per riscatto
+- **File modificati**:
+  - `prisma/schema-fidelity-integrated.prisma` (nuovo)
+  - `app/api/fidelity/card/[code]/route.ts` (aggiornato)
+  - `app/fidelity/page.tsx` (UI migliorata)
+  - `lib/actions/fidelity.ts` (aggiunta getFidelityCardByCodice)
+- **Stato**: COMPLETATO (pronto per migrazione DB)
+
+### 8. ✅ Commit di tutte le modifiche accumulate
 - **Organizzati 9 commit tematici**:
   1. Sistema richieste pagamento e gestione cassa
   2. Sistema gestione magazzino bar completo
@@ -145,11 +255,13 @@
 3. [ ] Verificare integrazione sistema magazzino
 4. [X] ~~Pulire file Zone.Identifier inutili~~ ✅ FATTO
 5. [X] ~~Unificare lettura ordine gruppi tavoli~~ ✅ FATTO
+6. [X] ~~Creare database migration per fidelity card~~ ✅ FATTO
 
 ### Media Priorità
-1. [ ] Testare fix Android PWA su dispositivi reali
-2. [ ] Verificare sistema notifiche PREPARA-CAMERIERE
-3. [ ] Documentare API nuove funzionalità
+1. [ ] Implementare catalogo premi e sistema riscatto
+2. [ ] Testare fix Android PWA su dispositivi reali
+3. [ ] Verificare sistema notifiche PREPARA-CAMERIERE
+4. [ ] Documentare API nuove funzionalità
 
 ### Bassa Priorità
 1. [ ] Rimuovere file backup non necessari
@@ -190,6 +302,7 @@ npm run session:end       # Fine giornata
    - 'queue:check'
    - 'order:esaurito:alert'
 3. **PWA**: L'app è configurata come PWA con service worker aggiornato
+4. **🔴 REGOLA FONDAMENTALE**: UTILIZZARE SEMPRE SERVER ACTIONS invece di API routes per tutte le operazioni server-side
 
 ## 🎯 FOCUS PROSSIMA SESSIONE
 

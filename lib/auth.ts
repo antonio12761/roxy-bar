@@ -298,7 +298,7 @@ export async function logoutUser(): Promise<{ success: boolean }> {
     cookieStore.delete(COOKIE_NAME);
     return { success: true };
   } catch (error) {
-    console.error("Errore logout:", error);
+    secureLog.error("Errore logout:", error);
     return { success: false };
   }
 }

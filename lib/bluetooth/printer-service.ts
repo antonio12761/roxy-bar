@@ -243,7 +243,12 @@ export class PrinterService {
       this.logDebug('Chiamata API impostazioni-scontrino...');
       console.log('🌐 Chiamata API /api/impostazioni-scontrino');
       
-      const response = await fetch('/api/impostazioni-scontrino', {
+      // Ensure we have a proper base URL
+      const baseUrl = typeof window !== 'undefined' && window.location 
+        ? window.location.origin 
+        : '';
+      
+      const response = await fetch(`${baseUrl}/api/impostazioni-scontrino`, {
         method: 'GET',
         credentials: 'include', // IMPORTANTE: include cookies per autenticazione
         headers: {

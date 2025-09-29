@@ -2,41 +2,48 @@
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth-multi-tenant";
-import { serializeDecimalData } from "@/lib/utils/decimal-serializer";
 import { revalidatePath } from "next/cache";
+import { secureLog } from "@/lib/utils/log-sanitizer";
 
+export interface GruppoTavoli {
+  id: number;
+  nome: string;
+  descrizione: string | null;
+  colore: string | null;
+  icona: string;
+  ordinamento: number;
+  attivo: boolean;
+  _count?: {
+    Tavolo: number;
+  };
+  Tavolo?: Array<{
+    id: number;
+    numero: string;
+    nome: string;
+    ordinamento: number | null;
+  }>;
+}
+
+/**
+ * Recupera tutti i gruppi tavoli attivi
+ */
 export async function getGruppiTavoli() {
   try {
     const user = await getCurrentUser();
     
     if (!user) {
-      console.error('getGruppiTavoli: Utente non autenticato');
-      return { success: false, error: "Non autorizzato" };
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
-    
-    console.log('getGruppiTavoli: Utente autenticato:', user.email);
 
     const gruppi = await prisma.gruppoTavoli.findMany({
       where: { attivo: true },
       include: {
         Tavolo: {
           where: { attivo: true },
-          orderBy: { ordinamento: 'asc' },
-          include: {
-            Ordinazione: {
-              where: {
-                stato: {
-                  notIn: ['PAGATO', 'ANNULLATO']
-                }
-              },
-              select: {
-                id: true,
-                numero: true,
-                stato: true,
-                totale: true
-              }
-            }
-          }
+          orderBy: { ordinamento: 'asc' }
         },
         _count: {
           select: { Tavolo: true }
@@ -44,108 +51,103 @@ export async function getGruppiTavoli() {
       },
       orderBy: { ordinamento: 'asc' }
     });
-    
-    console.log('getGruppiTavoli: Trovati gruppi:', gruppi.length);
 
-    return serializeDecimalData({
-      success: true,
-      gruppi
-    });
+    return { 
+      success: true, 
+      data: gruppi as GruppoTavoli[] 
+    };
   } catch (error) {
-    console.error('Get gruppi tavoli error:', error);
-    return {
-      success: false,
-      error: 'Errore nel recupero dei gruppi'
+    secureLog.error('Get gruppi tavoli error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nel recupero dei gruppi' 
     };
   }
 }
 
-interface CreateGruppoData {
+/**
+ * Crea un nuovo gruppo tavoli
+ */
+export async function createGruppoTavoli(data: {
   nome: string;
   descrizione?: string;
   colore?: string;
   icona?: string;
   ordinamento?: number;
-}
-
-export async function creaGruppoTavoli(data: CreateGruppoData) {
+}) {
   try {
     const user = await getCurrentUser();
     
-    if (!user) {
-      return { success: false, error: "Non autorizzato" };
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
 
-    const {
-      nome,
-      descrizione,
-      colore,
-      icona = 'Folder',
-      ordinamento = 0
-    } = data;
-
     // Validazione
-    if (!nome) {
-      return { success: false, error: 'Il nome del gruppo è obbligatorio' };
+    if (!data.nome) {
+      return { 
+        success: false, 
+        error: 'Il nome del gruppo è obbligatorio' 
+      };
     }
 
     // Check nome unique
     const existingGruppo = await prisma.gruppoTavoli.findUnique({
-      where: { nome }
+      where: { nome: data.nome }
     });
 
     if (existingGruppo) {
-      return { success: false, error: 'Nome gruppo già esistente' };
+      return { 
+        success: false, 
+        error: 'Nome gruppo già esistente' 
+      };
     }
 
     // Create gruppo
     const newGruppo = await prisma.gruppoTavoli.create({
       data: {
-        nome,
-        descrizione,
-        colore,
-        icona,
-        ordinamento
+        nome: data.nome,
+        descrizione: data.descrizione || null,
+        colore: data.colore || null,
+        icona: data.icona || 'Folder',
+        ordinamento: data.ordinamento || 0
       }
     });
 
-    revalidatePath('/dashboard/tavoli');
+    // Revalida le pagine
+    revalidatePath('/admin/gruppi-tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
     return {
       success: true,
-      message: 'Gruppo creato con successo',
-      gruppo: newGruppo
+      data: newGruppo as GruppoTavoli
     };
   } catch (error) {
-    console.error('Create gruppo error:', error);
-    return {
-      success: false,
-      error: 'Errore nella creazione del gruppo'
+    secureLog.error('Create gruppo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nella creazione del gruppo' 
     };
   }
 }
 
-interface UpdateGruppoData {
-  id: number;
-  nome?: string;
-  descrizione?: string;
-  colore?: string;
-  icona?: string;
-  ordinamento?: number;
-}
-
-export async function aggiornaGruppoTavoli(data: UpdateGruppoData) {
+/**
+ * Aggiorna un gruppo tavoli
+ */
+export async function updateGruppoTavoli(
+  id: number,
+  data: Partial<Omit<GruppoTavoli, 'id' | 'attivo' | '_count' | 'Tavolo'>>
+) {
   try {
     const user = await getCurrentUser();
     
-    if (!user) {
-      return { success: false, error: "Non autorizzato" };
-    }
-
-    const { id, ...updateData } = data;
-
-    if (!id) {
-      return { success: false, error: 'ID gruppo richiesto' };
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
 
     // Get existing gruppo
@@ -154,24 +156,33 @@ export async function aggiornaGruppoTavoli(data: UpdateGruppoData) {
     });
 
     if (!existingGruppo) {
-      return { success: false, error: 'Gruppo non trovato' };
+      return { 
+        success: false, 
+        error: 'Gruppo non trovato' 
+      };
     }
 
     // If updating nome, check uniqueness
-    if (updateData.nome && updateData.nome !== existingGruppo.nome) {
+    if (data.nome && data.nome !== existingGruppo.nome) {
       const existingNome = await prisma.gruppoTavoli.findUnique({
-        where: { nome: updateData.nome }
+        where: { nome: data.nome }
       });
 
       if (existingNome) {
-        return { success: false, error: 'Nome gruppo già in uso' };
+        return { 
+          success: false, 
+          error: 'Nome gruppo già in uso' 
+        };
       }
     }
 
     // Update gruppo
     const updatedGruppo = await prisma.gruppoTavoli.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...data,
+        updatedAt: new Date()
+      },
       include: {
         _count: {
           select: { Tavolo: true }
@@ -179,28 +190,35 @@ export async function aggiornaGruppoTavoli(data: UpdateGruppoData) {
       }
     });
 
-    revalidatePath('/dashboard/tavoli');
+    // Revalida le pagine
+    revalidatePath('/admin/gruppi-tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
     return {
       success: true,
-      message: 'Gruppo aggiornato con successo',
-      gruppo: updatedGruppo
+      data: updatedGruppo as GruppoTavoli
     };
   } catch (error) {
-    console.error('Update gruppo error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'aggiornamento del gruppo'
+    secureLog.error('Update gruppo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'aggiornamento del gruppo' 
     };
   }
 }
 
-export async function eliminaGruppoTavoli(id: number) {
+/**
+ * Elimina (soft delete) un gruppo tavoli
+ */
+export async function deleteGruppoTavoli(id: number) {
   try {
     const user = await getCurrentUser();
     
-    if (!user) {
-      return { success: false, error: "Non autorizzato" };
+    if (!user || !["SUPERVISORE", "ADMIN"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
     }
 
     // Check if gruppo has tavoli
@@ -214,121 +232,137 @@ export async function eliminaGruppoTavoli(id: number) {
     if (tavoliCount > 0) {
       return { 
         success: false, 
-        error: 'Non puoi eliminare un gruppo che contiene tavoli' 
+        error: `Non puoi eliminare un gruppo che contiene ${tavoliCount} tavoli attivi` 
       };
     }
 
     // Soft delete (set inactive)
     await prisma.gruppoTavoli.update({
       where: { id },
-      data: { attivo: false }
+      data: { 
+        attivo: false,
+        updatedAt: new Date()
+      }
     });
 
-    revalidatePath('/dashboard/tavoli');
+    // Revalida le pagine
+    revalidatePath('/admin/gruppi-tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
     return {
       success: true,
       message: 'Gruppo disattivato con successo'
     };
   } catch (error) {
-    console.error('Delete gruppo error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'eliminazione del gruppo'
+    secureLog.error('Delete gruppo error:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'eliminazione del gruppo' 
     };
   }
 }
 
-export async function aggiornaOrdineGruppi(gruppi: Array<{ id: number; ordinamento: number }>) {
+/**
+ * Aggiorna l'ordinamento di più gruppi
+ */
+export async function updateGruppiOrdinamento(
+  updates: Array<{ id: number; ordinamento: number }>
+) {
   try {
     const user = await getCurrentUser();
     
-    if (!user) {
-      return { success: false, error: "Non autorizzato" };
-    }
-
-    // Aggiorna ordinamento per ogni gruppo
-    const updates = gruppi.map(gruppo => 
-      prisma.gruppoTavoli.update({
-        where: { id: gruppo.id },
-        data: { ordinamento: gruppo.ordinamento }
-      })
-    );
-    
-    await Promise.all(updates);
-    
-    // Recupera i gruppi aggiornati per l'evento SSE
-    const gruppiAggiornati = await prisma.gruppoTavoli.findMany({
-      where: { attivo: true },
-      orderBy: { ordinamento: 'asc' },
-      select: { id: true, nome: true, ordinamento: true }
-    });
-    
-    // Invia evento SSE
-    const { sseService } = await import('@/lib/sse/sse-service');
-    sseService.emit('groups:reordered', {
-      groups: gruppiAggiornati,
-      updatedBy: user.name || user.email || 'Admin',
-      timestamp: new Date().toISOString()
-    }, {
-      tenantId: user.tenantId
-    });
-    
-    revalidatePath('/dashboard/tavoli');
-    revalidatePath('/cameriere/nuova-ordinazione');
-    
-    return {
-      success: true,
-      message: 'Ordine aggiornato con successo'
-    };
-  } catch (error) {
-    console.error('Update order error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'aggiornamento dell\'ordine'
-    };
-  }
-}
-
-export async function aggiornaVisibilitaGruppo(gruppoId: number, visibile: boolean) {
-  try {
-    const user = await getCurrentUser();
-    
-    if (!user) {
-      return {
-        success: false,
-        error: "Non autorizzato"
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
       };
     }
 
-    await prisma.gruppoTavoli.update({
-      where: { id: gruppoId },
-      data: { visibile }
-    });
+    // Esegui tutti gli aggiornamenti in una transazione
+    await prisma.$transaction(
+      updates.map(({ id, ordinamento }) =>
+        prisma.gruppoTavoli.update({
+          where: { id },
+          data: { 
+            ordinamento,
+            updatedAt: new Date()
+          }
+        })
+      )
+    );
 
-    // Emit SSE event for real-time updates
-    const { sseService } = await import('@/lib/sse/sse-service');
-    sseService.emit('groups:visibility:update', {
-      gruppoId,
-      visibile,
-      updatedBy: user.name || user.email || 'Admin',
-      timestamp: new Date().toISOString()
-    }, {
-      tenantId: user.tenantId
-    });
+    // Revalida le pagine
+    revalidatePath('/admin/gruppi-tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
 
-    revalidatePath('/dashboard/tavoli');
-    revalidatePath('/cameriere');
-
-    return {
-      success: true,
-      message: `Gruppo ${visibile ? 'reso visibile' : 'nascosto'} con successo`
+    return { 
+      success: true, 
+      message: 'Ordinamento aggiornato con successo' 
     };
   } catch (error) {
-    console.error('Update gruppo visibility error:', error);
-    return {
-      success: false,
-      error: 'Errore nell\'aggiornamento della visibilità del gruppo'
+    secureLog.error('Errore nell\'aggiornamento dell\'ordinamento:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'aggiornamento dell\'ordinamento' 
+    };
+  }
+}
+
+/**
+ * Assegna tavoli a un gruppo
+ */
+export async function assignTavoliToGruppo(
+  gruppoId: number,
+  tavoliIds: number[]
+) {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user || !["SUPERVISORE", "ADMIN", "MANAGER"].includes(user.ruolo)) {
+      return { 
+        success: false, 
+        error: "Non autorizzato" 
+      };
+    }
+
+    // Verifica che il gruppo esista
+    const gruppo = await prisma.gruppoTavoli.findUnique({
+      where: { id: gruppoId, attivo: true }
+    });
+
+    if (!gruppo) {
+      return { 
+        success: false, 
+        error: 'Gruppo non trovato' 
+      };
+    }
+
+    // Aggiorna i tavoli
+    await prisma.tavolo.updateMany({
+      where: { 
+        id: { in: tavoliIds },
+        attivo: true
+      },
+      data: { 
+        gruppoId,
+        updatedAt: new Date()
+      }
+    });
+
+    // Revalida le pagine
+    revalidatePath('/admin/gruppi-tavoli');
+    revalidatePath('/admin/tavoli');
+    revalidatePath('/cameriere/nuova-ordinazione');
+
+    return { 
+      success: true, 
+      message: `${tavoliIds.length} tavoli assegnati al gruppo ${gruppo.nome}` 
+    };
+  } catch (error) {
+    secureLog.error('Errore nell\'assegnazione tavoli:', error);
+    return { 
+      success: false, 
+      error: 'Errore nell\'assegnazione dei tavoli' 
     };
   }
 }

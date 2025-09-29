@@ -73,11 +73,7 @@ export function useStationSSE(config: StationSSEConfig) {
       return;
     }
 
-    // Don't connect if token is not available yet
-    if (!config.token) {
-      console.log(`[${config.stationType}] Waiting for token... token: ${config.token ? 'present' : 'missing'}`);
-      return;
-    }
+    // Cookie auth is handled automatically by the browser
 
     console.log(`[${config.stationType}] Connecting to SSE... userId: ${config.userId}`);
     setConnectionHealth(prev => ({ ...prev, status: 'connecting' }));
@@ -85,8 +81,8 @@ export function useStationSSE(config: StationSSEConfig) {
     const params = new URLSearchParams({
       station: config.stationType,
       userId: config.userId,
-      clientId: `${config.stationType}-${config.userId}-${Date.now()}`,
-      token: config.token
+      clientId: `${config.stationType}-${config.userId}-${Date.now()}`
+      // Token removed - using httpOnly cookie for auth
     });
 
     const eventSource = new EventSource(`/api/sse?${params}`);
@@ -321,13 +317,11 @@ export function useStationSSE(config: StationSSEConfig) {
     setConnectionHealth(prev => ({ ...prev, status: 'disconnected' }));
   }, []);
 
-  // Auto-connect on mount and when token becomes available
+  // Auto-connect on mount
   useEffect(() => {
-    if (config.token) {
-      connect();
-    }
+    connect();
     return disconnect;
-  }, [connect, disconnect, config.token]);
+  }, [connect, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

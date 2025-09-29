@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { randomBytes, createHash } from "crypto";
 import { auditService } from "./audit-service";
 import { notificationManager } from "@/lib/notifications/NotificationManager";
+import { secureLog } from "@/lib/utils/log-sanitizer";
 
 export interface SessionData {
   id: string;
@@ -169,7 +170,7 @@ export class SessionManager {
       // Imposta cookie
       this.setSessionCookie(sessionId, token);
 
-      console.log(`[Session] Sessione ${sessionId} creata per ${user.nome}`);
+      secureLog.info(`[Session] Nuova sessione creata per utente ${user.nome}`);
 
       return {
         sessionId,

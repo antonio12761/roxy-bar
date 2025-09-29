@@ -148,10 +148,7 @@ export function SSEProvider({
     if (stationRef.current) {
       params.append('station', stationRef.current);
     }
-    // Add token only if available (for backward compatibility)
-    if (tokenRef.current) {
-      params.append('token', tokenRef.current);
-    }
+    // Token removed - authentication via httpOnly cookie
     
     const url = `/api/sse${params.toString() ? '?' + params.toString() : ''}`;
     // Connect to SSE endpoint

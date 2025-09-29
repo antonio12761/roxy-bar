@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, Search, Plus, Minus, CreditCard, Banknote, Loader2, CheckCircle, ShoppingCart, Filter } from "lucide-react";
+import { X, Search, Plus, Minus, CreditCard, Banknote, Loader2, CheckCircle, ShoppingCart, Filter, Calendar } from "lucide-react";
 import { getProdotti } from "@/lib/actions/ordinazioni/prodotti";
 import { creaSconsintrinoDiretto } from "@/lib/actions/scontrino-diretto";
 import { useToast } from "@/lib/toast-notifications";
+import { CustomerAutocomplete } from "@/components/ui/CustomerAutocomplete";
+import { FidelityPointsPreview } from "@/components/ui/FidelityPointsPreview";
 
 interface Product {
   id: number;
@@ -30,8 +32,9 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("TUTTI");
-  const [paymentMethod, setPaymentMethod] = useState<"CONTANTI" | "CARTA">("CONTANTI");
+  const [paymentMethod, setPaymentMethod] = useState<"CONTANTI" | "CARTA" | "DEBITO">("CONTANTI");
   const [customerName, setCustomerName] = useState(""); // Nome cliente
+  const [customerId, setCustomerId] = useState<string | null>(null); // ID cliente per debiti
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCart, setShowCart] = useState(false); // Mobile cart toggle
@@ -44,6 +47,9 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
       // Reset mobile states
       setShowCart(false);
       setShowCategories(false);
+      // Reset customer data
+      setCustomerId(null);
+      setCustomerName("");
     }
   }, [isOpen]);
 
@@ -128,6 +134,12 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
       return;
     }
 
+    // Validate debt creation
+    if (paymentMethod === "DEBITO" && !customerId) {
+      showError("Seleziona un cliente per creare un debito");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const result = await creaSconsintrinoDiretto({
@@ -138,13 +150,23 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
         })),
         modalitaPagamento: paymentMethod,
         totale: calculateTotal(),
-        clienteNome: customerName.trim() || undefined
+        clienteNome: customerName.trim() || undefined,
+        clienteId: customerId || undefined
       });
 
       if (result.success) {
-        showSuccess("Scontrino creato con successo");
+        if (paymentMethod === "DEBITO") {
+          showSuccess(`Debito di €${calculateTotal().toFixed(2)} creato per ${customerName}`);
+        } else {
+          let messaggioSuccesso = "Scontrino creato con successo";
+          if (result.puntiAssegnati && result.puntiAssegnati > 0) {
+            messaggioSuccesso += ` (+${result.puntiAssegnati} punti fidelity!)`;
+          }
+          showSuccess(messaggioSuccesso);
+        }
         setCart([]);
         setCustomerName(""); // Reset nome cliente
+        setCustomerId(null); // Reset ID cliente
         onSuccess?.();
         onClose();
       } else {
@@ -261,38 +283,60 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
                     </span>
                   </div>
 
+                  {/* Preview punti fidelity */}
+                  {customerId && paymentMethod !== "DEBITO" && (
+                    <FidelityPointsPreview 
+                      importo={calculateTotal()} 
+                      className="mb-4"
+                    />
+                  )}
+
                   <div className="mb-4">
-                    <input
-                      type="text"
-                      placeholder="Nome cliente (opzionale)"
+                    <CustomerAutocomplete
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      onChange={setCustomerName}
+                      onCustomerSelect={(customer) => setCustomerId(customer?.id || null)}
+                      placeholder={paymentMethod === "DEBITO" ? "Seleziona cliente (richiesto)" : "Nome cliente (opzionale)"}
+                      required={paymentMethod === "DEBITO"}
+                      className="w-full"
                     />
                   </div>
 
-                  <div className="flex gap-2 mb-4">
+                  <div className="space-y-2 mb-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPaymentMethod("CONTANTI")}
+                        className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                          paymentMethod === "CONTANTI"
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700"
+                        }`}
+                      >
+                        <Banknote className="w-5 h-5" />
+                        <span className="font-medium">Contanti</span>
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod("CARTA")}
+                        className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                          paymentMethod === "CARTA"
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700"
+                        }`}
+                      >
+                        <CreditCard className="w-5 h-5" />
+                        <span className="font-medium">Carta</span>
+                      </button>
+                    </div>
                     <button
-                      onClick={() => setPaymentMethod("CONTANTI")}
-                      className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                        paymentMethod === "CONTANTI"
-                          ? "bg-green-500 text-white"
+                      onClick={() => setPaymentMethod("DEBITO")}
+                      className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                        paymentMethod === "DEBITO"
+                          ? "bg-orange-500 text-white"
                           : "bg-gray-100 dark:bg-gray-700"
                       }`}
                     >
-                      <Banknote className="w-5 h-5" />
-                      <span className="font-medium">Contanti</span>
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod("CARTA")}
-                      className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                        paymentMethod === "CARTA"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-700"
-                      }`}
-                    >
-                      <CreditCard className="w-5 h-5" />
-                      <span className="font-medium">Carta</span>
+                      <Calendar className="w-5 h-5" />
+                      <span className="font-medium">Debito</span>
                     </button>
                   </div>
 
@@ -542,37 +586,58 @@ export function DirectReceiptModal({ isOpen, onClose, onSuccess }: DirectReceipt
                 </span>
               </div>
 
+              {/* Preview punti fidelity */}
+              {customerId && paymentMethod !== "DEBITO" && (
+                <FidelityPointsPreview 
+                  importo={calculateTotal()} 
+                />
+              )}
+
               <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Nome cliente (opzionale)"
+                <CustomerAutocomplete
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  onChange={setCustomerName}
+                  onCustomerSelect={(customer) => setCustomerId(customer?.id || null)}
+                  placeholder={paymentMethod === "DEBITO" ? "Seleziona cliente (richiesto)" : "Nome cliente (opzionale)"}
+                  required={paymentMethod === "DEBITO"}
+                  className="w-full"
                 />
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPaymentMethod("CONTANTI")}
+                      className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
+                        paymentMethod === "CONTANTI"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      <Banknote className="w-4 h-4" />
+                      Contanti
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod("CARTA")}
+                      className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
+                        paymentMethod === "CARTA"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Carta
+                    </button>
+                  </div>
                   <button
-                    onClick={() => setPaymentMethod("CONTANTI")}
-                    className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
-                      paymentMethod === "CONTANTI"
-                        ? "bg-green-500 text-white"
+                    onClick={() => setPaymentMethod("DEBITO")}
+                    className={`w-full py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
+                      paymentMethod === "DEBITO"
+                        ? "bg-orange-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    <Banknote className="w-4 h-4" />
-                    Contanti
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod("CARTA")}
-                    className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors ${
-                      paymentMethod === "CARTA"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    Carta
+                    <Calendar className="w-4 h-4" />
+                    Debito
                   </button>
                 </div>
               </div>
